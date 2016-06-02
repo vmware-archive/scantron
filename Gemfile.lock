@@ -35,7 +35,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  rspec
+  rspec (~> 3.4)
   service_scanner!
 
 BUNDLED WITH
