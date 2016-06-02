@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+
+require "service_scanner/inventory"
+require "service_scanner/lsof_parser"
+require "service_scanner/scanner"
+
+options = {}
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: service-scanner [options]"
+
+  opts.on("-n", "--nmap-results RESULTS", "path to XML nmap results file") do |n|
+    options[:nmap_results] = n
+  end
+
+  opts.on("-i", "--inventory INVENTORY", "path to an inventory file") do |i|
+    options[:inventory] = i
+  end
+end.parse!
+
+unless options.has_key?(:nmap_results)
+  warn "--nmap-results required"
+  exit 1
+end
+
+unless options.has_key?(:inventory)
+  warn "--inventory required"
+  exit 1
+end
+
+parser = ServiceScanner::LsofParser.new
+
+inventory = ServiceScanner::Inventory.new(options.fetch(:inventory))
+results = Nmap::XML.new(options.fetch(:nmap_results))
+scanner = ServiceScanner::Scanner.new(results, parser)
+
+inventory.each_host do |machine|
+  puts "> Scanning host #{machine.address} (#{machine.type})..."
+
+  begin
+    results = scanner.scan(machine)
+  rescue ServiceScanner::UnknownMachine
+    puts "!! No scan results for this machine!"
+    next
+  end
+
+  results.each { |r| puts "  #{r.port}: #{r.service}" }
+end
+

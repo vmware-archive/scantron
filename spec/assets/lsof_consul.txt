@@ -1,0 +1,3 @@
+COMMAND  PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+consul  7067 vcap    4u  IPv4  15089      0t0  TCP diego-cell-partition-9c725d8997d84db68997-2.node.dc1.cf.internal:8301 (LISTEN)
+consul  7067 vcap    6u  IPv4  15090      0t0  UDP diego-cell-partition-9c725d8997d84db68997-2.node.dc1.cf.internal:8301
