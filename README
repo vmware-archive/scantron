@@ -12,3 +12,33 @@
 
   service-scanner --nmap-results results.xml --inventory inventory.yml
 
+== generating nmap scan results file
+
+    nmap -oX results.xml 10.0.0.1
+
+== inventory file
+
+The different pieces of information required to run this tool are in a number
+of different places that are non-trivial to fetch and for a machine to join.
+I've punted on the problem for now and required a YAML file that contains a
+list of hosts in the following format.
+
+    hosts:
+    - name: cell
+      username: user
+      password: secret
+      addresses:
+      - 10.0.0.1
+      - 10.0.0.2
+      - 10.0.0.3
+
+    - name: brain
+      username: user
+      password: secretz
+      addresses:
+      - 10.0.0.4
+      - 10.0.0.5
+      - 10.0.0.6
+
+In the future it would be nice to automate either the creation of this file or
+the fetching of this information directly.
