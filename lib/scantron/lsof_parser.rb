@@ -1,4 +1,4 @@
-module ServiceScanner
+module Scantron
   class NoServicesListeningOnPort < StandardError; end
 
   class LsofParser

@@ -1,8 +1,8 @@
-require File.expand_path("../lib/service_scanner/version", __FILE__)
+require File.expand_path("../lib/scantron/version", __FILE__)
 
 Gem::Specification.new do |gem|
-  gem.name    = 'service_scanner'
-  gem.version = ServiceScanner::VERSION
+  gem.name    = 'scantron'
+  gem.version = Scantron::VERSION
   gem.date    = Date.today.to_s
 
   gem.summary     = "a tool for working out which services are listening on ports"

@@ -1,7 +1,7 @@
 require "net/ssh"
 require "nmap/xml"
 
-module ServiceScanner
+module Scantron
   class UnknownMachine < StandardError; end
 
   Mapping = Struct.new(:port, :service)
@@ -25,7 +25,7 @@ module ServiceScanner
 
           begin
             service = parser.parse(output)
-          rescue ServiceScanner::NoServicesListeningOnPort
+          rescue Scantron::NoServicesListeningOnPort
             service = "-"
           end
 

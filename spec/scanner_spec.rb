@@ -1,15 +1,15 @@
 require "net/ssh"
 require "nmap/xml"
-require "service_scanner/lsof_parser"
+require "scantron/lsof_parser"
 
-require 'service_scanner/scanner'
+require 'scantron/scanner'
 
-RSpec.describe ServiceScanner::Scanner do
-  let(:parser) { instance_double(ServiceScanner::LsofParser) }
+RSpec.describe Scantron::Scanner do
+  let(:parser) { instance_double(Scantron::LsofParser) }
   let(:results) { instance_double(Nmap::XML) }
-  subject(:scanner) { ServiceScanner::Scanner.new(results, parser) }
+  subject(:scanner) { Scantron::Scanner.new(results, parser) }
 
-  let(:machine) { ServiceScanner::Machine.new('type', 'username', 'password', 'address') }
+  let(:machine) { Scantron::Machine.new('type', 'username', 'password', 'address') }
 
   before do
     allow(results).to receive(:hosts).and_return([host])
@@ -33,8 +33,8 @@ RSpec.describe ServiceScanner::Scanner do
       results = scanner.scan(machine)
 
       expect(results).to eq([
-        ServiceScanner::Mapping.new(3332, 'service-name'),
-        ServiceScanner::Mapping.new(2354, 'service-name'),
+        Scantron::Mapping.new(3332, 'service-name'),
+        Scantron::Mapping.new(2354, 'service-name'),
       ])
     end
   end
@@ -45,7 +45,7 @@ RSpec.describe ServiceScanner::Scanner do
     it 'raises an exception' do
       expect {
         scanner.scan(machine)
-      }.to raise_error(ServiceScanner::UnknownMachine)
+      }.to raise_error(Scantron::UnknownMachine)
     end
   end
 end

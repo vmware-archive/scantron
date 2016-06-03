@@ -2,14 +2,14 @@
 
 require 'optparse'
 
-require "service_scanner/inventory"
-require "service_scanner/lsof_parser"
-require "service_scanner/scanner"
+require "scantron/inventory"
+require "scantron/lsof_parser"
+require "scantron/scanner"
 
 options = {}
 
 OptionParser.new do |opts|
-  opts.banner = "Usage: service-scanner [options]"
+  opts.banner = "Usage: scantron [options]"
 
   opts.on("-n", "--nmap-results RESULTS", "path to XML nmap results file") do |n|
     options[:nmap_results] = n
@@ -30,18 +30,18 @@ unless options.has_key?(:inventory)
   exit 1
 end
 
-parser = ServiceScanner::LsofParser.new
+parser = Scantron::LsofParser.new
 
-inventory = ServiceScanner::Inventory.new(options.fetch(:inventory))
+inventory = Scantron::Inventory.new(options.fetch(:inventory))
 results = Nmap::XML.new(options.fetch(:nmap_results))
-scanner = ServiceScanner::Scanner.new(results, parser)
+scanner = Scantron::Scanner.new(results, parser)
 
 inventory.each_host do |machine|
   puts "> Scanning host #{machine.address} (#{machine.type})..."
 
   begin
     results = scanner.scan(machine)
-  rescue ServiceScanner::UnknownMachine
+  rescue Scantron::UnknownMachine
     puts "!! No scan results for this machine!"
     next
   end

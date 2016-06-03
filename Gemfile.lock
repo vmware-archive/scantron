@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    service_scanner (0.0.1)
+    scantron (0.0.1)
       net-ssh (~> 3.1)
       ruby-nmap (~> 0.8.0)
 
@@ -36,7 +36,7 @@ PLATFORMS
 
 DEPENDENCIES
   rspec (~> 3.4)
-  service_scanner!
+  scantron!
 
 BUNDLED WITH
    1.12.5

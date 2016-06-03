@@ -1,6 +1,6 @@
 require 'yaml'
 
-module ServiceScanner
+module Scantron
   Machine = Struct.new(:type, :username, :password, :address)
 
   class Inventory
@@ -15,7 +15,7 @@ module ServiceScanner
         addresses = host.fetch('addresses')
 
         addresses.each do |address|
-          machine = ServiceScanner::Machine.new(
+          machine = Scantron::Machine.new(
             host.fetch('name'),
             host.fetch('username'),
             host.fetch('password'),

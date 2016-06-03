@@ -1,7 +1,7 @@
-require 'service_scanner/lsof_parser'
+require 'scantron/lsof_parser'
 
-RSpec.describe ServiceScanner::LsofParser do
-  subject(:parser) { ServiceScanner::LsofParser.new }
+RSpec.describe Scantron::LsofParser do
+  subject(:parser) { Scantron::LsofParser.new }
 
   let(:cc_output) { File.read(asset_path('lsof_cc-uploader.txt')) }
   let(:consul_output) { File.read(asset_path('lsof_consul.txt')) }
@@ -19,6 +19,6 @@ RSpec.describe ServiceScanner::LsofParser do
   it 'raises an error if there are no processes listening on that port (empty output)' do
     expect {
       parser.parse('[sudo] password for vcap:')
-    }.to raise_error(ServiceScanner::NoServicesListeningOnPort)
+    }.to raise_error(Scantron::NoServicesListeningOnPort)
   end
 end
