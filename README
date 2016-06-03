@@ -8,6 +8,9 @@
 
   scantron --nmap-results results.xml --inventory inventory.yml
 
+You may need to use `bundle exec bin/scantron` if you don't want to install the
+gem.
+
 == generating nmap scan results file
 
     nmap -oX results.xml 10.0.0.1-6
@@ -38,3 +41,18 @@ list of hosts in the following format.
 
 In the future it would be nice to automate either the creation of this file or
 the fetching of this information directly.
+
+Here's how I generate the inventory at the moment:
+
+  1. Log into the Ops Manager that contains the deployment that I would like to
+     scan.
+  2. Click the tile that I would like to scan.
+  3. Click Credentials.
+  4. Click on any of the "VM Credential" links.
+  5. Save this output as "vm_credentials.json" in the current directory.
+  6. Run the `ruby mutate.rb > inventory.yml` script to generate a skeleton.
+  7. Go through and delete the errands and other hosts that we do not use.
+  8. Correlate the VM IPs from the Ops Manager status page with each of the
+     hosts in the inventory.
+
+I'm sorry.
