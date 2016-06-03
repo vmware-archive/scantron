@@ -4,6 +4,7 @@ require 'optparse'
 
 require "scantron/inventory"
 require "scantron/lsof_parser"
+require "scantron/rpcinfo_parser"
 require "scantron/scanner"
 
 options = {}
@@ -30,11 +31,12 @@ unless options.has_key?(:inventory)
   exit 1
 end
 
-parser = Scantron::LsofParser.new
+lsof_parser = Scantron::LsofParser.new
+rpcinfo_parser = Scantron::RPCInfoParser.new
 
 inventory = Scantron::Inventory.new(options.fetch(:inventory))
 results = Nmap::XML.new(options.fetch(:nmap_results))
-scanner = Scantron::Scanner.new(results, parser)
+scanner = Scantron::Scanner.new(results, lsof_parser, rpcinfo_parser)
 
 inventory.each_host do |machine|
   puts "> Scanning host #{machine.address} (#{machine.type})..."

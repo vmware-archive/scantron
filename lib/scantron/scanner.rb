@@ -7,9 +7,10 @@ module Scantron
   class UnknownMachine < StandardError; end
 
   class Scanner
-    def initialize(results, parser)
+    def initialize(results, lsof_parser, rpcinfo_parser)
       @results = results
-      @parser = parser
+      @lsof_parser = lsof_parser
+      @rpcinfo_parser = rpcinfo_parser
     end
 
     def scan(machine)
@@ -20,10 +21,12 @@ module Scantron
       results = []
 
       Net::SSH.start(machine.address, machine.username, password: machine.password) do |ssh|
-        host.each_port do |port|
-          output = ssh.exec!("echo #{machine.password} | sudo -S -- lsof +c 0 -i :#{port.number}")
+        rpcinfo_output = ssh.exec!("rpcinfo -p")
 
-          service = guess_service(port.number, output)
+        host.each_port do |port|
+          lsof_output = ssh.exec!("echo #{machine.password} | sudo -S -- lsof +c 0 -i :#{port.number}")
+
+          service = guess_service(port.number, lsof_output, rpcinfo_output)
 
           results << Mapping.new(port.number, service)
         end
@@ -34,18 +37,22 @@ module Scantron
 
     private
 
-    def guess_service(port_number, output)
+    def guess_service(port_number, lsof_output, rpcinfo_output)
       begin
-        parser.parse(output)
+        lsof_parser.parse(lsof_output)
       rescue Scantron::NoServicesListeningOnPort
         if port_number > 60000
           'user application (guessed)'
         else
-          '-'
+          begin
+            rpcinfo_parser.parse(rpcinfo_output, port_number)
+          rescue Scantron::NoServicesListeningOnPort
+            '-'
+          end
         end
       end
     end
 
-    attr_reader :results, :parser
+    attr_reader :results, :lsof_parser, :rpcinfo_parser
   end
 end
