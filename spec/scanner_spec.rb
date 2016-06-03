@@ -32,12 +32,12 @@ RSpec.describe Scantron::Scanner do
       allow(host).to receive(:each_port).and_yield(service1).and_yield(service2).and_yield(app_port).and_yield(rpc_port).and_yield(unknown_port)
       allow(lsof_parser).to receive(:parse).with('service1-output').and_return('service1-name')
       allow(lsof_parser).to receive(:parse).with('service2-output').and_return('service2-name')
-      allow(lsof_parser).to receive(:parse).with('app_port-output').and_raise(Scantron::NoServicesListeningOnPort)
-      allow(lsof_parser).to receive(:parse).with('rpc_port-output').and_raise(Scantron::NoServicesListeningOnPort)
-      allow(lsof_parser).to receive(:parse).with('unknown_port-output').and_raise(Scantron::NoServicesListeningOnPort)
+      allow(lsof_parser).to receive(:parse).with('app_port-output').and_return(nil)
+      allow(lsof_parser).to receive(:parse).with('rpc_port-output').and_return(nil)
+      allow(lsof_parser).to receive(:parse).with('unknown_port-output').and_return(nil)
 
       allow(rpcinfo_parser).to receive(:parse).with('rpcinfo-output', 33673).and_return('rpc-service')
-      allow(rpcinfo_parser).to receive(:parse).with('rpcinfo-output', 2342).and_raise(Scantron::NoServicesListeningOnPort)
+      allow(rpcinfo_parser).to receive(:parse).with('rpcinfo-output', 2342).and_return(nil)
 
       expect(Net::SSH).to receive(:start).with('address', 'username', password: 'password').and_yield(ssh_session)
 

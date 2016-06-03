@@ -38,19 +38,15 @@ module Scantron
     private
 
     def guess_service(port_number, lsof_output, rpcinfo_output)
-      begin
-        lsof_parser.parse(lsof_output)
-      rescue Scantron::NoServicesListeningOnPort
-        if port_number > 60000
-          'user application (guessed)'
-        else
-          begin
-            rpcinfo_parser.parse(rpcinfo_output, port_number)
-          rescue Scantron::NoServicesListeningOnPort
-            '-'
-          end
-        end
-      end
+      service = lsof_parser.parse(lsof_output)
+      return service if service
+
+      return 'user application (guessed)' if port_number > 60000
+
+      service = rpcinfo_parser.parse(rpcinfo_output, port_number)
+      return service if service
+
+      '-'
     end
 
     attr_reader :results, :lsof_parser, :rpcinfo_parser

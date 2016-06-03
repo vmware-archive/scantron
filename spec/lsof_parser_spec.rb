@@ -16,9 +16,8 @@ RSpec.describe Scantron::LsofParser do
     expect(command).to eq('consul')
   end
 
-  it 'raises an error if there are no processes listening on that port (empty output)' do
-    expect {
-      parser.parse('[sudo] password for vcap:')
-    }.to raise_error(Scantron::NoServicesListeningOnPort)
+  it 'returns nil if there are no processes listening on that port (empty output)' do
+    command = parser.parse('[sudo] password for vcap:')
+    expect(command).to be_nil
   end
 end

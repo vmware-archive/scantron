@@ -1,9 +1,7 @@
 module Scantron
-  class NoServicesListeningOnPort < StandardError; end
-
   class LsofParser
     def parse(output)
-      raise NoServicesListeningOnPort unless output.include?('COMMAND')
+      return nil unless output.include?('COMMAND')
 
       lines = output.split("\n")
       without_header = lines.drop(1)

@@ -15,9 +15,8 @@ RSpec.describe Scantron::RPCInfoParser do
     expect(command).to eq('portmapper')
   end
 
-  it 'raises an error if there are no processes listening on that port (empty output)' do
-    expect {
-      parser.parse(output, 1337)
-    }.to raise_error(Scantron::NoServicesListeningOnPort)
+  it 'returns nil if there are no processes listening on that port (empty output)' do
+    command = parser.parse(output, 1337)
+    expect(command).to be_nil
   end
 end

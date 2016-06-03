@@ -8,7 +8,7 @@ module Scantron
         map { |line| line.split(" ") }.
         find { |components| components[3] == port_number.to_s }
 
-      raise NoServicesListeningOnPort if line.nil?
+      return nil if line.nil?
 
       line[4]
     end
