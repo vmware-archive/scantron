@@ -11,4 +11,4 @@ inputs:
 - name: scantron
 
 run:
-  path: scantron/script/ci
+  path: scantron/ci/script/ci
