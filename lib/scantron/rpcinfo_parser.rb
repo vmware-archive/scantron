@@ -5,7 +5,7 @@ module Scantron
       without_header = lines.drop(1)
 
       line = without_header.
-        map { |line| line.split(" ") }.
+        map { |l| l.split(" ") }.
         find { |components| components[3] == port_number.to_s }
 
       return nil if line.nil?
