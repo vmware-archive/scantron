@@ -11,5 +11,6 @@ jobs:
 - name: scantron
   plan:
   - get: scantron
+    trigger: true
   - task: test
     file: scantron/ci/test.yml
