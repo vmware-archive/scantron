@@ -1,0 +1,15 @@
+---
+resources:
+- name: scantron
+  type: git
+  source:
+    uri: git@github.com:pivotalcf/scantron.git
+    branch: master
+    private_key: {{scantron-private-key}}
+
+jobs:
+- name: scantron
+  plan:
+  - get: scantron
+  - task: test
+    file: scantron/ci/test.yml
