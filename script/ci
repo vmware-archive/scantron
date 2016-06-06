@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -e -u -o pipefail
+
+pushd scantron
+  bundle install --jobs 2 --retry 5
+  bundle exec rspec
+popd
