@@ -5,9 +5,9 @@ module Scantron
 
       lines = output.split("\n")
       without_header = lines.drop(1)
-      first_line = without_header.first
+      listening = without_header.find { |l| l.include? "LISTEN" }
 
-      first_line.split(' ').first
+      listening.split(' ').first
     end
   end
 end
