@@ -28,7 +28,13 @@ module Scantron
 
           service = guess_service(port.number, lsof_output, rpcinfo_output)
 
-          results << Mapping.new(port.number, service)
+          mapping = Mapping.new(port.number, service)
+
+          if port.service
+            mapping.ssl = port.service.ssl?
+          end
+
+          results << mapping
         end
       end
 

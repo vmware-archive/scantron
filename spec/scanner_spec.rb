@@ -20,11 +20,11 @@ RSpec.describe Scantron::Scanner do
 
   context 'when the inventory machine is in the results' do
     let(:host) { instance_double(Nmap::Host, ip: 'address') }
-    let(:service1) { instance_double(Nmap::Port, number: 3332) }
-    let(:service2) { instance_double(Nmap::Port, number: 2354) }
-    let(:app_port) { instance_double(Nmap::Port, number: 60002) }
-    let(:rpc_port) { instance_double(Nmap::Port, number: 33673) }
-    let(:unknown_port) { instance_double(Nmap::Port, number: 2342) }
+    let(:service1) { instance_double(Nmap::Port, number: 3332, service: instance_double(Nmap::Service, ssl?: true)) }
+    let(:service2) { instance_double(Nmap::Port, number: 2354, service: instance_double(Nmap::Service, ssl?: false)) }
+    let(:app_port) { instance_double(Nmap::Port, number: 60002, service: instance_double(Nmap::Service, ssl?: false)) }
+    let(:rpc_port) { instance_double(Nmap::Port, number: 33673, service: instance_double(Nmap::Service, ssl?: false)) }
+    let(:unknown_port) { instance_double(Nmap::Port, number: 2342, service: instance_double(Nmap::Service, ssl?: false)) }
 
     let(:ssh_session) { double }
 
@@ -54,11 +54,11 @@ RSpec.describe Scantron::Scanner do
       results = scanner.scan(machine)
 
       expect(results).to eq([
-        Scantron::Mapping.new(3332, 'service1-name'),
-        Scantron::Mapping.new(2354, 'service2-name'),
-        Scantron::Mapping.new(60002, 'cloud foundry app'),
-        Scantron::Mapping.new(33673, 'rpc-service'),
-        Scantron::Mapping.new(2342, '-'),
+        Scantron::Mapping.new(3332, 'service1-name', true),
+        Scantron::Mapping.new(2354, 'service2-name', false),
+        Scantron::Mapping.new(60002, 'cloud foundry app', false),
+        Scantron::Mapping.new(33673, 'rpc-service', false),
+        Scantron::Mapping.new(2342, '-', false),
       ])
     end
   end
