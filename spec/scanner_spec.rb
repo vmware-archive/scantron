@@ -56,7 +56,7 @@ RSpec.describe Scantron::Scanner do
       expect(results).to eq([
         Scantron::Mapping.new(3332, 'service1-name'),
         Scantron::Mapping.new(2354, 'service2-name'),
-        Scantron::Mapping.new(60002, 'user application (guessed)'),
+        Scantron::Mapping.new(60002, 'cloud foundry app'),
         Scantron::Mapping.new(33673, 'rpc-service'),
         Scantron::Mapping.new(2342, '-'),
       ])

@@ -41,7 +41,7 @@ module Scantron
       service = lsof_parser.parse(lsof_output)
       return service if service
 
-      return 'user application (guessed)' if port_number > 60000
+      return 'cloud foundry app' if port_number > 60000
 
       service = rpcinfo_parser.parse(rpcinfo_output, port_number)
       return service if service
