@@ -14,7 +14,7 @@ Gem::Specification.new do |gem|
   gem.files = Dir['{bin,lib,spec}/**/*', 'README*'] & `git ls-files -z`.split("\0")
 
   gem.add_dependency('ruby-nmap', '~> 0.8.0')
-  gem.add_dependency('net-ssh', '~> 3.1')
+  gem.add_dependency('net-ssh', '~> 3.2')
 
   gem.add_development_dependency('rspec', '~> 3.4')
 end
