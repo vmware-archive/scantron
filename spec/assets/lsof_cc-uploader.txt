@@ -1,8 +1,0 @@
-COMMAND      PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
-cc-uploader 4263 vcap    6u  IPv6  14819      0t0  TCP *:9090 (LISTEN)
-cc-uploader 4263 vcap    8u  IPv6  16263      0t0  TCP diego-brain-partition-9c725d8997d84db68997-0.node.dc1.cf.internal:9090->diego-cell-partition-9c725d8997d84db68997-1.node.dc1.cf.internal:38492 (ESTABLISHED)
-cc-uploader 4263 vcap    9u  IPv6  16353      0t0  TCP diego-brain-partition-9c725d8997d84db68997-0.node.dc1.cf.internal:9090->diego-cell-partition-9c725d8997d84db68997-0.node.dc1.cf.internal:41652 (ESTABLISHED)
-cc-uploader 4263 vcap   12u  IPv6  16758      0t0  TCP diego-brain-partition-9c725d8997d84db68997-0.node.dc1.cf.internal:9090->diego-cell-partition-9c725d8997d84db68997-0.node.dc1.cf.internal:41689 (ESTABLISHED)
-cc-uploader 4263 vcap   14u  IPv6  16766      0t0  TCP diego-brain-partition-9c725d8997d84db68997-0.node.dc1.cf.internal:9090->diego-cell-partition-9c725d8997d84db68997-1.node.dc1.cf.internal:38549 (ESTABLISHED)
-cc-uploader 4263 vcap   15u  IPv6  16853      0t0  TCP diego-brain-partition-9c725d8997d84db68997-0.node.dc1.cf.internal:9090->diego-cell-partition-9c725d8997d84db68997-2.node.dc1.cf.internal:41619 (ESTABLISHED)
-cc-uploader 4263 vcap   16u  IPv6  16855      0t0  TCP diego-brain-partition-9c725d8997d84db68997-0.node.dc1.cf.internal:9090->diego-cell-partition-9c725d8997d84db68997-2.node.dc1.cf.internal:41620 (ESTABLISHED)

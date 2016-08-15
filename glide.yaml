@@ -1,0 +1,5 @@
+package: github.com/pivotal-cf/scantron
+import:
+- package: golang.org/x/crypto
+  subpackages:
+  - ssh
