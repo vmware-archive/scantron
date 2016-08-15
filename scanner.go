@@ -67,6 +67,7 @@ func Scan(logger lager.Logger, nmapRun *nmap.NmapRun, inventory *Inventory) {
 						portLogger := endpointLogger.WithData(lager.Data{
 							"port": port.PortId,
 						})
+
 						session, err := conn.NewSession()
 						if err != nil {
 							portLogger.Error("failed-to-create-session", err)
@@ -75,9 +76,12 @@ func Scan(logger lager.Logger, nmapRun *nmap.NmapRun, inventory *Inventory) {
 
 						bs, err := session.Output(fmt.Sprintf("echo %s | sudo -S -- lsof +c 0 -i :%d", host.Password, port.PortId))
 						if err != nil {
+							// the lsof session may fail for things like nfs; try rpcinfo,
+							// ignoring original error
 							session, err := conn.NewSession()
 							if err != nil {
-								portLogger.Error("failed-to-query-lsof", err)
+								portLogger.Error("failed-to-create-session", err)
+								continue
 							}
 
 							bs, err = session.Output("rpcinfo -p")
