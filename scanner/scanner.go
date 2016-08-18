@@ -6,8 +6,6 @@ type Scanner interface {
 	Scan(lager.Logger) ([]ScannedService, error)
 }
 
-const asciiCheckmark = "\u2713"
-
 type ScannedService struct {
 	Hostname string
 	Name     string
