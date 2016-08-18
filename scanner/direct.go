@@ -1,45 +1,37 @@
-package scantron
+package scanner
 
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"strings"
 	"text/tabwriter"
 
-	"github.com/lair-framework/go-nmap"
+	nmap "github.com/lair-framework/go-nmap"
+
+	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-golang/lager"
 	"golang.org/x/crypto/ssh"
 )
 
-const checkmark = "\u2713"
-
-type Host struct {
-	Name      string   `yaml:"name"`
-	Username  string   `yaml:"username"`
-	Password  string   `yaml:"password"`
-	Addresses []string `yaml:"addresses"`
+type direct struct {
+	nmapRun   *nmap.NmapRun
+	inventory *scantron.Inventory
 }
 
-type Inventory struct {
-	Hosts []Host `yaml:"hosts"`
+func Direct(nmapRun *nmap.NmapRun, inventory *scantron.Inventory) Scanner {
+	return &direct{
+		nmapRun:   nmapRun,
+		inventory: inventory,
+	}
 }
 
-type service struct {
-	hostname string
-	name     string
-	port     int
-	ssl      bool
-	ip       string
-}
-
-func Scan(logger lager.Logger, nmapRun *nmap.NmapRun, inventory *Inventory) {
+func (d *direct) Scan(logger lager.Logger) error {
 	l := logger.Session("scan")
 
-	var output []service
-	for _, host := range inventory.Hosts {
+	var output []ScannedService
+	for _, host := range d.inventory.Hosts {
 		config := &ssh.ClientConfig{
 			User: host.Username,
 			Auth: []ssh.AuthMethod{
@@ -48,7 +40,7 @@ func Scan(logger lager.Logger, nmapRun *nmap.NmapRun, inventory *Inventory) {
 		}
 
 		for _, address := range host.Addresses {
-			for _, nmapHost := range nmapRun.Hosts {
+			for _, nmapHost := range d.nmapRun.Hosts {
 				if nmapHost.Addresses[0].Addr == address {
 					endpoint := fmt.Sprintf("%s:22", address)
 					endpointLogger := l.Session("dial", lager.Data{
@@ -57,8 +49,7 @@ func Scan(logger lager.Logger, nmapRun *nmap.NmapRun, inventory *Inventory) {
 
 					conn, err := ssh.Dial("tcp", endpoint, config)
 					if err != nil {
-						endpointLogger.Error("failed", err)
-						return
+						return err
 					}
 
 					endpointLogger.Debug("done")
@@ -91,7 +82,7 @@ func Scan(logger lager.Logger, nmapRun *nmap.NmapRun, inventory *Inventory) {
 							}
 						}
 
-						output = append(output, service{
+						output = append(output, ScannedService{
 							hostname: host.Name,
 							ip:       address,
 							name:     serviceName(bs, port.PortId),
@@ -111,7 +102,7 @@ func Scan(logger lager.Logger, nmapRun *nmap.NmapRun, inventory *Inventory) {
 	for _, o := range output {
 		ssl := ""
 		if o.ssl {
-			ssl = checkmark
+			ssl = asciiCheckmark
 		}
 
 		fmt.Fprintln(wr, fmt.Sprintf("%s\t%s\t%s\t%d\t%s", o.ip, o.hostname, o.name, o.port, ssl))
@@ -119,8 +110,10 @@ func Scan(logger lager.Logger, nmapRun *nmap.NmapRun, inventory *Inventory) {
 
 	err := wr.Flush()
 	if err != nil {
-		log.Fatalf("failed to print output: %s", err.Error())
+		return err
 	}
+
+	return nil
 }
 
 var commandLineRegexp = regexp.MustCompile(`^COMMAND`)
