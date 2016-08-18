@@ -1,10 +1,8 @@
 package scanner
 
 import (
-	"bytes"
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 	"text/tabwriter"
 
@@ -30,7 +28,7 @@ func Direct(nmapRun *nmap.NmapRun, inventory *scantron.Inventory) Scanner {
 func (d *direct) Scan(logger lager.Logger) error {
 	l := logger.Session("scan")
 
-	var output []ScannedService
+	var scannedServices []ScannedService
 	for _, host := range d.inventory.Hosts {
 		config := &ssh.ClientConfig{
 			User: host.Username,
@@ -52,43 +50,32 @@ func (d *direct) Scan(logger lager.Logger) error {
 						return err
 					}
 
-					endpointLogger.Debug("done")
+					session, err := conn.NewSession()
+					if err != nil {
+						endpointLogger.Error("failed-to-create-session", err)
+						continue
+					}
 
-					for _, port := range nmapHost.Ports {
-						portLogger := endpointLogger.WithData(lager.Data{
-							"port": port.PortId,
-						})
+					bs, err := session.Output(fmt.Sprintf("echo %s | sudo -S -- lsof -l -iTCP -sTCP:LISTEN +c0 -Fcn -P -n", host.Password))
+					if err != nil {
+						endpointLogger.Error("failed-to-run-lsof", err)
+						continue
+					}
 
-						session, err := conn.NewSession()
-						if err != nil {
-							portLogger.Error("failed-to-create-session", err)
-							continue
-						}
+					processes := ParseLSOFOutput(string(bs))
 
-						bs, err := session.Output(fmt.Sprintf("echo %s | sudo -S -- lsof +c 0 -i :%d", host.Password, port.PortId))
-						if err != nil {
-							// the lsof session may fail for things like nfs; try rpcinfo,
-							// ignoring original error
-							session, err := conn.NewSession()
-							if err != nil {
-								portLogger.Error("failed-to-create-session", err)
-								continue
-							}
-
-							bs, err = session.Output("rpcinfo -p")
-							if err != nil {
-								portLogger.Error("failed-to-exec", err)
-								continue
+					for _, nmapPort := range nmapHost.Ports {
+						for _, process := range processes {
+							if process.HasFileWithPort(nmapPort.PortId) {
+								scannedServices = append(scannedServices, ScannedService{
+									hostname: host.Name,
+									ip:       address,
+									name:     process.CommandName,
+									port:     nmapPort.PortId,
+									ssl:      len(nmapPort.Service.Tunnel) > 0,
+								})
 							}
 						}
-
-						output = append(output, ScannedService{
-							hostname: host.Name,
-							ip:       address,
-							name:     serviceName(bs, port.PortId),
-							port:     port.PortId,
-							ssl:      len(port.Service.Tunnel) > 0,
-						})
 					}
 				}
 			}
@@ -99,7 +86,7 @@ func (d *direct) Scan(logger lager.Logger) error {
 
 	fmt.Fprintln(wr, strings.Join([]string{"IP Address", "Job", "Service", "Port", "SSL"}, "\t"))
 
-	for _, o := range output {
+	for _, o := range scannedServices {
 		ssl := ""
 		if o.ssl {
 			ssl = asciiCheckmark
@@ -114,60 +101,4 @@ func (d *direct) Scan(logger lager.Logger) error {
 	}
 
 	return nil
-}
-
-var commandLineRegexp = regexp.MustCompile(`^COMMAND`)
-
-func serviceName(output []byte, port int) string {
-	lsof := lsofServiceName(output)
-	if lsof != "" {
-		return lsof
-	}
-
-	rpcInfo := rpcInfoServiceName(output, port)
-	if rpcInfo != "" {
-		return rpcInfo
-	}
-
-	if port > 60000 {
-		return "cloud foundry app"
-	}
-
-	return "unknown"
-}
-
-func lsofServiceName(output []byte) string {
-	lines := bytes.Split(output, []byte("\n"))
-
-	if !commandLineRegexp.Match(lines[0]) {
-		return ""
-	}
-
-	var service string
-	fmt.Sscanf(string(lines[1]), "%s ", &service)
-
-	if service == "" {
-		return ""
-	}
-
-	return service
-}
-
-func rpcInfoServiceName(output []byte, port int) string {
-	lines := bytes.Split(output, []byte("\n"))
-
-	var (
-		foundPort            int
-		service              string
-		vers, proto, program string
-	)
-
-	for _, line := range lines[1:] {
-		fmt.Sscanf(string(line), "%s %s %s %d %s", &program, &vers, &proto, &foundPort, &service)
-		if foundPort == port {
-			return service
-		}
-	}
-
-	return ""
 }
