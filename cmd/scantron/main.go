@@ -2,9 +2,12 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
+	"text/tabwriter"
 
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/jessevdk/go-flags"
@@ -38,6 +41,8 @@ type Opts struct {
 		ClientSecret string `long:"uaa-client-secret" description:"UAA Client Secret" value-name:"OAUTH_CLIENT_SECRET"`
 	}
 }
+
+const asciiCheckmark = "\u2713"
 
 func main() {
 	var opts Opts
@@ -102,8 +107,26 @@ func main() {
 		s = scanner.Direct(nmapRun, inventory)
 	}
 
-	err = s.Scan(logger)
+	results, err := s.Scan(logger)
 	if err != nil {
 		log.Fatalf("failed to scan: %s", err.Error())
+	}
+
+	wr := tabwriter.NewWriter(os.Stdout, 0, 8, 0, '\t', 0)
+
+	fmt.Fprintln(wr, strings.Join([]string{"IP Address", "Job", "Service", "Port", "SSL"}, "\t"))
+
+	for _, result := range results {
+		ssl := ""
+		if result.SSL {
+			ssl = asciiCheckmark
+		}
+
+		fmt.Fprintln(wr, fmt.Sprintf("%s\t%s\t%s\t%d\t%s", result.IP, result.Hostname, result.Name, result.Port, ssl))
+	}
+
+	err = wr.Flush()
+	if err != nil {
+		log.Fatalf("failed to flush tabwriter", err)
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-	"text/tabwriter"
 
 	boshcmd "github.com/cloudfoundry/bosh-init/cmd"
 	boshconfig "github.com/cloudfoundry/bosh-init/cmd/config"
@@ -67,23 +66,23 @@ func Bosh(
 	}
 }
 
-func (s *boshScanner) Scan(logger lager.Logger) error {
+func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 	director, err := getDirector(s.boshURL, s.boshUsername, s.boshPassword, s.creds, s.boshLogger)
 	if err != nil {
 		logger.Error("failed-to-get-director", err)
-		return err
+		return nil, err
 	}
 
 	deployment, err := director.FindDeployment(s.deploymentName)
 	if err != nil {
 		logger.Error("failed-to-find-deployment", err)
-		return err
+		return nil, err
 	}
 
 	vmInfos, err := deployment.VMInfos()
 	if err != nil {
 		logger.Error("failed-to-get-vm-infos", err)
-		return err
+		return nil, err
 	}
 
 	inventory := &scantron.Inventory{}
@@ -104,20 +103,20 @@ func (s *boshScanner) Scan(logger lager.Logger) error {
 	tmpDir, err := ioutil.TempDir("", "scantron")
 	if err != nil {
 		logger.Error("failed-to-create-temp-dir", err)
-		return err
+		return nil, err
 	}
 
 	tmpDirPath, err := deps.FS.ExpandPath(tmpDir)
 	if err != nil {
 		logger.Error("failed-to-expand-temp-dir-path", err)
-		return err
+		return nil, err
 	}
 	defer os.RemoveAll(tmpDirPath)
 
 	err = deps.FS.ChangeTempRoot(tmpDirPath)
 	if err != nil {
 		logger.Error("failed-to-change-temp-root", err)
-		return err
+		return nil, err
 	}
 
 	sshSessionFactory := func(o boshssh.ConnectionOpts, r boshdir.SSHResult) boshssh.Session {
@@ -141,7 +140,7 @@ func (s *boshScanner) Scan(logger lager.Logger) error {
 	sshOpts, privKey, err := boshdir.NewSSHOpts(deps.UUIDGen)
 	if err != nil {
 		logger.Error("failed-to-create-ssh-opts", err)
-		return err
+		return nil, err
 	}
 
 	// empty/empty means scan all instances of all jobs
@@ -150,7 +149,7 @@ func (s *boshScanner) Scan(logger lager.Logger) error {
 	sshResult, err := deployment.SetUpSSH(slug, sshOpts)
 	if err != nil {
 		logger.Error("failed-to-set-up-ssh", err)
-		return err
+		return nil, err
 	}
 	defer deployment.CleanUpSSH(slug, sshOpts)
 
@@ -166,7 +165,7 @@ func (s *boshScanner) Scan(logger lager.Logger) error {
 	err = sshRunner.Run(connOpts, sshResult, strings.Split(cmd, " "))
 	if err != nil {
 		logger.Error("failed-to-run-cmd", err)
-		return err
+		return nil, err
 	}
 
 	var scannedServices []ScannedService
@@ -178,11 +177,11 @@ func (s *boshScanner) Scan(logger lager.Logger) error {
 				for _, process := range processes {
 					if process.HasFileWithPort(nmapPort.PortId) {
 						scannedServices = append(scannedServices, ScannedService{
-							hostname: result.JobName(),
-							ip:       result.Host(),
-							name:     process.CommandName,
-							port:     nmapPort.PortId,
-							ssl:      len(nmapPort.Service.Tunnel) > 0,
+							Hostname: result.JobName(),
+							IP:       result.Host(),
+							Name:     process.CommandName,
+							Port:     nmapPort.PortId,
+							SSL:      len(nmapPort.Service.Tunnel) > 0,
 						})
 					}
 				}
@@ -190,21 +189,7 @@ func (s *boshScanner) Scan(logger lager.Logger) error {
 		}
 	}
 
-	wr := tabwriter.NewWriter(os.Stdout, 0, 8, 0, '\t', 0)
-	defer wr.Flush()
-
-	fmt.Fprintln(wr, strings.Join([]string{"IP Address", "Job", "Service", "Port", "SSL"}, "\t"))
-
-	for _, o := range scannedServices {
-		ssl := ""
-		if o.ssl {
-			ssl = asciiCheckmark
-		}
-
-		fmt.Fprintln(wr, fmt.Sprintf("%s\t%s\t%s\t%d\t%s", o.ip, o.hostname, o.name, o.port, ssl))
-	}
-
-	return nil
+	return scannedServices, nil
 }
 
 func getDirector(

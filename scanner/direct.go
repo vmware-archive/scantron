@@ -2,9 +2,6 @@ package scanner
 
 import (
 	"fmt"
-	"os"
-	"strings"
-	"text/tabwriter"
 
 	nmap "github.com/lair-framework/go-nmap"
 
@@ -25,7 +22,7 @@ func Direct(nmapRun *nmap.NmapRun, inventory *scantron.Inventory) Scanner {
 	}
 }
 
-func (d *direct) Scan(logger lager.Logger) error {
+func (d *direct) Scan(logger lager.Logger) ([]ScannedService, error) {
 	l := logger.Session("scan")
 
 	var scannedServices []ScannedService
@@ -47,7 +44,7 @@ func (d *direct) Scan(logger lager.Logger) error {
 
 					conn, err := ssh.Dial("tcp", endpoint, config)
 					if err != nil {
-						return err
+						return nil, err
 					}
 
 					session, err := conn.NewSession()
@@ -68,11 +65,11 @@ func (d *direct) Scan(logger lager.Logger) error {
 						for _, process := range processes {
 							if process.HasFileWithPort(nmapPort.PortId) {
 								scannedServices = append(scannedServices, ScannedService{
-									hostname: host.Name,
-									ip:       address,
-									name:     process.CommandName,
-									port:     nmapPort.PortId,
-									ssl:      len(nmapPort.Service.Tunnel) > 0,
+									Hostname: host.Name,
+									IP:       address,
+									Name:     process.CommandName,
+									Port:     nmapPort.PortId,
+									SSL:      len(nmapPort.Service.Tunnel) > 0,
 								})
 							}
 						}
@@ -82,23 +79,5 @@ func (d *direct) Scan(logger lager.Logger) error {
 		}
 	}
 
-	wr := tabwriter.NewWriter(os.Stdout, 0, 8, 0, '\t', 0)
-
-	fmt.Fprintln(wr, strings.Join([]string{"IP Address", "Job", "Service", "Port", "SSL"}, "\t"))
-
-	for _, o := range scannedServices {
-		ssl := ""
-		if o.ssl {
-			ssl = asciiCheckmark
-		}
-
-		fmt.Fprintln(wr, fmt.Sprintf("%s\t%s\t%s\t%d\t%s", o.ip, o.hostname, o.name, o.port, ssl))
-	}
-
-	err := wr.Flush()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return scannedServices, nil
 }
