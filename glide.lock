@@ -1,5 +1,5 @@
-hash: d28accd0c8a506a44a13409aa906d08bbfcfe76c50861e5cecf87c80644bff4b
-updated: 2016-08-12T16:14:17.259598259-07:00
+hash: 82aaec3b859446ad3aa50d2f57230870dccd61caf3961d36e28ada37e0dcd762
+updated: 2016-08-18T10:03:27.902082659-07:00
 imports:
 - name: github.com/cloudfoundry-incubator/candiedyaml
   version: 99c3df83b51532e3615f851d8c2dbb638f5313bf
@@ -10,7 +10,7 @@ imports:
 - name: github.com/pivotal-golang/lager
   version: 62951a8009ab331bb21dc418074fa54e66eb9b6a
 - name: golang.org/x/crypto
-  version: 595bbbd7f5f308415a544d3c55743c91427c8d99
+  version: 9fbab14f903f89e23047b5971369b86380230e56
   subpackages:
   - ssh
   - curve25519
