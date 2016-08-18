@@ -38,7 +38,7 @@
 
 Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML:
 
-    nmap -oX results.xml 10.0.0.1-6
+    nmap -oX results.xml -sV -n -p - 10.0.0.1-6
 
 ### GENERATING INVENTORY (SKIP IF TARGETING BOSH)
 
