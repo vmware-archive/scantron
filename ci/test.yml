@@ -9,6 +9,7 @@ image_resource:
 
 inputs:
 - name: scantron
+  path: /go/src/github.com/pivotal-cf/scantron
 
 run:
   path: scantron/ci/script/ci
