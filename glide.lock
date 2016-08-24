@@ -1,5 +1,5 @@
-hash: 3bbc663a70ce1a4ad0c2546a2015ef5f75cf25d9d9092134118f0cefb600b974
-updated: 2016-08-18T11:33:53.980676091-07:00
+hash: fbffd5d4a8c846a46416aa261abc736e57f5d1439c7b503889bad248693dbecf
+updated: 2016-08-24T14:03:17.112053312-07:00
 imports:
 - name: github.com/aws/aws-sdk-go
   version: f34b74c96bfd27df35643adeb14d8431ca047df5
@@ -155,6 +155,12 @@ imports:
   version: 66b8e73f3f5cda9f96b69efd03dd3d7fc4a5cdb8
 - name: github.com/nu7hatch/gouuid
   version: 179d4d0c4d8d407a32af483c2354df1d2c91e6c3
+- name: github.com/onsi/ginkgo
+  version: 43e2af1f01ace55adbb6d7d0f30416476db1baae
+  subpackages:
+  - ginkgo
+- name: github.com/onsi/gomega
+  version: b48c9a8b2644326d0a44eaaacc8d83e35174a05d
 - name: github.com/pivotal-golang/clock
   version: e0835a7d46f9ea781e764f0dc9325110e32a97dd
 - name: github.com/pivotal-golang/lager

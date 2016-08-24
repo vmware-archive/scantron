@@ -12,3 +12,7 @@ import:
 - package: golang.org/x/crypto
   subpackages:
   - ssh
+- package: github.com/onsi/ginkgo
+  subpackages:
+  - ginkgo
+- package: github.com/onsi/gomega
