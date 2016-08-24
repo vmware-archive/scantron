@@ -12,4 +12,4 @@ inputs:
   path: /go/src/github.com/pivotal-cf/scantron
 
 run:
-  path: scantron/ci/script/ci
+  path: /go/src/github.com/pivotal-cf/scantron/ci/script/ci
