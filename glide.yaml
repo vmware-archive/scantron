@@ -2,8 +2,8 @@ package: github.com/pivotal-cf/scantron
 import:
 - package: github.com/cloudfoundry-incubator/candiedyaml
 - package: github.com/cloudfoundry/bosh-init
-  repo: https://github.com/krishicks/bosh-init.git
   version: cli
+  repo: https://github.com/krishicks/bosh-init.git
 - package: github.com/cppforlife/s3cli
   repo: https://github.com/krishicks/s3cli
 - package: github.com/jessevdk/go-flags
