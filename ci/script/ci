@@ -10,6 +10,7 @@ pushd $GOPATH/src/github.com/pivotal-cf/scantron
 
   ln -s $PWD/vendor /tmp/src
   GOPATH=/tmp go install github.com/onsi/ginkgo/ginkgo
+  export PATH=/tmp/bin:$PATH
 
   ginkgo -r -p -race "$@"
 popd
