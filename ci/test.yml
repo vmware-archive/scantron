@@ -4,7 +4,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: calavera/go-glide
+    repository: pcfsecurity/go-glide
     tag: latest
 
 inputs:
