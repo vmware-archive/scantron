@@ -2,7 +2,10 @@
 
 set -e -u -o pipefail
 
+go install github.com/onsi/ginkgo/ginkgo
+go get github.com/onsi/gomega
+
 pushd scantron
-  bundle install --jobs 2 --retry 5
-  bundle exec rspec
+  glide install
+  ginkgo -r -p -race "$@"
 popd
