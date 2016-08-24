@@ -5,7 +5,7 @@ set -e -u -o pipefail
 export GOPATH=$PWD/go
 export PATH=$GOPATH/bin:$PATH
 
-cd $GOPATH/src/github.com/pivotal-cf/scantron
+pushd $GOPATH/src/github.com/pivotal-cf/scantron
   glide install
   ginkgo -r -p -race "$@"
 popd
