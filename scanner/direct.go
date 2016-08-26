@@ -53,7 +53,7 @@ func (d *direct) Scan(logger lager.Logger) ([]ScannedService, error) {
 						continue
 					}
 
-					bs, err := session.Output(fmt.Sprintf("echo %s | sudo -S -- lsof -l -iTCP -sTCP:LISTEN +c0 -Fcn -P -n", host.Password))
+					bs, err := session.Output(fmt.Sprintf("echo %s | sudo -S -- lsof -l -iTCP -sTCP:LISTEN +c0 -FcnL -P -n", host.Password))
 					if err != nil {
 						endpointLogger.Error("failed-to-run-lsof", err)
 						continue
