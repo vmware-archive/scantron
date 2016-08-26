@@ -182,7 +182,7 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 						if process.HasFileWithPort(nmapPort.PortId) {
 							scannedServices = append(scannedServices, ScannedService{
 								Hostname: vmInfo.JobName,
-								IP:       result.Host(),
+								IP:       vmInfo.IPs[0],
 								Name:     process.CommandName,
 								User:     process.User,
 								Port:     nmapPort.PortId,
