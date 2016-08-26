@@ -42,6 +42,7 @@ type Opts struct {
 	}
 }
 
+const asciiCross = "\u2717"
 const asciiCheckmark = "\u2713"
 
 func main() {
@@ -117,7 +118,7 @@ func main() {
 	fmt.Fprintln(wr, strings.Join([]string{"IP Address", "Job", "Service", "Port", "SSL"}, "\t"))
 
 	for _, result := range results {
-		ssl := ""
+		ssl := asciiCross
 		if result.SSL {
 			ssl = asciiCheckmark
 		}
