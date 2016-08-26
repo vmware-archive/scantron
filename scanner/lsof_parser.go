@@ -28,6 +28,7 @@ func (f File) Port() (int, bool) {
 type Process struct {
 	CommandName string
 	ID          string
+	User        string
 	Files       []File
 }
 
@@ -81,6 +82,8 @@ func ParseLSOFOutput(output string) []Process {
 			}
 
 			file.Name = line[1:]
+		case 'L':
+			process.User = line[1:]
 		}
 	}
 

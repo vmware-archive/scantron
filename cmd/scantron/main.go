@@ -115,7 +115,7 @@ func main() {
 
 	wr := tabwriter.NewWriter(os.Stdout, 0, 8, 0, '\t', 0)
 
-	fmt.Fprintln(wr, strings.Join([]string{"IP Address", "Job", "Service", "Port", "SSL"}, "\t"))
+	fmt.Fprintln(wr, strings.Join([]string{"IP Address", "Job", "Service", "Port", "User", "SSL"}, "\t"))
 
 	for _, result := range results {
 		ssl := asciiCross
@@ -123,7 +123,7 @@ func main() {
 			ssl = asciiCheckmark
 		}
 
-		fmt.Fprintln(wr, fmt.Sprintf("%s\t%s\t%s\t%d\t%s", result.IP, result.Hostname, result.Name, result.Port, ssl))
+		fmt.Fprintln(wr, fmt.Sprintf("%s\t%s\t%s\t%d\t%s\t%s", result.IP, result.Hostname, result.Name, result.Port, result.User, ssl))
 	}
 
 	err = wr.Flush()

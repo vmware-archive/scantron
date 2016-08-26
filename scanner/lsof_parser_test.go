@@ -12,12 +12,14 @@ var _ = Describe("LsofParser", func() {
 		input := `p4115
 cpostgres
 f6
+Luser1
 n127.0.0.1:5432
 `
 		Expect(scanner.ParseLSOFOutput(input)).To(Equal([]scanner.Process{
 			{
 				CommandName: "postgres",
 				ID:          "4115",
+				User:        "user1",
 				Files: []scanner.File{
 					{
 						Descriptor: "6",
@@ -31,12 +33,14 @@ n127.0.0.1:5432
 	It("parses a single process with no file descriptor correctly", func() {
 		input := `p4115
 cpostgres
+Luser1
 n127.0.0.1:5432
 `
 		Expect(scanner.ParseLSOFOutput(input)).To(Equal([]scanner.Process{
 			{
 				CommandName: "postgres",
 				ID:          "4115",
+				User:        "user1",
 				Files: []scanner.File{
 					{
 						Name: "127.0.0.1:5432",
@@ -49,6 +53,7 @@ n127.0.0.1:5432
 	It("parses a single process with multiple files correctly", func() {
 		input := `p4115
 cpostgres
+Luser1
 f6
 n127.0.0.1:5432
 f7
@@ -58,6 +63,7 @@ n127.0.0.1:5433
 			{
 				CommandName: "postgres",
 				ID:          "4115",
+				User:        "user1",
 				Files: []scanner.File{
 					{
 						Descriptor: "6",
@@ -76,13 +82,16 @@ n127.0.0.1:5433
 		input := `p4115
 cpostgres
 f6
+Luser1
 n127.0.0.1:5432
 f7
 n127.0.0.1:5433
 p6108
 csshd
+Luser2
 f3
 n*:22
+Luser2
 f4
 n*:22
 `
@@ -90,6 +99,7 @@ n*:22
 			{
 				CommandName: "postgres",
 				ID:          "4115",
+				User:        "user1",
 				Files: []scanner.File{
 					{
 						Descriptor: "6",
@@ -104,6 +114,7 @@ n*:22
 			{
 				CommandName: "sshd",
 				ID:          "6108",
+				User:        "user2",
 				Files: []scanner.File{
 					{
 						Descriptor: "3",
@@ -125,8 +136,10 @@ n*:2222
 n*:38283
 n*:58804
 n*:59560
+Luser2
 p19278
 catc
+Luser2
 n*:8080
 n127.0.0.1:8079
 `
@@ -134,6 +147,7 @@ n127.0.0.1:8079
 			{
 				CommandName: "tsa",
 				ID:          "18929",
+				User:        "user2",
 				Files: []scanner.File{
 					{Name: "*:2222"},
 					{Name: "*:38283"},
@@ -144,6 +158,7 @@ n127.0.0.1:8079
 			{
 				CommandName: "atc",
 				ID:          "19278",
+				User:        "user2",
 				Files: []scanner.File{
 					{Name: "*:8080"},
 					{Name: "127.0.0.1:8079"},
