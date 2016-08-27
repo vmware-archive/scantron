@@ -174,6 +174,10 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 		}
 
 		for _, nmapHost := range s.nmapRun.Hosts {
+			if nmapHost.Addresses[0].Addr != vmInfo.IPs[0] {
+				continue
+			}
+
 			result := sshWriter.ResultsForHost(nmapHost.Addresses[0].Addr)
 			if result != nil {
 				processes := ParseLSOFOutput(result.StdoutString())
