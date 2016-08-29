@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 
 	boshcmd "github.com/cloudfoundry/bosh-init/cmd"
 	boshconfig "github.com/cloudfoundry/bosh-init/cmd/config"
@@ -145,60 +146,74 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 
 	var scannedServices []ScannedService
 
+	wg := &sync.WaitGroup{}
+	wg.Add(len(vmInfos))
+
+	serviceChan := make(chan ScannedService)
+
 	for _, vmInfo := range vmInfos {
-		fmt.Printf("Scanning %s/%s... ", vmInfo.JobName, vmInfo.ID)
+		vmInfo := vmInfo
 
-		slug := boshdir.NewAllOrPoolOrInstanceSlug(vmInfo.JobName, vmInfo.ID)
-		sshResult, err := deployment.SetUpSSH(slug, sshOpts)
-		if err != nil {
-			fmt.Printf("ERROR\n")
-			logger.Error("failed-to-set-up-ssh", err)
-			return nil, err
-		}
-		defer deployment.CleanUpSSH(slug, sshOpts)
+		go func() {
+			defer wg.Done()
 
-		connOpts := boshssh.ConnectionOpts{
-			PrivateKey: privKey,
+			slug := boshdir.NewAllOrPoolOrInstanceSlug(vmInfo.JobName, vmInfo.ID)
+			sshResult, err := deployment.SetUpSSH(slug, sshOpts)
+			if err != nil {
+				logger.Error("failed-to-set-up-ssh", err)
+				return
+			}
+			defer deployment.CleanUpSSH(slug, sshOpts)
 
-			GatewayUsername:       s.gatewayUsername,
-			GatewayHost:           s.gatewayHost,
-			GatewayPrivateKeyPath: s.gatewayPrivateKeyPath,
-		}
+			connOpts := boshssh.ConnectionOpts{
+				PrivateKey: privKey,
 
-		cmd := "sudo lsof -iTCP -sTCP:LISTEN +c0 -FcnL -P -n"
-		err = sshRunner.Run(connOpts, sshResult, strings.Split(cmd, " "))
-		if err != nil {
-			fmt.Printf("ERROR\n")
-			logger.Error("failed-to-run-cmd", err)
-			return nil, err
-		}
-
-		for _, nmapHost := range s.nmapRun.Hosts {
-			if nmapHost.Addresses[0].Addr != vmInfo.IPs[0] {
-				continue
+				GatewayUsername:       s.gatewayUsername,
+				GatewayHost:           s.gatewayHost,
+				GatewayPrivateKeyPath: s.gatewayPrivateKeyPath,
 			}
 
-			result := sshWriter.ResultsForHost(nmapHost.Addresses[0].Addr)
-			if result != nil {
-				processes := ParseLSOFOutput(result.StdoutString())
-				for _, nmapPort := range nmapHost.Ports {
-					for _, process := range processes {
-						if process.HasFileWithPort(nmapPort.PortId) {
-							scannedServices = append(scannedServices, ScannedService{
-								Hostname: vmInfo.JobName,
-								IP:       vmInfo.IPs[0],
-								Name:     process.CommandName,
-								User:     process.User,
-								Port:     nmapPort.PortId,
-								SSL:      len(nmapPort.Service.Tunnel) > 0,
-							})
+			cmd := "sudo lsof -iTCP -sTCP:LISTEN +c0 -FcnL -P -n"
+			err = sshRunner.Run(connOpts, sshResult, strings.Split(cmd, " "))
+			if err != nil {
+				logger.Error("failed-to-run-cmd", err)
+				return
+			}
+
+			for _, nmapHost := range s.nmapRun.Hosts {
+				if nmapHost.Addresses[0].Addr != vmInfo.IPs[0] {
+					continue
+				}
+
+				result := sshWriter.ResultsForHost(nmapHost.Addresses[0].Addr)
+				if result != nil {
+					processes := ParseLSOFOutput(result.StdoutString())
+					for _, nmapPort := range nmapHost.Ports {
+						for _, process := range processes {
+							if process.HasFileWithPort(nmapPort.PortId) {
+								serviceChan <- ScannedService{
+									Hostname: vmInfo.JobName,
+									IP:       vmInfo.IPs[0],
+									Name:     process.CommandName,
+									User:     process.User,
+									Port:     nmapPort.PortId,
+									SSL:      len(nmapPort.Service.Tunnel) > 0,
+								}
+							}
 						}
 					}
 				}
 			}
-		}
+		}()
+	}
 
-		fmt.Printf("DONE\n")
+	go func() {
+		wg.Wait()
+		close(serviceChan)
+	}()
+
+	for service := range serviceChan {
+		scannedServices = append(scannedServices, service)
 	}
 
 	return scannedServices, nil
