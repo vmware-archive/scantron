@@ -14,7 +14,6 @@ import (
 	boshssh "github.com/cloudfoundry/bosh-init/ssh"
 	boshuaa "github.com/cloudfoundry/bosh-init/uaa"
 	boshui "github.com/cloudfoundry/bosh-init/ui"
-	nmap "github.com/lair-framework/go-nmap"
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-golang/lager"
 
@@ -22,7 +21,7 @@ import (
 )
 
 type boshScanner struct {
-	nmapRun               *nmap.NmapRun
+	nmapResults           scantron.NmapResults
 	creds                 boshconfig.Creds
 	deploymentName        string
 	boshURL               string
@@ -35,7 +34,7 @@ type boshScanner struct {
 }
 
 func Bosh(
-	nmapRun *nmap.NmapRun,
+	nmapResults scantron.NmapResults,
 	deploymentName string,
 	boshURL string,
 	boshUsername string,
@@ -48,7 +47,7 @@ func Bosh(
 	gatewayPrivateKeyPath string,
 ) Scanner {
 	return &boshScanner{
-		nmapRun: nmapRun,
+		nmapResults: nmapResults,
 		creds: boshconfig.Creds{
 			Client:       uaaClient,
 			ClientSecret: uaaClientSecret,
@@ -180,26 +179,24 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 				return
 			}
 
-			for _, nmapHost := range s.nmapRun.Hosts {
-				if nmapHost.Addresses[0].Addr != vmInfo.IPs[0] {
-					continue
-				}
+			result := sshWriter.ResultsForHost(vmInfo.IPs[0])
+			if result == nil {
+				return
+			}
 
-				result := sshWriter.ResultsForHost(nmapHost.Addresses[0].Addr)
-				if result != nil {
-					processes := ParseLSOFOutput(result.StdoutString())
-					for _, nmapPort := range nmapHost.Ports {
-						for _, process := range processes {
-							if process.HasFileWithPort(nmapPort.PortId) {
-								serviceChan <- ScannedService{
-									Hostname: vmInfo.JobName,
-									IP:       vmInfo.IPs[0],
-									Name:     process.CommandName,
-									User:     process.User,
-									Port:     nmapPort.PortId,
-									SSL:      len(nmapPort.Service.Tunnel) > 0,
-								}
-							}
+			services := s.nmapResults[vmInfo.IPs[0]]
+			processes := ParseLSOFOutput(result.StdoutString())
+
+			for _, nmapService := range services {
+				for _, process := range processes {
+					if process.HasFileWithPort(nmapService.Port) {
+						serviceChan <- ScannedService{
+							Hostname: vmInfo.JobName,
+							IP:       vmInfo.IPs[0],
+							Name:     process.CommandName,
+							User:     process.User,
+							Port:     nmapService.Port,
+							SSL:      nmapService.SSL,
 						}
 					}
 				}

@@ -3,22 +3,20 @@ package scanner
 import (
 	"fmt"
 
-	nmap "github.com/lair-framework/go-nmap"
-
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-golang/lager"
 	"golang.org/x/crypto/ssh"
 )
 
 type direct struct {
-	nmapRun   *nmap.NmapRun
-	inventory *scantron.Inventory
+	nmapResults scantron.NmapResults
+	inventory   *scantron.Inventory
 }
 
-func Direct(nmapRun *nmap.NmapRun, inventory *scantron.Inventory) Scanner {
+func Direct(nmapResults scantron.NmapResults, inventory *scantron.Inventory) Scanner {
 	return &direct{
-		nmapRun:   nmapRun,
-		inventory: inventory,
+		nmapResults: nmapResults,
+		inventory:   inventory,
 	}
 }
 
@@ -35,44 +33,45 @@ func (d *direct) Scan(logger lager.Logger) ([]ScannedService, error) {
 		}
 
 		for _, address := range host.Addresses {
-			for _, nmapHost := range d.nmapRun.Hosts {
-				if nmapHost.Addresses[0].Addr == address {
-					endpoint := fmt.Sprintf("%s:22", address)
-					endpointLogger := l.Session("dial", lager.Data{
-						"endpoint": endpoint,
-					})
+			nmapServices, found := d.nmapResults[address]
+			if !found {
+				continue
+			}
 
-					conn, err := ssh.Dial("tcp", endpoint, config)
-					if err != nil {
-						return nil, err
-					}
+			endpoint := fmt.Sprintf("%s:22", address)
+			endpointLogger := l.Session("dial", lager.Data{
+				"endpoint": endpoint,
+			})
 
-					session, err := conn.NewSession()
-					if err != nil {
-						endpointLogger.Error("failed-to-create-session", err)
-						continue
-					}
+			conn, err := ssh.Dial("tcp", endpoint, config)
+			if err != nil {
+				return nil, err
+			}
 
-					bs, err := session.Output(fmt.Sprintf("echo %s | sudo -S -- lsof -l -iTCP -sTCP:LISTEN +c0 -FcnL -P -n", host.Password))
-					if err != nil {
-						endpointLogger.Error("failed-to-run-lsof", err)
-						continue
-					}
+			session, err := conn.NewSession()
+			if err != nil {
+				endpointLogger.Error("failed-to-create-session", err)
+				continue
+			}
 
-					processes := ParseLSOFOutput(string(bs))
+			bs, err := session.Output(fmt.Sprintf("echo %s | sudo -S -- lsof -l -iTCP -sTCP:LISTEN +c0 -FcnL -P -n", host.Password))
+			if err != nil {
+				endpointLogger.Error("failed-to-run-lsof", err)
+				continue
+			}
 
-					for _, nmapPort := range nmapHost.Ports {
-						for _, process := range processes {
-							if process.HasFileWithPort(nmapPort.PortId) {
-								scannedServices = append(scannedServices, ScannedService{
-									Hostname: host.Name,
-									IP:       address,
-									Name:     process.CommandName,
-									Port:     nmapPort.PortId,
-									SSL:      len(nmapPort.Service.Tunnel) > 0,
-								})
-							}
-						}
+			processes := ParseLSOFOutput(string(bs))
+
+			for _, nmapService := range nmapServices {
+				for _, process := range processes {
+					if process.HasFileWithPort(nmapService.Port) {
+						scannedServices = append(scannedServices, ScannedService{
+							Hostname: host.Name,
+							IP:       address,
+							Name:     process.CommandName,
+							Port:     nmapService.Port,
+							SSL:      nmapService.SSL,
+						})
 					}
 				}
 			}

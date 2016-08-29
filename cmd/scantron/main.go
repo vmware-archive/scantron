@@ -68,6 +68,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to parse nmap results: %s", err.Error())
 	}
+	nmapResults := scantron.BuildNmapResults(nmapRun)
 
 	logger := lager.NewLogger("scantron")
 	logger.RegisterSink(lager.NewWriterSink(os.Stderr, lager.DEBUG))
@@ -79,7 +80,7 @@ func main() {
 		boshLogger := boshlog.NewWriterLogger(boshlog.LevelNone, out, nil)
 
 		s = scanner.Bosh(
-			nmapRun,
+			nmapResults,
 			opts.BOSH.Deployment,
 			opts.BOSH.URL,
 			opts.BOSH.Username,
@@ -105,7 +106,7 @@ func main() {
 			log.Fatalf("failed to parse inventory", err.Error())
 		}
 
-		s = scanner.Direct(nmapRun, inventory)
+		s = scanner.Direct(nmapResults, inventory)
 	}
 
 	results, err := s.Scan(logger)
