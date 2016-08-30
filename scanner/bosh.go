@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -190,9 +191,14 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 			for _, nmapService := range services {
 				for _, process := range processes {
 					if process.HasFileWithPort(nmapService.Port) {
+						index := "?"
+						if vmInfo.Index != nil {
+							index = strconv.Itoa(*vmInfo.Index)
+						}
+
 						serviceChan <- ScannedService{
-							Hostname: vmInfo.JobName,
 							IP:       vmInfo.IPs[0],
+							Hostname: fmt.Sprintf("%s/%s", vmInfo.JobName, index),
 							Name:     process.CommandName,
 							PID:      process.ID,
 							User:     process.User,
