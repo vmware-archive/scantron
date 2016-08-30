@@ -13,7 +13,6 @@ func BuildNmapResults(run *nmap.NmapRun) NmapResults {
 	results := NmapResults{}
 
 	for _, host := range run.Hosts {
-		address := host.Addresses[0].Addr
 		services := []Service{}
 
 		for _, port := range host.Ports {
@@ -23,7 +22,13 @@ func BuildNmapResults(run *nmap.NmapRun) NmapResults {
 			})
 		}
 
+		address := host.Addresses[0].Addr
 		results[address] = services
+
+		if len(host.Hostnames) > 0 {
+			hostname := host.Hostnames[0].Name
+			results[hostname] = services
+		}
 	}
 
 	return results

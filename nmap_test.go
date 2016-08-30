@@ -10,10 +10,15 @@ import (
 
 var _ = Describe("Nmap", func() {
 	Describe("converting an nmap.Run into a scantron.NmapResults", func() {
-		It("provides map access to the nmap results", func() {
+		var results scantron.NmapResults
+
+		BeforeEach(func() {
 			run := &nmap.NmapRun{
 				Hosts: []nmap.Host{
 					{
+						Hostnames: []nmap.Hostname{
+							{Name: "host1"},
+						},
 						Addresses: []nmap.Address{
 							{Addr: "10.0.0.1"},
 							{Addr: "10.0.0.2"},
@@ -42,9 +47,10 @@ var _ = Describe("Nmap", func() {
 					},
 				},
 			}
+			results = scantron.BuildNmapResults(run)
+		})
 
-			results := scantron.BuildNmapResults(run)
-
+		It("provides map access to the nmap results", func() {
 			firstResult, found := results["10.0.0.1"]
 			Expect(found).To(BeTrue())
 			Expect(firstResult).To(ConsistOf(
@@ -66,9 +72,26 @@ var _ = Describe("Nmap", func() {
 					SSL:  false,
 				},
 			))
+		})
 
-			_, found = results["10.0.0.100"]
+		It("returns false if there is no such host", func() {
+			_, found := results["10.0.0.100"]
 			Expect(found).To(BeFalse())
+		})
+
+		It("lets results be looked up by hostname", func() {
+			result, found := results["host1"]
+			Expect(found).To(BeTrue())
+			Expect(result).To(ConsistOf(
+				scantron.Service{
+					Port: 1234,
+					SSL:  true,
+				},
+				scantron.Service{
+					Port: 9252,
+					SSL:  false,
+				},
+			))
 		})
 	})
 })
