@@ -10,8 +10,8 @@
 ### BUILDING
 
 1. Install glide, the vendor package manager: https://github.com/Masterminds/glide
-1. `go get github.com/pivotal-cf/scantron`
-1. `cd $GOPATH/src/github.com/pivotal-cf/scantron && glide install`
+2. `go get github.com/pivotal-cf/scantron`
+3. `cd $GOPATH/src/github.com/pivotal-cf/scantron && glide install`
 
 ### SYNOPSIS
 
@@ -38,7 +38,7 @@
 
 Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML:
 
-    nmap -oX results.xml -sV -n -p - 10.0.0.1-6
+    nmap -oX results.xml -sV -p - 10.0.0.1-6
 
 ### GENERATING INVENTORY (SKIP IF TARGETING BOSH)
 
