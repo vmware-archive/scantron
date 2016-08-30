@@ -28,18 +28,18 @@ type Opts struct {
 		Username   string `long:"director-username" description:"BOSH Director username" value-name:"USERNAME"`
 		Password   string `long:"director-password" description:"BOSH Director password" value-name:"PASSWORD"`
 		Deployment string `long:"bosh-deployment" description:"BOSH Deployment" value-name:"DEPLOYMENT_NAME"`
-	}
+
+		UAA struct {
+			Client       string `long:"uaa-client" description:"UAA Client" value-name:"OAUTH_CLIENT"`
+			ClientSecret string `long:"uaa-client-secret" description:"UAA Client Secret" value-name:"OAUTH_CLIENT_SECRET"`
+		} `group:"UAA"`
+	} `group:"BOSH"`
 
 	Gateway struct {
 		Username       string `long:"gateway-username" description:"BOSH VM gateway username" value-name:"USERNAME"`
 		Host           string `long:"gateway-host" description:"BOSH VM gateway host" value-name:"URL"`
 		PrivateKeyPath string `long:"gateway-private-key" description:"BOSH VM gateway private key" value-name:"PATH"`
-	}
-
-	UAA struct {
-		Client       string `long:"uaa-client" description:"UAA Client" value-name:"OAUTH_CLIENT"`
-		ClientSecret string `long:"uaa-client-secret" description:"UAA Client Secret" value-name:"OAUTH_CLIENT_SECRET"`
-	}
+	} `group:"Gateway"`
 }
 
 const asciiCross = "\u2717"
@@ -50,7 +50,7 @@ func main() {
 
 	_, err := flags.ParseArgs(&opts, os.Args)
 	if err != nil {
-		log.Fatalf(err.Error())
+		os.Exit(1)
 	}
 
 	f, err := os.Open(opts.NmapResults)
@@ -86,8 +86,8 @@ func main() {
 			opts.BOSH.Username,
 			opts.BOSH.Password,
 			boshLogger,
-			opts.UAA.Client,
-			opts.UAA.ClientSecret,
+			opts.BOSH.UAA.Client,
+			opts.BOSH.UAA.ClientSecret,
 			opts.Gateway.Username,
 			opts.Gateway.Host,
 			opts.Gateway.PrivateKeyPath,
