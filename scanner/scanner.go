@@ -9,6 +9,7 @@ type Scanner interface {
 type ScannedService struct {
 	Hostname string
 	Name     string
+	PID      string
 	User     string
 	Port     int
 	SSL      bool

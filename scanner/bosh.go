@@ -194,6 +194,7 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 							Hostname: vmInfo.JobName,
 							IP:       vmInfo.IPs[0],
 							Name:     process.CommandName,
+							PID:      process.ID,
 							User:     process.User,
 							Port:     nmapService.Port,
 							SSL:      nmapService.SSL,
