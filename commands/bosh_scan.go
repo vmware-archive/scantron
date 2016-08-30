@@ -2,12 +2,9 @@ package commands
 
 import (
 	"bufio"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
-	"strings"
-	"text/tabwriter"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	nmap "github.com/lair-framework/go-nmap"
@@ -75,29 +72,8 @@ func (command *BoshScanCommand) Execute(args []string) error {
 		log.Fatalf("failed to scan: %s", err.Error())
 	}
 
-	wr := tabwriter.NewWriter(os.Stdout, 0, 8, 2, '\t', 0)
+	err = showReport(results)
 
-	fmt.Fprintln(wr, strings.Join([]string{"Host", "Job", "Service", "PID", "Port", "User", "SSL"}, "\t"))
-
-	for _, result := range results {
-		ssl := asciiCross
-		if result.SSL {
-			ssl = asciiCheckmark
-		}
-
-		fmt.Fprintln(wr, fmt.Sprintf(
-			"%s\t%s\t%s\t%s\t%d\t%s\t%s",
-			result.IP,
-			result.Hostname,
-			result.Name,
-			result.PID,
-			result.Port,
-			result.User,
-			ssl),
-		)
-	}
-
-	err = wr.Flush()
 	if err != nil {
 		log.Fatalf("failed to flush tabwriter", err)
 	}

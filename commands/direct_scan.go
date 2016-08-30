@@ -1,12 +1,9 @@
 package commands
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
-	"strings"
-	"text/tabwriter"
 
 	"golang.org/x/crypto/ssh"
 
@@ -69,29 +66,7 @@ func (command *DirectScanCommand) Execute(args []string) error {
 		log.Fatalf("failed to scan: %s", err.Error())
 	}
 
-	wr := tabwriter.NewWriter(os.Stdout, 0, 8, 2, '\t', 0)
-
-	fmt.Fprintln(wr, strings.Join([]string{"Host", "Job", "Service", "PID", "Port", "User", "SSL"}, "\t"))
-
-	for _, result := range results {
-		ssl := asciiCross
-		if result.SSL {
-			ssl = asciiCheckmark
-		}
-
-		fmt.Fprintln(wr, fmt.Sprintf(
-			"%s\t%s\t%s\t%s\t%d\t%s\t%s",
-			result.IP,
-			result.Hostname,
-			result.Name,
-			result.PID,
-			result.Port,
-			result.User,
-			ssl),
-		)
-	}
-
-	err = wr.Flush()
+	err = showReport(results)
 	if err != nil {
 		log.Fatalf("failed to flush tabwriter", err)
 	}
