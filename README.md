@@ -7,20 +7,24 @@
     Y88b  d88P Y88b  d88P d8888888888 888   Y8888     888     888  T88b  Y88b. .d88P 888   Y8888
      "Y8888P"   "Y8888P" d88P     888 888    Y888     888     888   T88b  "Y88888P"  888    Y888
 
+
 ### BUILDING
 
 1. Install glide, the vendor package manager: https://github.com/Masterminds/glide
 2. `go get github.com/pivotal-cf/scantron`
 3. `cd $GOPATH/src/github.com/pivotal-cf/scantron && glide install`
 
+
 ### SYNOPSIS
 
-    scantron --nmap-results=PATH [ --inventory=PATH ] [ --director-url=URL --director-username=USERNAME --director-password=PASSWORD --bosh-deployment=DEPLOYMENT_NAME ] [ --gateway-username=USERNAME --gateway-host=URL --gateway-private-key=PATH ] [ --uaa-client=OAUTH_CLIENT --uaa-client-secret=OAUTH_CLIENT_SECRET ]
+    scantron <bosh-scan|direct-scan> [command options]
 
-### OPTIONS
+
+### COMMAND OPTIONS
 
     --nmap-results=PATH                        Path to nmap results XML (See GENERATING NMAP RESULTS)
-    --inventory=PATH                           Path to inventory XML (See GENERATING INVENTORY)
+
+#### BOSH-SCAN
 
     --director-url=URL                         BOSH Director URL
     --director-username=USERNAME               BOSH Director username
@@ -34,45 +38,37 @@
     --uaa-client=OAUTH_CLIENT                  UAA Client
     --uaa-client-secret=OAUTH_CLIENT_SECRET    UAA Client Secret
 
+#### DIRECT-SCAN
+
+    --address=ADDRESS                          Address to scan
+    --username=USERNAME                        Username to scan with
+    --password=PASSWORD                        Password to scan with
+    --private-key=PATH                         Private key to scan with (optional)
+
+
 ### GENERATING NMAP RESULTS
 
 Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML:
 
     nmap -oX results.xml -sV -p - 10.0.0.1-6
 
-### GENERATING INVENTORY (SKIP IF TARGETING BOSH)
-
-    hosts:
-    - name: cell
-      username: user
-      password: secret
-      addresses:
-      - 10.0.0.1
-      - 10.0.0.2
-      - 10.0.0.3
-
-    - name: brain
-      username: user
-      password: secretz
-      addresses:
-      - 10.0.0.4
-      - 10.0.0.5
-      - 10.0.0.6
 
 ### EXAMPLES
 
     # Direct scanning
-    scantron --nmap-results results.xml --inventory inventory.yml
+    scantron direct-scan --nmap-results results.xml \
+      --address scanme.example.com --username ubuntu \
+      --password hunter2
 
     # BOSH
-    scantron --nmap-results results.xml \
+    scantron bosh-scan --nmap-results results.xml \
       --director-url=URL \
       --director-username=USERNAME \
       --director-password=PASSWORD \
       --bosh-deployment=DEPLOYMENT_NAME
 
     # BOSH with gateway
-    scantron --nmap-results results.xml \
+    scantron bosh-scan --nmap-results results.xml \
       --director-url=URL \
       --director-username=USERNAME \
       --director-password=PASSWORD \
@@ -81,11 +77,9 @@ Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML:
       --gateway-host=URL \
       --gateway-private-key=PATH
 
-    # BOSH with gateway and UAA
-    scantron --nmap-results results.xml \
+    # BOSH with UAA
+    scantron bosh-scan --nmap-results results.xml \
       --director-url=URL \
-      --director-username=USERNAME \
-      --director-password=PASSWORD \
       --bosh-deployment=DEPLOYMENT_NAME \
       --gateway-username=USERNAME \
       --gateway-host=URL \
@@ -93,23 +87,20 @@ Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML:
       --uaa-client=OAUTH_CLIENT \
       --uaa-client-secret=OAUTH_CLIENT_SECRET
 
+
 ### EXAMPLE OUTPUT
 
-    IP Address  Job       Service       Port   SSL
-    10.0.0.17   web/1     sshd          22
-    10.0.0.17   web/1     sshd          22
-    10.0.0.17   web/1     rpcbind       111
-    10.0.0.17   web/1     rpcbind       111
-    10.0.0.17   web/1     tsa           2222
-    10.0.0.17   web/1     atc           8080
-    10.0.0.17   web/1     tsa           38283
-    10.0.0.17   web/1     tsa           39421
-    10.0.0.17   web/1     tsa           40925
-    10.0.0.20   worker/1  sshd          22
-    10.0.0.20   worker/1  sshd          22
-    10.0.0.20   worker/1  rpcbind       111
-    10.0.0.20   worker/1  rpcbind       111
-    10.0.0.20   worker/1  guardian      7777
-    10.0.0.20   worker/1  baggageclaim  7788
-    10.0.0.20   worker/1  guardian      17013
-    10.0.0.20   worker/1  rpc.statd     33707
+    Host                Job             Service         PID     Port    User    SSL
+    10.85.8.91          10.85.8.91      sshd            1184    22      root    ✗
+    10.85.8.91          10.85.8.91      rpcbind         566     111     root    ✗
+    10.85.8.91          10.85.8.91      ruby            11219   4222    vcap    ✗
+    10.85.8.91          10.85.8.91      bosh-agent      834     6868    root    ✓
+    10.85.8.91          10.85.8.91      java            11357   8080    vcap    ✗
+    10.85.8.91          10.85.8.91      java            11357   8443    vcap    ✓
+    10.85.8.91          10.85.8.91      nginx           11421   25250   root    ✗
+    10.85.8.91          10.85.8.91      nginx           11427   25250   vcap    ✗
+    10.85.8.91          10.85.8.91      nginx           11428   25250   vcap    ✗
+    10.85.8.91          10.85.8.91      nginx           11323   25555   root    ✓
+    10.85.8.91          10.85.8.91      nginx           11326   25555   vcap    ✓
+    10.85.8.91          10.85.8.91      nginx           11327   25555   vcap    ✓
+    10.85.8.91          10.85.8.91      rpc.statd       651     57427   statd   ✗
