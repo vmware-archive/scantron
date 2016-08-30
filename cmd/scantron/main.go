@@ -127,7 +127,7 @@ func main() {
 		log.Fatalf("failed to scan: %s", err.Error())
 	}
 
-	wr := tabwriter.NewWriter(os.Stdout, 0, 8, 0, '\t', 0)
+	wr := tabwriter.NewWriter(os.Stdout, 0, 8, 2, '\t', 0)
 
 	fmt.Fprintln(wr, strings.Join([]string{"Host", "Job", "Service", "PID", "Port", "User", "SSL"}, "\t"))
 
