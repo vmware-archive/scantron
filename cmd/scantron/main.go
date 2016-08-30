@@ -9,7 +9,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/cloudfoundry-incubator/candiedyaml"
+	"golang.org/x/crypto/ssh"
+
 	"github.com/jessevdk/go-flags"
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/scanner"
@@ -21,7 +22,11 @@ import (
 
 type Opts struct {
 	NmapResults string `long:"nmap-results" description:"Path to nmap results XML" value-name:"PATH" required:"true"`
-	Inventory   string `long:"inventory" description:"Path to inventory XML" value-name:"PATH"`
+
+	Address    string `long:"address" description:"direct scan machine address" value-name:"ADDRESS"`
+	Username   string `long:"username" description:"direct scan machine username" value-name:"USERNAME"`
+	Password   string `long:"password" description:"direct scan machine password" value-name:"PASSWORD"`
+	PrivateKey string `long:"private-key" description:"direct scan private key path" value-name:"PATH"`
 
 	BOSH struct {
 		URL        string `long:"director-url" description:"BOSH Director URL" value-name:"URL"`
@@ -93,20 +98,28 @@ func main() {
 			opts.Gateway.PrivateKeyPath,
 		)
 	} else {
-		inventory := &scantron.Inventory{}
-		f, err = os.Open(opts.Inventory)
-		if err != nil {
-			log.Fatalf("failed to open inventory: %s", err.Error())
-		}
-		defer f.Close()
+		var privateKey ssh.Signer
 
-		decoder := candiedyaml.NewDecoder(f)
-		err = decoder.Decode(&inventory)
-		if err != nil {
-			log.Fatalf("failed to parse inventory", err.Error())
+		if opts.PrivateKey != "" {
+			key, err := ioutil.ReadFile(opts.PrivateKey)
+			if err != nil {
+				log.Fatalf("unable to read private key: %s", err.Error())
+			}
+
+			privateKey, err = ssh.ParsePrivateKey(key)
+			if err != nil {
+				log.Fatalf("unable to parse private key: %s", err.Error())
+			}
 		}
 
-		s = scanner.Direct(nmapResults, inventory)
+		machine := &scantron.Machine{
+			Address:  opts.Address,
+			Username: opts.Username,
+			Password: opts.Password,
+			Key:      privateKey,
+		}
+
+		s = scanner.Direct(nmapResults, machine)
 	}
 
 	results, err := s.Scan(logger)

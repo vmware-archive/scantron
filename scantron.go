@@ -1,5 +1,7 @@
 package scantron
 
+import "golang.org/x/crypto/ssh"
+
 type Host struct {
 	Name      string   `yaml:"name"`
 	Username  string   `yaml:"username"`
@@ -9,4 +11,11 @@ type Host struct {
 
 type Inventory struct {
 	Hosts []Host `yaml:"hosts"`
+}
+
+type Machine struct {
+	Address  string
+	Username string
+	Password string
+	Key      ssh.Signer
 }
