@@ -53,18 +53,20 @@ func (command *BoshScanCommand) Execute(args []string) error {
 	}
 	nmapResults := scantron.BuildNmapResults(nmapRun)
 
-	s := scanner.Bosh(
-		nmapResults,
-		command.Director.Deployment,
-		command.Director.URL,
-		command.Director.Username,
-		command.Director.Password,
-		boshLogger,
-		command.Director.Client,
-		command.Director.ClientSecret,
-		command.Gateway.Username,
-		command.Gateway.Host,
-		command.Gateway.PrivateKeyPath,
+	s := scanner.AnnotateWithTLSInformation(
+		scanner.Bosh(
+			nmapResults,
+			command.Director.Deployment,
+			command.Director.URL,
+			command.Director.Username,
+			command.Director.Password,
+			boshLogger,
+			command.Director.Client,
+			command.Director.ClientSecret,
+			command.Gateway.Username,
+			command.Gateway.Host,
+			command.Gateway.PrivateKeyPath,
+		),
 	)
 
 	results, err := s.Scan(logger)
@@ -73,7 +75,6 @@ func (command *BoshScanCommand) Execute(args []string) error {
 	}
 
 	err = showReport(results)
-
 	if err != nil {
 		log.Fatalf("failed to flush tabwriter", err)
 	}

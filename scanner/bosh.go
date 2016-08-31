@@ -197,13 +197,13 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 						}
 
 						serviceChan <- ScannedService{
-							IP:       vmInfo.IPs[0],
-							Hostname: fmt.Sprintf("%s/%s", vmInfo.JobName, index),
-							Name:     process.CommandName,
-							PID:      process.ID,
-							User:     process.User,
-							Port:     nmapService.Port,
-							SSL:      nmapService.SSL,
+							IP:   vmInfo.IPs[0],
+							Job:  fmt.Sprintf("%s/%s", vmInfo.JobName, index),
+							Name: process.CommandName,
+							PID:  process.ID,
+							User: process.User,
+							Port: nmapService.Port,
+							SSL:  nmapService.SSL,
 						}
 					}
 				}

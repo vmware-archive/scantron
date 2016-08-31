@@ -7,11 +7,13 @@ type Scanner interface {
 }
 
 type ScannedService struct {
-	Hostname string
-	Name     string
-	PID      string
-	User     string
-	Port     int
-	SSL      bool
-	IP       string
+	IP   string
+	Job  string
+	Name string
+	PID  string
+	User string
+	Port int
+
+	SSL     bool
+	TLSCert *Certificate
 }

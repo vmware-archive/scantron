@@ -59,7 +59,9 @@ func (command *DirectScanCommand) Execute(args []string) error {
 		Key:      privateKey,
 	}
 
-	s := scanner.Direct(nmapResults, machine)
+	s := scanner.AnnotateWithTLSInformation(
+		scanner.Direct(nmapResults, machine),
+	)
 
 	results, err := s.Scan(logger)
 	if err != nil {

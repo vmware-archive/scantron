@@ -74,13 +74,13 @@ func (d *direct) Scan(logger lager.Logger) ([]ScannedService, error) {
 		for _, process := range processes {
 			if process.HasFileWithPort(nmapService.Port) {
 				scannedServices = append(scannedServices, ScannedService{
-					Hostname: d.machine.Address,
-					IP:       d.machine.Address,
-					Name:     process.CommandName,
-					PID:      process.ID,
-					User:     process.User,
-					Port:     nmapService.Port,
-					SSL:      nmapService.SSL,
+					Job:  d.machine.Address,
+					IP:   d.machine.Address,
+					Name: process.CommandName,
+					PID:  process.ID,
+					User: process.User,
+					Port: nmapService.Port,
+					SSL:  nmapService.SSL,
 				})
 			}
 		}

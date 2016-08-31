@@ -18,15 +18,12 @@ func showReport(results []scanner.ScannedService) error {
 	fmt.Fprintln(wr, strings.Join([]string{"Host", "Job", "Service", "PID", "Port", "User", "SSL"}, "\t"))
 
 	for _, result := range results {
-		ssl := asciiCross
-		if result.SSL {
-			ssl = asciiCheckmark
-		}
+		ssl := tlsReport(result)
 
 		fmt.Fprintln(wr, fmt.Sprintf(
 			"%s\t%s\t%s\t%s\t%d\t%s\t%s",
 			result.IP,
-			result.Hostname,
+			result.Job,
 			result.Name,
 			result.PID,
 			result.Port,
@@ -36,4 +33,23 @@ func showReport(results []scanner.ScannedService) error {
 	}
 
 	return wr.Flush()
+}
+
+func tlsReport(service scanner.ScannedService) string {
+	if !service.SSL {
+		return asciiCross
+	}
+
+	if service.TLSCert == nil {
+		return fmt.Sprintf("%s (no certificate information found; maybe mutual tls?)", asciiCheckmark)
+	}
+
+	cert := service.TLSCert
+	return fmt.Sprintf(
+		"%s (size: %d, expires: %s, subject: %s)",
+		asciiCheckmark,
+		cert.Bits,
+		cert.Expiration,
+		cert.Subject,
+	)
 }
