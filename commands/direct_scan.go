@@ -61,6 +61,7 @@ func (command *DirectScanCommand) Execute(args []string) error {
 
 	s := scanner.AnnotateWithTLSInformation(
 		scanner.Direct(nmapResults, machine),
+		nmapResults,
 	)
 
 	results, err := s.Scan(logger)

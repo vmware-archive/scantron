@@ -50,7 +50,7 @@
 
 Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML:
 
-    nmap -oX results.xml -sV -p - 10.0.0.1-6
+    nmap -oX results.xml -v --script ssl-enum-ciphers -sV -p - 10.0.0.1-6
 
 
 ### EXAMPLES

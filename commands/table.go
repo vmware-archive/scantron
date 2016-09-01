@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
@@ -44,12 +45,33 @@ func tlsReport(service scanner.ScannedService) string {
 		return fmt.Sprintf("%s (no certificate information found; maybe mutual tls?)", asciiCheckmark)
 	}
 
+	output := bytes.NewBufferString(asciiCheckmark)
+	output.WriteString(" ")
+
 	cert := service.TLSCert
-	return fmt.Sprintf(
-		"%s (size: %d, expires: %s, subject: %s)",
-		asciiCheckmark,
+	output.WriteString(fmt.Sprintf(
+		"(size: %d, expires: %s, subject: %s) ",
 		cert.Bits,
 		cert.Expiration,
 		cert.Subject,
-	)
+	))
+
+	if len(service.SSLInformation) > 0 {
+		for tlsVersion, ciphers := range service.SSLInformation {
+			output.WriteString("(")
+			output.WriteString(tlsVersion)
+			output.WriteString(": [")
+
+			for _, cipher := range ciphers {
+				output.WriteString(cipher.Name)
+				output.WriteString(" - ")
+				output.WriteString(cipher.Quality)
+				output.WriteString(" ")
+			}
+
+			output.WriteString("]) ")
+		}
+	}
+
+	return output.String()
 }

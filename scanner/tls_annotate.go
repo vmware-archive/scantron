@@ -4,6 +4,7 @@ import (
 	"net"
 	"strconv"
 
+	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-golang/lager"
 )
 
@@ -13,7 +14,7 @@ func (s scannerFunc) Scan(logger lager.Logger) ([]ScannedService, error) {
 	return s(logger)
 }
 
-func AnnotateWithTLSInformation(scanner Scanner) Scanner {
+func AnnotateWithTLSInformation(scanner Scanner, nmapResults scantron.NmapResults) Scanner {
 	return scannerFunc(func(logger lager.Logger) ([]ScannedService, error) {
 		results, err := scanner.Scan(logger)
 		if err != nil {
@@ -21,6 +22,8 @@ func AnnotateWithTLSInformation(scanner Scanner) Scanner {
 		}
 
 		for i, result := range results {
+			nmapResult := nmapResults[result.IP]
+
 			if result.SSL {
 				hostport := net.JoinHostPort(result.IP, strconv.Itoa(result.Port))
 				cert, err := FetchTLSInformation(hostport)
@@ -29,6 +32,14 @@ func AnnotateWithTLSInformation(scanner Scanner) Scanner {
 				}
 
 				result.TLSCert = cert
+
+				for _, service := range nmapResult {
+					if result.Port == service.Port {
+						result.SSLInformation = service.SSLInformation
+						break
+					}
+				}
+
 				results[i] = result
 			}
 		}

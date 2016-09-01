@@ -67,6 +67,7 @@ func (command *BoshScanCommand) Execute(args []string) error {
 			command.Gateway.Host,
 			command.Gateway.PrivateKeyPath,
 		),
+		nmapResults,
 	)
 
 	results, err := s.Scan(logger)
