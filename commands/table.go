@@ -58,7 +58,6 @@ func tlsReport(service scanner.ScannedService) string {
 
 	cipherInfo := service.TLSInformation.CipherInformation
 	if len(cipherInfo) > 0 {
-		fmt.Println(cipherInfo)
 		for tlsVersion, ciphers := range cipherInfo {
 			output.WriteString("(")
 			output.WriteString(tlsVersion)
