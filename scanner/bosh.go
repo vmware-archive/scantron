@@ -203,7 +203,6 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 							PID:  process.ID,
 							User: process.User,
 							Port: nmapService.Port,
-							SSL:  nmapService.SSL,
 						}
 					}
 				}

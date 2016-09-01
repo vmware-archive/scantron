@@ -17,7 +17,11 @@ type ScannedService struct {
 	User string
 	Port int
 
-	SSL            bool
-	SSLInformation scantron.SSLInformation
-	TLSCert        *Certificate
+	TLSInformation TLSInformation
+}
+
+type TLSInformation struct {
+	Presence          bool
+	Certificate       *Certificate
+	CipherInformation scantron.CipherInformation
 }

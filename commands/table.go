@@ -37,17 +37,17 @@ func showReport(results []scanner.ScannedService) error {
 }
 
 func tlsReport(service scanner.ScannedService) string {
-	if !service.SSL {
+	if !service.TLSInformation.Presence {
 		return asciiCross
 	}
 
 	output := bytes.NewBufferString(asciiCheckmark)
 	output.WriteString(" ")
 
-	if service.TLSCert == nil {
+	cert := service.TLSInformation.Certificate
+	if cert == nil {
 		output.WriteString("(no certificate information found; maybe mutual tls?) ")
 	} else {
-		cert := service.TLSCert
 		output.WriteString(fmt.Sprintf(
 			"(size: %d, expires: %s, subject: %s) ",
 			cert.Bits,
@@ -56,8 +56,10 @@ func tlsReport(service scanner.ScannedService) string {
 		))
 	}
 
-	if len(service.SSLInformation) > 0 {
-		for tlsVersion, ciphers := range service.SSLInformation {
+	cipherInfo := service.TLSInformation.CipherInformation
+	if len(cipherInfo) > 0 {
+		fmt.Println(cipherInfo)
+		for tlsVersion, ciphers := range cipherInfo {
 			output.WriteString("(")
 			output.WriteString(tlsVersion)
 			output.WriteString(": [")

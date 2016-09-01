@@ -9,12 +9,12 @@ import (
 )
 
 type Service struct {
-	Port           int
-	SSL            bool
-	SSLInformation SSLInformation
+	Port              int
+	SSL               bool
+	CipherInformation CipherInformation
 }
 
-type SSLInformation map[string][]SSLCipher
+type CipherInformation map[string][]SSLCipher
 
 type SSLCipher struct {
 	Name    string
@@ -30,7 +30,7 @@ func BuildNmapResults(run *nmap.NmapRun) NmapResults {
 		services := []Service{}
 
 		for _, port := range host.Ports {
-			var sslInfo SSLInformation
+			var sslInfo CipherInformation
 
 			for _, script := range port.Scripts {
 				if script.Id != "ssl-enum-ciphers" {
@@ -41,9 +41,9 @@ func BuildNmapResults(run *nmap.NmapRun) NmapResults {
 			}
 
 			services = append(services, Service{
-				Port:           port.PortId,
-				SSL:            len(port.Service.Tunnel) > 0,
-				SSLInformation: sslInfo,
+				Port:              port.PortId,
+				SSL:               len(port.Service.Tunnel) > 0,
+				CipherInformation: sslInfo,
 			})
 		}
 
@@ -62,7 +62,7 @@ func BuildNmapResults(run *nmap.NmapRun) NmapResults {
 var tlsRegexp = regexp.MustCompile(`^\s*(TLS_[A-Z0-9_]+) .*- ([A-Z])`)
 var tlsVersionRegexp = regexp.MustCompile(`^\s*([A-Z0-9v\.]+):`)
 
-func ExtractSSLInformation(input string) SSLInformation {
+func ExtractSSLInformation(input string) CipherInformation {
 	scanner := bufio.NewScanner(strings.NewReader(input))
 	ciphers := []SSLCipher{}
 	sslInfo := make(map[string][]SSLCipher)

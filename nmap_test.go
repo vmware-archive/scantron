@@ -135,7 +135,7 @@ var _ = Describe("Nmap", func() {
 
 		It("builds SSL information from Nmap script output", func() {
 			output := scantron.ExtractSSLInformation(input)
-			Expect(output).To(Equal(scantron.SSLInformation{
+			Expect(output).To(Equal(scantron.CipherInformation{
 				"TLSv1.0": []scantron.SSLCipher{
 					{Name: "TLS_RSA_WITH_AES_128_CBC_SHA", Quality: "A"},
 				},
