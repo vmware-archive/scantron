@@ -1,11 +1,17 @@
 package scanner
 
 import (
+	"bufio"
 	"fmt"
+	"log"
+	"os"
+	"strings"
+
+	"golang.org/x/crypto/ssh"
 
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-golang/lager"
-	"golang.org/x/crypto/ssh"
+	"github.com/pkg/sftp"
 )
 
 type direct struct {
@@ -70,6 +76,14 @@ func (d *direct) Scan(logger lager.Logger) ([]ScannedService, error) {
 
 	processes := ParseLSOFOutput(string(bs))
 
+	output, err := d.scanProc(logger, conn)
+	if err != nil {
+		endpointLogger.Error("failed-to-run-proc-scan", err)
+		return nil, err
+	}
+
+	cmdMap := d.parseProcOutput(string(output))
+
 	for _, nmapService := range nmapServices {
 		for _, process := range processes {
 			if process.HasFileWithPort(nmapService.Port) {
@@ -80,10 +94,71 @@ func (d *direct) Scan(logger lager.Logger) ([]ScannedService, error) {
 					PID:  process.ID,
 					User: process.User,
 					Port: nmapService.Port,
+					Cmd:  cmdMap[process.ID],
 				})
 			}
 		}
 	}
 
 	return scannedServices, nil
+}
+
+func (d *direct) scanProc(logger lager.Logger, conn *ssh.Client) ([]byte, error) {
+	sftp, err := sftp.NewClient(conn)
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	defer sftp.Close()
+
+	srcFile, err := os.Open("./" + "proc_scan")
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	defer srcFile.Close()
+
+	dstFile, err := sftp.Create("./" + "proc_scan")
+	if err != nil {
+		fmt.Println("err")
+		log.Fatal(err)
+		return nil, err
+	}
+	defer dstFile.Close()
+	defer sftp.Remove("./proc_scan")
+
+	dstFile.ReadFrom(srcFile)
+	sftp.Chmod("./proc_scan", 0777)
+
+	session, err := conn.NewSession()
+	if err != nil {
+		return nil, err
+	}
+
+	return session.Output(fmt.Sprintf("echo %s | sudo -S -- bash ./proc_scan", d.machine.Password))
+}
+
+func (d *direct) parseProcOutput(output string) map[string]Cmd {
+	cmdMap := make(map[string]Cmd)
+
+	scanner := bufio.NewScanner(strings.NewReader(output))
+	for scanner.Scan() {
+		line := scanner.Text()
+		switch line[0] {
+		case 'p':
+			pid := line[1:]
+			scanner.Scan()
+			args := scanner.Text()
+			scanner.Scan()
+			env := scanner.Text()
+			envs := strings.Split(env, "\x00")
+			entry := Cmd{
+				Args: args,
+				Envs: envs,
+			}
+			cmdMap[pid] = entry
+		}
+	}
+
+	return cmdMap
 }

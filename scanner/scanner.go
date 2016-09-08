@@ -18,10 +18,16 @@ type ScannedService struct {
 	Port int
 
 	TLSInformation TLSInformation
+	Cmd            Cmd
 }
 
 type TLSInformation struct {
 	Presence          bool
 	Certificate       *Certificate
 	CipherInformation scantron.CipherInformation
+}
+
+type Cmd struct {
+	Args string
+	Envs []string
 }

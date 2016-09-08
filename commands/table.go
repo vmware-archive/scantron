@@ -31,6 +31,19 @@ func showReport(results []scanner.ScannedService) error {
 			result.User,
 			ssl),
 		)
+		if result.Cmd.Args != "" {
+			fmt.Fprintln(wr, fmt.Sprintf("Args: %s", result.Cmd.Args))
+		}
+		if len(result.Cmd.Envs) > 0 {
+			fmt.Fprintf(wr, fmt.Sprintf("Envs: { "))
+			for _, env := range result.Cmd.Envs {
+				if len(env) == 0 {
+					continue
+				}
+				fmt.Fprintf(wr, fmt.Sprintf("{%s} ", env))
+			}
+			fmt.Fprintf(wr, fmt.Sprintf("}\n"))
+		}
 	}
 
 	return wr.Flush()

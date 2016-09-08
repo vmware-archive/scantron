@@ -1,0 +1,21 @@
+#!/bin/bash
+
+rm -f result
+
+procs=`sudo lsof -iTCP -sTCP:LISTEN -Fp`
+
+for p in $procs ;
+do
+  pid=(${p//p/ })
+  if [ -d "/proc/$pid" ]; then
+    echo "$p" >> result
+    sudo cat /proc/$pid/cmdline >> result
+    echo >> result
+    sudo cat /proc/$pid/environ >> result
+    echo >> result
+  fi
+done
+
+cat result
+
+rm -f result

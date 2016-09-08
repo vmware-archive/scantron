@@ -1,6 +1,7 @@
 package scanner
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -126,17 +127,35 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 
 	sshWriter := NewMemWriter()
 
-	sshRunner := boshssh.NewNonInteractiveRunner(
-		boshssh.NewComboRunner(
-			deps.CmdRunner,
-			sshSessionFactory,
-			signal.Notify,
-			sshWriter,
-			deps.FS,
-			ui,
-			s.boshLogger,
-		),
+	comboRunner := boshssh.NewComboRunner(
+		deps.CmdRunner,
+		sshSessionFactory,
+		signal.Notify,
+		sshWriter,
+		deps.FS,
+		ui,
+		s.boshLogger,
 	)
+
+	sshRunner := boshssh.NewNonInteractiveRunner(comboRunner)
+
+	scpSessionFactory := func(o boshssh.ConnectionOpts, r boshdir.SSHResult) boshssh.Session {
+		return boshssh.NewSessionImpl(o, boshssh.SessionImplOpts{ForceTTY: false}, r, deps.FS)
+	}
+
+	scpWriter := NewMemWriter()
+
+	scpComboRunner := boshssh.NewComboRunner(
+		deps.CmdRunner,
+		scpSessionFactory,
+		signal.Notify,
+		scpWriter,
+		deps.FS,
+		ui,
+		s.boshLogger,
+	)
+
+	scpRunner := boshssh.NewSCPRunner(scpComboRunner)
 
 	sshOpts, privKey, err := boshdir.NewSSHOpts(deps.UUIDGen)
 	if err != nil {
@@ -188,6 +207,34 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 			services := s.nmapResults[vmInfo.IPs[0]]
 			processes := ParseLSOFOutput(result.StdoutString())
 
+			cmd = "rm /tmp/proc_scan -f"
+			err = sshRunner.Run(connOpts, sshResult, strings.Split(cmd, " "))
+			if err != nil {
+				logger.Error("failed-to-run-cmd", err)
+				return
+			}
+
+			scpArgs := boshssh.NewSCPArgs([]string{"./proc_scan", fmt.Sprintf("%s/%d:%s", vmInfo.JobName, *vmInfo.Index, "/tmp")}, false)
+
+			err = scpRunner.Run(connOpts, sshResult, scpArgs)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			err = sshRunner.Run(connOpts, sshResult, []string{"bash", "/tmp/proc_scan"})
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			result = sshWriter.ResultsForHost(vmInfo.IPs[0])
+			if result == nil {
+				return
+			}
+
+			cmdMap := parseProcOutput(result.StdoutString())
+
 			for _, nmapService := range services {
 				for _, process := range processes {
 					if process.HasFileWithPort(nmapService.Port) {
@@ -203,6 +250,7 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 							PID:  process.ID,
 							User: process.User,
 							Port: nmapService.Port,
+							Cmd:  cmdMap[process.ID],
 						}
 					}
 				}
@@ -281,4 +329,29 @@ func getUAA(dirConfig boshdir.Config, creds boshconfig.Creds, logger boshlog.Log
 	uaaConfig.ClientSecret = creds.ClientSecret
 
 	return boshuaa.NewFactory(logger).New(uaaConfig)
+}
+
+func parseProcOutput(output string) map[string]Cmd {
+	cmdMap := make(map[string]Cmd)
+
+	scanner := bufio.NewScanner(strings.NewReader(output))
+	for scanner.Scan() {
+		line := scanner.Text()
+		switch line[0] {
+		case 'p':
+			pid := line[1:]
+			scanner.Scan()
+			args := scanner.Text()
+			scanner.Scan()
+			env := scanner.Text()
+			envs := strings.Split(env, "\x00")
+			entry := Cmd{
+				Args: args,
+				Envs: envs,
+			}
+			cmdMap[pid] = entry
+		}
+	}
+
+	return cmdMap
 }
