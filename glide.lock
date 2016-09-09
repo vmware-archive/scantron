@@ -1,5 +1,5 @@
-hash: fbffd5d4a8c846a46416aa261abc736e57f5d1439c7b503889bad248693dbecf
-updated: 2016-08-24T14:03:17.112053312-07:00
+hash: 0e83f3bfef810bf5a538b83968534deb9c17915483dcd99ac7e5b37e08c1bfa7
+updated: 2016-09-09T09:35:31.904574712-07:00
 imports:
 - name: github.com/aws/aws-sdk-go
   version: f34b74c96bfd27df35643adeb14d8431ca047df5
@@ -147,12 +147,16 @@ imports:
   version: f2785f5820ec967043de79c8be97edfc464ca745
 - name: github.com/jmespath/go-jmespath
   version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
+- name: github.com/kr/fs
+  version: 2788f0dbd16903de03cb8186e5c7d97b69ad387b
 - name: github.com/lair-framework/go-nmap
   version: bb839509aeb3e36eca86ae5f8f667439af33b857
 - name: github.com/mattn/go-colorable
   version: ed8eb9e318d7a84ce5915b495b7d35e0cfe7b5a8
 - name: github.com/mattn/go-isatty
   version: 66b8e73f3f5cda9f96b69efd03dd3d7fc4a5cdb8
+- name: github.com/mitchellh/go-ps
+  version: e2d21980687ce16e58469d98dcee92d27fbbd7fb
 - name: github.com/nu7hatch/gouuid
   version: 179d4d0c4d8d407a32af483c2354df1d2c91e6c3
 - name: github.com/onsi/ginkgo
@@ -167,6 +171,10 @@ imports:
   version: 62951a8009ab331bb21dc418074fa54e66eb9b6a
 - name: github.com/pivotal-golang/yaml
   version: 8b09e4a33107d942293b5ef6f32254124ccaf8a8
+- name: github.com/pkg/errors
+  version: 17b591df37844cde689f4d5813e5cea0927d8dd2
+- name: github.com/pkg/sftp
+  version: 8197a2e580736b78d704be0fc47b2324c0591a32
 - name: github.com/vito/go-interact
   version: 965b78fd2ce125500bf67529de7a88c0be18ac0c
   subpackages:
@@ -178,8 +186,8 @@ imports:
   - ssh
   - curve25519
   - ed25519
-  - ssh/terminal
   - ed25519/internal/edwards25519
+  - ssh/terminal
 - name: golang.org/x/sys
   version: a646d33e2ee3172a661fc09bca23bb4889a41bc8
   subpackages:

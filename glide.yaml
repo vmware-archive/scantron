@@ -16,3 +16,4 @@ import:
   subpackages:
   - ginkgo
 - package: github.com/onsi/gomega
+- package: github.com/mitchellh/go-ps

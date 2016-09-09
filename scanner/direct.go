@@ -1,11 +1,10 @@
 package scanner
 
 import (
-	"bufio"
+	"encoding/json"
 	"fmt"
-	"log"
 	"os"
-	"strings"
+	"strconv"
 
 	"golang.org/x/crypto/ssh"
 
@@ -62,27 +61,33 @@ func (d *direct) Scan(logger lager.Logger) ([]ScannedService, error) {
 		return nil, err
 	}
 
+	filepath := "./proc_scan"
+
+	sftp, err := sftpScanBinary(conn, filepath)
+	if err != nil {
+		endpointLogger.Error("failed-to-setup-sftp", err)
+		return nil, err
+	}
+	defer sftp.Remove(filepath)
+
 	session, err := conn.NewSession()
 	if err != nil {
 		endpointLogger.Error("failed-to-create-session", err)
 		return nil, err
 	}
 
-	bs, err := session.Output(fmt.Sprintf("echo %s | sudo -S -- lsof -iTCP -sTCP:LISTEN +c0 -FcnL -P -n", d.machine.Password))
-	if err != nil {
-		endpointLogger.Error("failed-to-run-lsof", err)
-		return nil, err
-	}
-
-	processes := ParseLSOFOutput(string(bs))
-
-	output, err := d.scanProc(logger, conn)
+	bs, err := session.Output(fmt.Sprintf("echo %s | sudo -S -- %s", d.machine.Password, filepath))
 	if err != nil {
 		endpointLogger.Error("failed-to-run-proc-scan", err)
 		return nil, err
 	}
 
-	cmdMap := d.parseProcOutput(string(output))
+	var processes []scantron.Process
+	err = json.Unmarshal(bs, &processes)
+	if err != nil {
+		endpointLogger.Error("failed-to-unmarshal-output", err)
+		return nil, err
+	}
 
 	for _, nmapService := range nmapServices {
 		for _, process := range processes {
@@ -91,10 +96,13 @@ func (d *direct) Scan(logger lager.Logger) ([]ScannedService, error) {
 					Job:  d.machine.Address,
 					IP:   d.machine.Address,
 					Name: process.CommandName,
-					PID:  process.ID,
+					PID:  strconv.Itoa(process.ID),
 					User: process.User,
 					Port: nmapService.Port,
-					Cmd:  cmdMap[process.ID],
+					Cmd: Cmd{
+						Args: process.Cmdline,
+						Env:  process.Env,
+					},
 				})
 			}
 		}
@@ -103,62 +111,27 @@ func (d *direct) Scan(logger lager.Logger) ([]ScannedService, error) {
 	return scannedServices, nil
 }
 
-func (d *direct) scanProc(logger lager.Logger, conn *ssh.Client) ([]byte, error) {
+func sftpScanBinary(conn *ssh.Client, filepath string) (*sftp.Client, error) {
 	sftp, err := sftp.NewClient(conn)
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 	defer sftp.Close()
 
-	srcFile, err := os.Open("./" + "proc_scan")
+	srcFile, err := os.Open(filepath)
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 	defer srcFile.Close()
 
-	dstFile, err := sftp.Create("./" + "proc_scan")
+	dstFile, err := sftp.Create(filepath)
 	if err != nil {
-		fmt.Println("err")
-		log.Fatal(err)
 		return nil, err
 	}
 	defer dstFile.Close()
-	defer sftp.Remove("./proc_scan")
 
 	dstFile.ReadFrom(srcFile)
-	sftp.Chmod("./proc_scan", 0777)
+	sftp.Chmod(filepath, 0700)
 
-	session, err := conn.NewSession()
-	if err != nil {
-		return nil, err
-	}
-
-	return session.Output(fmt.Sprintf("echo %s | sudo -S -- bash ./proc_scan", d.machine.Password))
-}
-
-func (d *direct) parseProcOutput(output string) map[string]Cmd {
-	cmdMap := make(map[string]Cmd)
-
-	scanner := bufio.NewScanner(strings.NewReader(output))
-	for scanner.Scan() {
-		line := scanner.Text()
-		switch line[0] {
-		case 'p':
-			pid := line[1:]
-			scanner.Scan()
-			args := scanner.Text()
-			scanner.Scan()
-			env := scanner.Text()
-			envs := strings.Split(env, "\x00")
-			entry := Cmd{
-				Args: args,
-				Envs: envs,
-			}
-			cmdMap[pid] = entry
-		}
-	}
-
-	return cmdMap
+	return sftp, nil
 }

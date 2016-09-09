@@ -31,12 +31,14 @@ func showReport(results []scanner.ScannedService) error {
 			result.User,
 			ssl),
 		)
-		if result.Cmd.Args != "" {
+
+		if len(result.Cmd.Args) > 0 {
 			fmt.Fprintln(wr, fmt.Sprintf("Args: %s", result.Cmd.Args))
 		}
-		if len(result.Cmd.Envs) > 0 {
+
+		if len(result.Cmd.Env) > 0 {
 			fmt.Fprintf(wr, fmt.Sprintf("Envs: { "))
-			for _, env := range result.Cmd.Envs {
+			for _, env := range result.Cmd.Env {
 				if len(env) == 0 {
 					continue
 				}

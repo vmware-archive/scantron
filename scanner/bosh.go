@@ -1,7 +1,7 @@
 package scanner
 
 import (
-	"bufio"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -192,10 +192,31 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 				GatewayPrivateKeyPath: s.gatewayPrivateKeyPath,
 			}
 
-			cmd := "sudo lsof -iTCP -sTCP:LISTEN +c0 -FcnL -P -n"
+			cmd := "rm /tmp/proc_scan -f"
 			err = sshRunner.Run(connOpts, sshResult, strings.Split(cmd, " "))
 			if err != nil {
 				logger.Error("failed-to-run-cmd", err)
+				return
+			}
+
+			scpArgs := boshssh.NewSCPArgs([]string{"./proc_scan", fmt.Sprintf("%s/%d:%s", vmInfo.JobName, *vmInfo.Index, "/tmp")}, false)
+			err = scpRunner.Run(connOpts, sshResult, scpArgs)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			cmd = "sudo mv /tmp/proc_scan /var/vcap/"
+			err = sshRunner.Run(connOpts, sshResult, strings.Split(cmd, " "))
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			defer sshRunner.Run(connOpts, sshResult, []string{"sudo", "rm", "/var/vcap/proc_scan"})
+
+			err = sshRunner.Run(connOpts, sshResult, []string{"sudo", "/var/vcap/proc_scan"})
+			if err != nil {
+				fmt.Println(err)
 				return
 			}
 
@@ -204,36 +225,14 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 				return
 			}
 
+			var processes []scantron.Process
+			err = json.NewDecoder(result.StdoutReader()).Decode(&processes)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
 			services := s.nmapResults[vmInfo.IPs[0]]
-			processes := ParseLSOFOutput(result.StdoutString())
-
-			cmd = "rm /tmp/proc_scan -f"
-			err = sshRunner.Run(connOpts, sshResult, strings.Split(cmd, " "))
-			if err != nil {
-				logger.Error("failed-to-run-cmd", err)
-				return
-			}
-
-			scpArgs := boshssh.NewSCPArgs([]string{"./proc_scan", fmt.Sprintf("%s/%d:%s", vmInfo.JobName, *vmInfo.Index, "/tmp")}, false)
-
-			err = scpRunner.Run(connOpts, sshResult, scpArgs)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			err = sshRunner.Run(connOpts, sshResult, []string{"bash", "/tmp/proc_scan"})
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			result = sshWriter.ResultsForHost(vmInfo.IPs[0])
-			if result == nil {
-				return
-			}
-
-			cmdMap := parseProcOutput(result.StdoutString())
 
 			for _, nmapService := range services {
 				for _, process := range processes {
@@ -247,10 +246,13 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 							IP:   vmInfo.IPs[0],
 							Job:  fmt.Sprintf("%s/%s", vmInfo.JobName, index),
 							Name: process.CommandName,
-							PID:  process.ID,
+							PID:  strconv.Itoa(process.ID),
 							User: process.User,
 							Port: nmapService.Port,
-							Cmd:  cmdMap[process.ID],
+							Cmd: Cmd{
+								Args: process.Cmdline,
+								Env:  process.Env,
+							},
 						}
 					}
 				}
@@ -329,29 +331,4 @@ func getUAA(dirConfig boshdir.Config, creds boshconfig.Creds, logger boshlog.Log
 	uaaConfig.ClientSecret = creds.ClientSecret
 
 	return boshuaa.NewFactory(logger).New(uaaConfig)
-}
-
-func parseProcOutput(output string) map[string]Cmd {
-	cmdMap := make(map[string]Cmd)
-
-	scanner := bufio.NewScanner(strings.NewReader(output))
-	for scanner.Scan() {
-		line := scanner.Text()
-		switch line[0] {
-		case 'p':
-			pid := line[1:]
-			scanner.Scan()
-			args := scanner.Text()
-			scanner.Scan()
-			env := scanner.Text()
-			envs := strings.Split(env, "\x00")
-			entry := Cmd{
-				Args: args,
-				Envs: envs,
-			}
-			cmdMap[pid] = entry
-		}
-	}
-
-	return cmdMap
 }

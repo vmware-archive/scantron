@@ -28,6 +28,6 @@ type TLSInformation struct {
 }
 
 type Cmd struct {
-	Args string
-	Envs []string
+	Args []string
+	Env  []string
 }
