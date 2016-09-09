@@ -250,8 +250,8 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 							User: process.User,
 							Port: nmapService.Port,
 							Cmd: Cmd{
-								Args: process.Cmdline,
-								Env:  process.Env,
+								Cmdline: process.Cmdline,
+								Env:     process.Env,
 							},
 						}
 					}
