@@ -36,12 +36,14 @@ func (db *Database) Close() error {
 func (db *Database) SaveReport(scans []scanner.ScannedService) error {
 	for _, scan := range scans {
 		var hostID int
-		queryDDL := "SELECT id FROM hosts WHERE name = ? AND ip = ?"
-		err := db.db.QueryRow(queryDDL, scan.Job, scan.IP).Scan(&hostID)
-		switch {
-		case err == sql.ErrNoRows:
-			insertDDL := "INSERT INTO hosts(name, ip) VALUES (?, ?)"
-			res, err := db.db.Exec(insertDDL, scan.Job, scan.IP)
+		query := "SELECT id FROM hosts WHERE name = ? AND ip = ?"
+		err := db.db.QueryRow(query, scan.Job, scan.IP).Scan(&hostID)
+		if err != nil {
+			if err != sql.ErrNoRows {
+				return err
+			}
+
+			res, err := db.db.Exec("INSERT INTO hosts(name, ip) VALUES (?, ?)", scan.Job, scan.IP)
 			if err != nil {
 				return err
 			}
@@ -50,14 +52,15 @@ func (db *Database) SaveReport(scans []scanner.ScannedService) error {
 			if err != nil {
 				return err
 			}
+
 			hostID = int(insertedID)
-		case err != nil:
-			return err
 		}
 
-		insertDDL := "INSERT INTO processes(host_id, name, pid, cmdline, user) VALUES (?, ?, ?, ?, ?)"
 		cmdline := strings.Join(scan.Cmd.Cmdline, " ")
-		res, err := db.db.Exec(insertDDL, hostID, scan.Job, scan.PID, cmdline, scan.User)
+		res, err := db.db.Exec(
+			"INSERT INTO processes(host_id, name, pid, cmdline, user) VALUES (?, ?, ?, ?, ?)",
+			hostID, scan.Job, scan.PID, cmdline, scan.User,
+		)
 		if err != nil {
 			return err
 		}
@@ -67,30 +70,49 @@ func (db *Database) SaveReport(scans []scanner.ScannedService) error {
 			return err
 		}
 
-		insertDDL = "INSERT INTO ports(process_id, number) VALUES (?, ?)"
-		res, err = db.db.Exec(insertDDL, processID, scan.Port)
+		res, err = db.db.Exec(
+			"INSERT INTO ports(process_id, number) VALUES (?, ?)",
+			processID, scan.Port,
+		)
 		if err != nil {
 			return err
 		}
 
-		tls := scan.TLSInformation
-		if tls.Certificate != nil {
+		if scan.TLSInformation.Certificate != nil {
 			portID, err := res.LastInsertId()
 			if err != nil {
 				return err
 			}
 
-			tlsCertSubject := tls.Certificate.Subject
-
-			insertDDL = "INSERT INTO tls_informations(port_id, cert_expiration, cert_bits, cert_country, cert_province, cert_locality, cert_organization, cert_common_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-			_, err = db.db.Exec(insertDDL, portID, tls.Certificate.Expiration, tls.Certificate.Bits, tlsCertSubject.Country, tlsCertSubject.Province, tlsCertSubject.Locality, tlsCertSubject.Organization, tlsCertSubject.CommonName)
+			cert := scan.TLSInformation.Certificate
+			_, err = db.db.Exec(`
+				INSERT INTO tls_informations (
+					 port_id,
+					 cert_expiration,
+					 cert_bits,
+					 cert_country,
+					 cert_province,
+					 cert_locality,
+					 cert_organization,
+					 cert_common_name
+				 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+				portID,
+				cert.Expiration,
+				cert.Bits,
+				cert.Subject.Country,
+				cert.Subject.Province,
+				cert.Subject.Locality,
+				cert.Subject.Organization,
+				cert.Subject.CommonName,
+			)
 			if err != nil {
 				return err
 			}
 		}
 
-		insertDDL = "INSERT INTO env_vars(var, process_id) VALUES (?, ?)"
-		_, err = db.db.Exec(insertDDL, strings.Join(scan.Cmd.Env, " "), processID)
+		_, err = db.db.Exec("INSERT INTO env_vars(var, process_id) VALUES (?, ?)",
+			strings.Join(scan.Cmd.Env, " "), processID,
+		)
 		if err != nil {
 			return err
 		}
@@ -124,7 +146,7 @@ CREATE TABLE ports (
 	FOREIGN KEY(process_id) REFERENCES processes(id)
 );
 
-CREATE TABLE tls_informations(
+CREATE TABLE tls_informations (
 	id integer PRIMARY KEY AUTOINCREMENT,
 	port_id integer,
 	cert_expiration datetime,
