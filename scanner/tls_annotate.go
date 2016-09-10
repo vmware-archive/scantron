@@ -29,10 +29,9 @@ func AnnotateWithTLSInformation(scanner Scanner, nmapResults scantron.NmapResult
 					continue
 				}
 
-				hasTLS := service.SSL
-				results[i].TLSInformation.Presence = hasTLS
+				if service.SSL {
+					results[i].TLSInformation.Presence = true
 
-				if hasTLS {
 					hostport := net.JoinHostPort(result.IP, strconv.Itoa(result.Port))
 					cert, err := FetchTLSInformation(hostport)
 					if err == nil {
