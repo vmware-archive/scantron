@@ -11,7 +11,6 @@ import (
 type Certificate struct {
 	Expiration time.Time
 	Bits       int
-	Value      []string
 	Subject    CertificateSubject
 }
 
