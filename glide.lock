@@ -1,5 +1,5 @@
-hash: 0e83f3bfef810bf5a538b83968534deb9c17915483dcd99ac7e5b37e08c1bfa7
-updated: 2016-09-09T09:35:31.904574712-07:00
+hash: 6c7adef329b67bbfc9ca3b4c4322ed52ce7f812d5e3d9ea32ca1eca7b67a2ac2
+updated: 2016-09-09T11:02:38.241518146-07:00
 imports:
 - name: github.com/aws/aws-sdk-go
   version: f34b74c96bfd27df35643adeb14d8431ca047df5
@@ -155,6 +155,8 @@ imports:
   version: ed8eb9e318d7a84ce5915b495b7d35e0cfe7b5a8
 - name: github.com/mattn/go-isatty
   version: 66b8e73f3f5cda9f96b69efd03dd3d7fc4a5cdb8
+- name: github.com/mattn/go-sqlite3
+  version: 3b3f1d01b2696af5501697c35629048c227586ab
 - name: github.com/mitchellh/go-ps
   version: e2d21980687ce16e58469d98dcee92d27fbbd7fb
 - name: github.com/nu7hatch/gouuid
