@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
 
 	"golang.org/x/crypto/ssh"
 
@@ -96,7 +95,7 @@ func (d *direct) Scan(logger lager.Logger) ([]ScannedService, error) {
 					Job:  d.machine.Address,
 					IP:   d.machine.Address,
 					Name: process.CommandName,
-					PID:  strconv.Itoa(process.ID),
+					PID:  process.ID,
 					User: process.User,
 					Port: nmapService.Port,
 					Cmd: Cmd{

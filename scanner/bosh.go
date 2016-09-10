@@ -246,7 +246,7 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 							IP:   vmInfo.IPs[0],
 							Job:  fmt.Sprintf("%s/%s", vmInfo.JobName, index),
 							Name: process.CommandName,
-							PID:  strconv.Itoa(process.ID),
+							PID:  process.ID,
 							User: process.User,
 							Port: nmapService.Port,
 							Cmd: Cmd{

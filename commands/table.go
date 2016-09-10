@@ -22,7 +22,7 @@ func showReport(results []scanner.ScannedService) error {
 		ssl := tlsReport(result)
 
 		fmt.Fprintln(wr, fmt.Sprintf(
-			"%s\t%s\t%s\t%s\t%d\t%s\t%s",
+			"%s\t%s\t%s\t%d\t%d\t%s\t%s",
 			result.IP,
 			result.Job,
 			result.Name,

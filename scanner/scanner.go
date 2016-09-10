@@ -13,7 +13,7 @@ type ScannedService struct {
 	IP   string
 	Job  string
 	Name string
-	PID  string
+	PID  int
 	User string
 	Port int
 
