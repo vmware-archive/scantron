@@ -45,11 +45,6 @@ func (d *direct) Scan(logger lager.Logger) ([]ScannedService, error) {
 		Auth: auth,
 	}
 
-	nmapServices, found := d.nmapResults[d.machine.Address]
-	if !found {
-		return nil, nil
-	}
-
 	endpoint := fmt.Sprintf("%s:22", d.machine.Address)
 	endpointLogger := l.Session("dial", lager.Data{
 		"endpoint": endpoint,
@@ -88,23 +83,19 @@ func (d *direct) Scan(logger lager.Logger) ([]ScannedService, error) {
 		return nil, err
 	}
 
-	for _, nmapService := range nmapServices {
-		for _, process := range processes {
-			if process.HasFileWithPort(nmapService.Port) {
-				scannedServices = append(scannedServices, ScannedService{
-					Job:  d.machine.Address,
-					IP:   d.machine.Address,
-					Name: process.CommandName,
-					PID:  process.ID,
-					User: process.User,
-					Port: nmapService.Port,
-					Cmd: Cmd{
-						Cmdline: process.Cmdline,
-						Env:     process.Env,
-					},
-				})
-			}
-		}
+	for _, process := range processes {
+		scannedServices = append(scannedServices, ScannedService{
+			Job:   d.machine.Address,
+			IP:    d.machine.Address,
+			Name:  process.CommandName,
+			PID:   process.ID,
+			User:  process.User,
+			Ports: process.Ports,
+			Cmd: Cmd{
+				Cmdline: process.Cmdline,
+				Env:     process.Env,
+			},
+		})
 	}
 
 	return scannedServices, nil

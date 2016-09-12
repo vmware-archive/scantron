@@ -21,6 +21,7 @@ type DirectScanCommand struct {
 	Username   string `long:"username" description:"Username of machine to scan" value-name:"USERNAME" required:"true"`
 	Password   string `long:"password" description:"Password of machine to scan" value-name:"PASSWORD" required:"true"`
 	PrivateKey string `long:"private-key" description:"Private key of machine to scan" value-name:"PATH"`
+	Database   string `long:"database" description:"location of database where scan output will be stored" value-name:"PATH"`
 }
 
 func (command *DirectScanCommand) Execute(args []string) error {
@@ -64,14 +65,31 @@ func (command *DirectScanCommand) Execute(args []string) error {
 		nmapResults,
 	)
 
+	var db *Database
+	if command.Database == "" {
+		db, err = NewDatabase("./database.db")
+	} else {
+		db, err = NewDatabase(command.Database)
+	}
+	if err != nil {
+		log.Fatalf("failed to create database: %s", err.Error())
+	}
+
 	results, err := s.Scan(logger)
 	if err != nil {
 		log.Fatalf("failed to scan: %s", err.Error())
 	}
 
+	err = db.SaveReport(results)
+	if err != nil {
+		log.Fatalf("failed to save to database: %s", err.Error())
+	}
+
+	db.Close()
+
 	err = showReport(results)
 	if err != nil {
-		log.Fatalf("failed to flush tabwriter", err)
+		log.Fatalf("failed to flush tabwriter %s", err.Error())
 	}
 
 	return nil

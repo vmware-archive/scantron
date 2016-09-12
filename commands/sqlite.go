@@ -70,12 +70,15 @@ func (db *Database) SaveReport(scans []scanner.ScannedService) error {
 			return err
 		}
 
-		res, err = db.db.Exec(
-			"INSERT INTO ports(process_id, number) VALUES (?, ?)",
-			processID, scan.Port,
-		)
-		if err != nil {
-			return err
+		for _, port := range scan.Ports {
+
+			res, err = db.db.Exec(
+				"INSERT INTO ports(process_id, protocol, address, number) VALUES (?, ?, ?, ?)",
+				processID, port.Protocol, port.Address, port.Number,
+			)
+			if err != nil {
+				return err
+			}
 		}
 
 		if scan.TLSInformation.Certificate != nil {
@@ -142,6 +145,8 @@ CREATE TABLE processes (
 CREATE TABLE ports (
 	id integer PRIMARY KEY AUTOINCREMENT,
 	process_id integer,
+  protocol string,
+  address string,
 	number integer,
 	FOREIGN KEY(process_id) REFERENCES processes(id)
 );

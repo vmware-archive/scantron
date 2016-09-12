@@ -10,12 +10,12 @@ type Scanner interface {
 }
 
 type ScannedService struct {
-	IP   string
-	Job  string
-	Name string
-	PID  int
-	User string
-	Port int
+	IP    string
+	Job   string
+	Name  string
+	PID   int
+	User  string
+	Ports []scantron.Port
 
 	TLSInformation TLSInformation
 	Cmd            Cmd

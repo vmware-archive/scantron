@@ -27,7 +27,7 @@ func showReport(results []scanner.ScannedService) error {
 			result.Job,
 			result.Name,
 			result.PID,
-			result.Port,
+			result.Ports,
 			result.User,
 			ssl),
 		)

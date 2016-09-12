@@ -16,6 +16,7 @@ import (
 
 func main() {
 	processes, err := ps.Processes()
+
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error: failed to get process list:", err)
 		os.Exit(1)
@@ -24,6 +25,7 @@ func main() {
 	jsonProcesses := []scantron.Process{}
 
 	for _, process := range processes {
+
 		pid := process.Pid()
 
 		jsonProcess := scantron.Process{
@@ -55,8 +57,9 @@ func main() {
 		ports := []scantron.Port{}
 		bs, err = exec.Command("lsof",
 			"-iTCP",
-			"-a", "-sTCP:LISTEN",
-			"-a", "-p", strconv.Itoa(pid),
+			"-a",
+			"-p",
+			strconv.Itoa(pid),
 			"+c0",
 			"-FcnL",
 			"-n",
@@ -67,8 +70,31 @@ func main() {
 
 			for _, lsofProc := range lsofProcs {
 				for _, file := range lsofProc.Files {
-					if number, ok := file.Port(); ok {
-						ports = append(ports, scantron.Port{Number: number})
+					if address, number, ok := file.Port(); ok {
+						ports = append(ports, scantron.Port{Protocol: "TCP", Address: address, Number: number})
+					}
+				}
+			}
+
+		}
+
+		bs, err = exec.Command("lsof",
+			"-iUDP",
+			"-a",
+			"-p",
+			strconv.Itoa(pid),
+			"+c0",
+			"-FcnL",
+			"-n",
+			"-P",
+		).Output()
+		if err == nil {
+			lsofProcs := scanner.ParseLSOFOutput(string(bs))
+
+			for _, lsofProc := range lsofProcs {
+				for _, file := range lsofProc.Files {
+					if address, number, ok := file.Port(); ok {
+						ports = append(ports, scantron.Port{Protocol: "UDP", Address: address, Number: number})
 					}
 				}
 			}

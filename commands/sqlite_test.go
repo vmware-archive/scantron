@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/commands"
 	"github.com/pivotal-cf/scantron/scanner"
 )
@@ -119,7 +120,13 @@ var _ = Describe("Sqlite", func() {
 					Name: "server-name",
 					PID:  213,
 					User: "root",
-					Port: 123,
+					Ports: []scantron.Port{
+						{
+							Protocol: "TCP",
+							Address:  "123.0.0.1",
+							Number:   123,
+						},
+					},
 					TLSInformation: scanner.TLSInformation{
 						Presence: true,
 						Certificate: &scanner.Certificate{
@@ -150,6 +157,8 @@ var _ = Describe("Sqlite", func() {
 							 processes.pid,
 							 processes.user,
 							 processes.cmdline,
+							 ports.protocol,
+							 ports.address,
 							 ports.number,
 							 tls_informations.cert_expiration,
 							 tls_informations.cert_bits,
@@ -175,8 +184,8 @@ var _ = Describe("Sqlite", func() {
 				Expect(hasRows).To(BeTrue())
 
 				var (
-					name, ip, user, cmdline, env string
-					pid, port                    int
+					name, ip, user, cmdline, env, portProtocol, portAddress string
+					pid, portNumber                                         int
 
 					tlsCertCountry,
 					tlsCertProvince,
@@ -187,14 +196,18 @@ var _ = Describe("Sqlite", func() {
 					tlsCertExp  time.Time
 				)
 
-				err = rows.Scan(&name, &ip, &pid, &user, &cmdline, &port, &tlsCertExp, &tlsCertBits, &tlsCertCountry, &tlsCertProvince, &tlsCertLocality, &tlsCertOrganization, &tlsCertCommonName, &env)
+				err = rows.Scan(&name, &ip, &pid, &user, &cmdline, &portProtocol,
+					&portAddress, &portNumber, &tlsCertExp, &tlsCertBits,
+					&tlsCertCountry, &tlsCertProvince, &tlsCertLocality,
+					&tlsCertOrganization, &tlsCertCommonName, &env)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(name).To(Equal("custom_name/0"))
 				Expect(ip).To(Equal("10.0.0.1"))
 				Expect(pid).To(Equal(213))
 				Expect(user).To(Equal("root"))
-				Expect(port).To(Equal(123))
+				Expect(portAddress).To(Equal("123.0.0.1"))
+				Expect(portNumber).To(Equal(123))
 				Expect(tlsCertExp.Equal(certExpiration)).To(BeTrue())
 				Expect(tlsCertBits).To(Equal(234))
 				Expect(tlsCertCountry).To(Equal("some-country"))
@@ -219,6 +232,8 @@ var _ = Describe("Sqlite", func() {
 									 hosts.ip,
 									 processes.pid,
 									 processes.USER,
+									 ports.protocol,
+									 ports.address,
 									 ports.number
 						FROM   hosts,
 									 processes,
@@ -233,18 +248,20 @@ var _ = Describe("Sqlite", func() {
 					Expect(hasRows).To(BeTrue())
 
 					var (
-						name, ip, user string
-						pid, port      int
+						name, ip, user, portProtocol, portAddress string
+						pid, portNumber                           int
 					)
 
-					err = rows.Scan(&name, &ip, &pid, &user, &port)
+					err = rows.Scan(&name, &ip, &pid, &user, &portProtocol, &portAddress, &portNumber)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(name).To(Equal("custom_name/0"))
 					Expect(ip).To(Equal("10.0.0.1"))
 					Expect(pid).To(Equal(213))
 					Expect(user).To(Equal("root"))
-					Expect(port).To(Equal(123))
+					Expect(portProtocol).To(Equal("TCP"))
+					Expect(portAddress).To(Equal("123.0.0.1"))
+					Expect(portNumber).To(Equal(123))
 				})
 
 				It("does not store any tls information", func() {

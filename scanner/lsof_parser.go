@@ -11,18 +11,18 @@ type File struct {
 	Name       string
 }
 
-func (f File) Port() (int, bool) {
+func (f File) Port() (string, int, bool) {
 	parts := strings.Split(f.Name, ":")
 	if len(parts) != 2 {
-		return 0, false
+		return "", 0, false
 	}
 
 	port, err := strconv.Atoi(parts[1])
 	if err != nil {
-		return 0, false
+		return "", 0, false
 	}
 
-	return port, true
+	return parts[0], port, true
 }
 
 type Process struct {
@@ -34,7 +34,7 @@ type Process struct {
 
 func (p Process) HasFileWithPort(port int) bool {
 	for _, file := range p.Files {
-		if filePort, ok := file.Port(); ok && filePort == port {
+		if _, filePort, ok := file.Port(); ok && filePort == port {
 			return true
 		}
 	}

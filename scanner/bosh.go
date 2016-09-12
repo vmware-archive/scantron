@@ -232,29 +232,23 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 				return
 			}
 
-			services := s.nmapResults[vmInfo.IPs[0]]
+			for _, process := range processes {
+				index := "?"
+				if vmInfo.Index != nil {
+					index = strconv.Itoa(*vmInfo.Index)
+				}
 
-			for _, nmapService := range services {
-				for _, process := range processes {
-					if process.HasFileWithPort(nmapService.Port) {
-						index := "?"
-						if vmInfo.Index != nil {
-							index = strconv.Itoa(*vmInfo.Index)
-						}
-
-						serviceChan <- ScannedService{
-							IP:   vmInfo.IPs[0],
-							Job:  fmt.Sprintf("%s/%s", vmInfo.JobName, index),
-							Name: process.CommandName,
-							PID:  process.ID,
-							User: process.User,
-							Port: nmapService.Port,
-							Cmd: Cmd{
-								Cmdline: process.Cmdline,
-								Env:     process.Env,
-							},
-						}
-					}
+				serviceChan <- ScannedService{
+					IP:    vmInfo.IPs[0],
+					Job:   fmt.Sprintf("%s/%s", vmInfo.JobName, index),
+					Name:  process.CommandName,
+					PID:   process.ID,
+					User:  process.User,
+					Ports: process.Ports,
+					Cmd: Cmd{
+						Cmdline: process.Cmdline,
+						Env:     process.Env,
+					},
 				}
 			}
 		}()

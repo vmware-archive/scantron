@@ -1,7 +1,9 @@
 package scantron
 
 type Port struct {
-	Number int `json:"number"`
+	Protocol string `json:"protocol"`
+	Address  string `json:"address"`
+	Number   int    `json:"number"`
 }
 
 type Process struct {

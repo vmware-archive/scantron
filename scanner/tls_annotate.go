@@ -25,20 +25,22 @@ func AnnotateWithTLSInformation(scanner Scanner, nmapResults scantron.NmapResult
 			nmapResult := nmapResults[result.IP]
 
 			for _, service := range nmapResult {
-				if result.Port != service.Port {
-					continue
-				}
-
-				if service.SSL {
-					results[i].TLSInformation.Presence = true
-
-					hostport := net.JoinHostPort(result.IP, strconv.Itoa(result.Port))
-					cert, err := FetchTLSInformation(hostport)
-					if err == nil {
-						results[i].TLSInformation.Certificate = cert
+				for _, port := range result.Ports {
+					if port.Number != service.Port {
+						continue
 					}
 
-					results[i].TLSInformation.CipherInformation = service.CipherInformation
+					if service.SSL {
+						results[i].TLSInformation.Presence = true
+
+						hostport := net.JoinHostPort(result.IP, strconv.Itoa(port.Number))
+						cert, err := FetchTLSInformation(hostport)
+						if err == nil {
+							results[i].TLSInformation.Certificate = cert
+						}
+
+						results[i].TLSInformation.CipherInformation = service.CipherInformation
+					}
 				}
 			}
 		}
