@@ -73,8 +73,8 @@ func (db *Database) SaveReport(scans []scanner.ScannedService) error {
 		for _, port := range scan.Ports {
 
 			res, err = db.db.Exec(
-				"INSERT INTO ports(process_id, protocol, address, number) VALUES (?, ?, ?, ?)",
-				processID, port.Protocol, port.Address, port.Number,
+				"INSERT INTO ports(process_id, protocol, address, number, state) VALUES (?, ?, ?, ?, ?)",
+				processID, port.Protocol, port.Address, port.Number, port.State,
 			)
 			if err != nil {
 				return err
@@ -148,6 +148,7 @@ CREATE TABLE ports (
   protocol string,
   address string,
 	number integer,
+	state string,
 	FOREIGN KEY(process_id) REFERENCES processes(id)
 );
 
@@ -170,4 +171,5 @@ CREATE TABLE env_vars (
 	var text,
 	FOREIGN KEY(process_id) REFERENCES processes(id)
 );
+
 `

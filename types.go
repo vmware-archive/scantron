@@ -4,6 +4,7 @@ type Port struct {
 	Protocol string `json:"protocol"`
 	Address  string `json:"address"`
 	Number   int    `json:"number"`
+	State    string `json:"state"`
 }
 
 type Process struct {

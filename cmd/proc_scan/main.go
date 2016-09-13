@@ -14,6 +14,15 @@ import (
 	"github.com/pivotal-cf/scantron/scanner"
 )
 
+func getNetstatPorts() []scanner.NetstatPort {
+	bs, err := exec.Command("netstat", "-at", "-4", "--numeric-ports", "-u", "-p").Output()
+	if err == nil {
+		return scanner.ParseNetstatOutputForPort(string(bs))
+	}
+
+	return []scanner.NetstatPort{}
+}
+
 func main() {
 	processes, err := ps.Processes()
 
@@ -21,6 +30,8 @@ func main() {
 		fmt.Fprintln(os.Stderr, "error: failed to get process list:", err)
 		os.Exit(1)
 	}
+
+	netstatPorts := getNetstatPorts()
 
 	jsonProcesses := []scantron.Process{}
 
@@ -52,36 +63,20 @@ func main() {
 			os.Exit(1)
 		}
 
-		getLSOFOutput := func(protocol string) []scantron.Port {
-			ports := []scantron.Port{}
-			bs, err = exec.Command("lsof",
-				fmt.Sprintf("-i4%s", protocol),
-				"-a",
-				"-p",
-				strconv.Itoa(pid),
-				"+c0",
-				"-FcnL",
-				"-n",
-				"-P",
-			).Output()
-			if err == nil {
-				lsofProcs := scanner.ParseLSOFOutput(string(bs))
+		getNetstatOutput := func() []scantron.Port {
+			result := []scantron.Port{}
 
-				for _, lsofProc := range lsofProcs {
-					for _, file := range lsofProc.Files {
-						if address, number, ok := file.Port(); ok {
-							ports = append(ports, scantron.Port{Protocol: protocol, Address: address, Number: number})
-						}
-					}
+			for _, netstatPort := range netstatPorts {
+				if netstatPort.ID == pid {
+					result = append(result, netstatPort.Local)
 				}
-
 			}
-			return ports
+
+			return result
 		}
 
 		ports := []scantron.Port{}
-		ports = append(ports, getLSOFOutput("TCP")...)
-		ports = append(ports, getLSOFOutput("UDP")...)
+		ports = append(ports, getNetstatOutput()...)
 		jsonProcess.Ports = ports
 		jsonProcesses = append(jsonProcesses, jsonProcess)
 	}
