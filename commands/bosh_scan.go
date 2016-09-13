@@ -96,7 +96,7 @@ func (command *BoshScanCommand) Execute(args []string) error {
 
 	err = showReport(results)
 	if err != nil {
-		log.Fatalf("failed to flush tabwriter", err)
+		log.Fatalf("failed to flush tabwriter %s", err.Error())
 	}
 
 	return nil

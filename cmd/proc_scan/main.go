@@ -40,66 +40,48 @@ func main() {
 		}
 		jsonProcess.User = strings.TrimSpace(string(bs))
 
-		bs, err = ioutil.ReadFile(fmt.Sprintf("/proc/%d/cmdline", pid))
+		jsonProcess.Cmdline, err = readFile(fmt.Sprintf("/proc/%d/cmdline", pid))
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "error getting cmdline:", err)
 			os.Exit(1)
 		}
-		jsonProcess.Cmdline = prune(strings.Split(string(bs), "\x00"))
 
-		bs, err = ioutil.ReadFile(fmt.Sprintf("/proc/%d/environ", pid))
+		jsonProcess.Env, err = readFile(fmt.Sprintf("/proc/%d/environ", pid))
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "error getting env:", err)
 			os.Exit(1)
 		}
-		jsonProcess.Env = prune(strings.Split(string(bs), "\x00"))
+
+		getLSOFOutput := func(protocol string) []scantron.Port {
+			ports := []scantron.Port{}
+			bs, err = exec.Command("lsof",
+				fmt.Sprintf("-i4%s", protocol),
+				"-a",
+				"-p",
+				strconv.Itoa(pid),
+				"+c0",
+				"-FcnL",
+				"-n",
+				"-P",
+			).Output()
+			if err == nil {
+				lsofProcs := scanner.ParseLSOFOutput(string(bs))
+
+				for _, lsofProc := range lsofProcs {
+					for _, file := range lsofProc.Files {
+						if address, number, ok := file.Port(); ok {
+							ports = append(ports, scantron.Port{Protocol: protocol, Address: address, Number: number})
+						}
+					}
+				}
+
+			}
+			return ports
+		}
 
 		ports := []scantron.Port{}
-		bs, err = exec.Command("lsof",
-			"-iTCP",
-			"-a",
-			"-p",
-			strconv.Itoa(pid),
-			"+c0",
-			"-FcnL",
-			"-n",
-			"-P",
-		).Output()
-		if err == nil {
-			lsofProcs := scanner.ParseLSOFOutput(string(bs))
-
-			for _, lsofProc := range lsofProcs {
-				for _, file := range lsofProc.Files {
-					if address, number, ok := file.Port(); ok {
-						ports = append(ports, scantron.Port{Protocol: "TCP", Address: address, Number: number})
-					}
-				}
-			}
-
-		}
-
-		bs, err = exec.Command("lsof",
-			"-iUDP",
-			"-a",
-			"-p",
-			strconv.Itoa(pid),
-			"+c0",
-			"-FcnL",
-			"-n",
-			"-P",
-		).Output()
-		if err == nil {
-			lsofProcs := scanner.ParseLSOFOutput(string(bs))
-
-			for _, lsofProc := range lsofProcs {
-				for _, file := range lsofProc.Files {
-					if address, number, ok := file.Port(); ok {
-						ports = append(ports, scantron.Port{Protocol: "UDP", Address: address, Number: number})
-					}
-				}
-			}
-
-		}
+		ports = append(ports, getLSOFOutput("TCP")...)
+		ports = append(ports, getLSOFOutput("UDP")...)
 		jsonProcess.Ports = ports
 		jsonProcesses = append(jsonProcesses, jsonProcess)
 	}
@@ -107,7 +89,13 @@ func main() {
 	json.NewEncoder(os.Stdout).Encode(jsonProcesses)
 }
 
-func prune(inputs []string) []string {
+func readFile(path string) ([]string, error) {
+	bs, err := ioutil.ReadFile(path)
+	if err != nil {
+		return []string{}, err
+	}
+
+	inputs := strings.Split(string(bs), "\x00")
 	output := []string{}
 
 	for _, input := range inputs {
@@ -116,5 +104,5 @@ func prune(inputs []string) []string {
 		}
 	}
 
-	return output
+	return output, nil
 }
