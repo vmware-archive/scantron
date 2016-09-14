@@ -39,7 +39,7 @@ tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      
 		Expect(scanner.ParseNetstatOutputForPort(input)).To(Equal([]scanner.NetstatPort{
 			{
 				CommandName: "java",
-				ID:          1317,
+				PID:         1317,
 				Local: scantron.Port{
 					Protocol: "tcp",
 					Address:  "127.0.0.1",
@@ -65,7 +65,7 @@ udp        0      0 127.0.0.2:8080          0.0.0.0:*               LISTEN      
 		Expect(scanner.ParseNetstatOutputForPort(input)).To(Equal([]scanner.NetstatPort{
 			{
 				CommandName: "java",
-				ID:          1317,
+				PID:         1317,
 				Local: scantron.Port{
 					Protocol: "tcp",
 					Address:  "127.0.0.1",
@@ -82,7 +82,7 @@ udp        0      0 127.0.0.2:8080          0.0.0.0:*               LISTEN      
 			},
 			{
 				CommandName: "java",
-				ID:          1318,
+				PID:         1318,
 				Local: scantron.Port{
 					Protocol: "udp",
 					Address:  "127.0.0.2",

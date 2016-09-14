@@ -19,14 +19,27 @@ type NetstatInfo struct {
 
 type NetstatPort struct {
 	CommandName string
-	ID          int
+	PID         int
 	Local       scantron.Port
 	Foreign     scantron.Port
 	State       string
 }
 
-func ParseNetstatLine(line string) NetstatInfo {
+type NetstatPorts []NetstatPort
 
+func (ps NetstatPorts) LocalPortsForPID(pid int) []scantron.Port {
+	result := []scantron.Port{}
+
+	for _, nsPort := range ps {
+		if nsPort.PID == pid {
+			result = append(result, nsPort.Local)
+		}
+	}
+
+	return result
+}
+
+func ParseNetstatLine(line string) NetstatInfo {
 	netstat := strings.Fields(line)
 
 	if len(netstat) < 7 {
@@ -76,7 +89,7 @@ func CreateNetstatPort(info NetstatInfo) NetstatPort {
 	id, _ := strconv.Atoi(info.ID)
 	return NetstatPort{
 		CommandName: info.CommandName,
-		ID:          id,
+		PID:         id,
 		State:       info.State,
 		Local:       localPort,
 		Foreign:     foreignPort,

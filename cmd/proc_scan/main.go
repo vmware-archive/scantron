@@ -14,18 +14,8 @@ import (
 	"github.com/pivotal-cf/scantron/scanner"
 )
 
-func getNetstatPorts() []scanner.NetstatPort {
-	bs, err := exec.Command("netstat", "-at", "-4", "--numeric-ports", "-u", "-p").Output()
-	if err == nil {
-		return scanner.ParseNetstatOutputForPort(string(bs))
-	}
-
-	return []scanner.NetstatPort{}
-}
-
 func main() {
 	processes, err := ps.Processes()
-
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error: failed to get process list:", err)
 		os.Exit(1)
@@ -36,73 +26,25 @@ func main() {
 	jsonProcesses := []scantron.Process{}
 
 	for _, process := range processes {
-
 		pid := process.Pid()
 
 		jsonProcess := scantron.Process{
 			CommandName: process.Executable(),
 			ID:          pid,
+			User:        user(pid),
+			Cmdline:     cmdline(pid),
+			Env:         env(pid),
+			Ports:       netstatPorts.LocalPortsForPID(pid),
 		}
 
-		bs, err := exec.Command("ps", "-e", "-o", "uname:20=", "-f", strconv.Itoa(pid)).CombinedOutput()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "error getting user:", err)
-			os.Exit(1)
-		}
-		jsonProcess.User = strings.TrimSpace(string(bs))
-
-		jsonProcess.Cmdline, err = readFile(fmt.Sprintf("/proc/%d/cmdline", pid))
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "error getting cmdline:", err)
-			os.Exit(1)
-		}
-
-		jsonProcess.Env, err = readFile(fmt.Sprintf("/proc/%d/environ", pid))
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "error getting env:", err)
-			os.Exit(1)
-		}
-
-		getNetstatOutput := func() []scantron.Port {
-			result := []scantron.Port{}
-
-			for _, netstatPort := range netstatPorts {
-				if netstatPort.ID == pid {
-					result = append(result, netstatPort.Local)
-				}
-			}
-
-			return result
-		}
-
-		ports := []scantron.Port{}
-		ports = append(ports, getNetstatOutput()...)
-		jsonProcess.Ports = ports
 		jsonProcesses = append(jsonProcesses, jsonProcess)
 	}
 
-	bs, err := exec.Command(
-		"find", "/",
-		"-type", "f",
-		"-perm", "-o+w",
-		"-not", "-path", "/proc/*",
-		"-not", "-path", "/sys/*",
-		"-not", "-path", "/dev/*",
-	).Output()
-	findResult := string(bs)
-	findLines := strings.Split(findResult, "\n")
-	findFiles := []scantron.File{}
-	for _, line := range findLines {
-		if line != "" {
-			findFiles = append(findFiles, scantron.File{
-				Path: line,
-			})
-		}
-	}
+	jsonFiles := worldWritableFiles()
 
 	systemInfo := scantron.SystemInfo{
 		Processes: jsonProcesses,
-		Files:     findFiles,
+		Files:     jsonFiles,
 	}
 
 	json.NewEncoder(os.Stdout).Encode(systemInfo)
@@ -124,4 +66,71 @@ func readFile(path string) ([]string, error) {
 	}
 
 	return output, nil
+}
+
+func getNetstatPorts() scanner.NetstatPorts {
+	bs, err := exec.Command("netstat", "-at", "-4", "--numeric-ports", "-u", "-p").Output()
+	if err != nil {
+		return []scanner.NetstatPort{}
+	}
+
+	return scanner.ParseNetstatOutputForPort(string(bs))
+}
+
+func user(pid int) string {
+	bs, err := exec.Command("ps", "-e", "-o", "uname:20=", "-f", strconv.Itoa(pid)).CombinedOutput()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error getting user:", err)
+		os.Exit(1)
+	}
+
+	return strings.TrimSpace(string(bs))
+}
+
+func cmdline(pid int) []string {
+	cmdline, err := readFile(fmt.Sprintf("/proc/%d/cmdline", pid))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error getting cmdline:", err)
+		os.Exit(1)
+	}
+
+	return cmdline
+}
+
+func env(pid int) []string {
+	env, err := readFile(fmt.Sprintf("/proc/%d/environ", pid))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error getting env:", err)
+		os.Exit(1)
+	}
+
+	return env
+}
+
+func worldWritableFiles() []scantron.File {
+	bs, err := exec.Command(
+		"find", "/",
+		"-type", "f",
+		"-perm", "-o+w",
+		"-not", "-path", "/proc/*",
+		"-not", "-path", "/sys/*",
+		"-not", "-path", "/dev/*",
+	).Output()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error: failed to get list of world-writable files:", err)
+		os.Exit(1)
+	}
+
+	findResult := string(bs)
+	findLines := strings.Split(findResult, "\n")
+	jsonFiles := []scantron.File{}
+	for _, line := range findLines {
+		if line != "" {
+			jsonFiles = append(jsonFiles, scantron.File{
+				Path: line,
+			})
+		}
+	}
+
+	return jsonFiles
 }
