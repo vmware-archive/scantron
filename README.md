@@ -13,7 +13,7 @@
 1. Install glide, the vendor package manager: https://github.com/Masterminds/glide
 2. `go get github.com/pivotal-cf/scantron`
 3. `cd $GOPATH/src/github.com/pivotal-cf/scantron && glide install`
-
+4. `GOOS=linux GOARCH=amd64 go build -o proc_scan cmd/proc_scan/main.go`
 
 ### SYNOPSIS
 
