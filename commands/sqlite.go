@@ -33,7 +33,8 @@ func (db *Database) Close() error {
 	return db.db.Close()
 }
 
-func (db *Database) SaveReport(scans []scanner.ScannedService) error {
+func (db *Database) SaveReport(scans []scanner.ScannedHost) error {
+
 	for _, scan := range scans {
 		var hostID int
 		query := "SELECT id FROM hosts WHERE name = ? AND ip = ?"
@@ -54,70 +55,83 @@ func (db *Database) SaveReport(scans []scanner.ScannedService) error {
 			}
 
 			hostID = int(insertedID)
-		}
 
-		cmdline := strings.Join(scan.Cmd.Cmdline, " ")
-		res, err := db.db.Exec(
-			"INSERT INTO processes(host_id, name, pid, cmdline, user) VALUES (?, ?, ?, ?, ?)",
-			hostID, scan.Job, scan.PID, cmdline, scan.User,
-		)
-		if err != nil {
-			return err
-		}
+			for _, service := range scan.Services {
 
-		processID, err := res.LastInsertId()
-		if err != nil {
-			return err
-		}
+				cmdline := strings.Join(service.Cmd.Cmdline, " ")
+				res, err := db.db.Exec(
+					"INSERT INTO processes(host_id, name, pid, cmdline, user) VALUES (?, ?, ?, ?, ?)",
+					hostID, scan.Job, service.PID, cmdline, service.User,
+				)
+				if err != nil {
+					return err
+				}
 
-		for _, port := range scan.Ports {
+				processID, err := res.LastInsertId()
+				if err != nil {
+					return err
+				}
 
-			res, err = db.db.Exec(
-				"INSERT INTO ports(process_id, protocol, address, number, state) VALUES (?, ?, ?, ?, ?)",
-				processID, port.Protocol, port.Address, port.Number, port.State,
-			)
-			if err != nil {
-				return err
+				for _, port := range service.Ports {
+
+					res, err = db.db.Exec(
+						"INSERT INTO ports(process_id, protocol, address, number, state) VALUES (?, ?, ?, ?, ?)",
+						processID, port.Protocol, port.Address, port.Number, port.State,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				if service.TLSInformation.Certificate != nil {
+					portID, err := res.LastInsertId()
+					if err != nil {
+						return err
+					}
+
+					cert := service.TLSInformation.Certificate
+					_, err = db.db.Exec(`
+						INSERT INTO tls_informations (
+							 port_id,
+							 cert_expiration,
+							 cert_bits,
+							 cert_country,
+							 cert_province,
+							 cert_locality,
+							 cert_organization,
+							 cert_common_name
+						 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+						portID,
+						cert.Expiration,
+						cert.Bits,
+						cert.Subject.Country,
+						cert.Subject.Province,
+						cert.Subject.Locality,
+						cert.Subject.Organization,
+						cert.Subject.CommonName,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				_, err = db.db.Exec("INSERT INTO env_vars(var, process_id) VALUES (?, ?)",
+					strings.Join(service.Cmd.Env, " "), processID,
+				)
+				if err != nil {
+					return err
+				}
 			}
-		}
 
-		if scan.TLSInformation.Certificate != nil {
-			portID, err := res.LastInsertId()
-			if err != nil {
-				return err
+			for _, file := range scan.Files {
+				_, err = db.db.Exec(
+					"INSERT INTO files(host_id, path) VALUES (?, ?)",
+					hostID, file.Path,
+				)
+				if err != nil {
+					return err
+				}
 			}
-
-			cert := scan.TLSInformation.Certificate
-			_, err = db.db.Exec(`
-				INSERT INTO tls_informations (
-					 port_id,
-					 cert_expiration,
-					 cert_bits,
-					 cert_country,
-					 cert_province,
-					 cert_locality,
-					 cert_organization,
-					 cert_common_name
-				 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-				portID,
-				cert.Expiration,
-				cert.Bits,
-				cert.Subject.Country,
-				cert.Subject.Province,
-				cert.Subject.Locality,
-				cert.Subject.Organization,
-				cert.Subject.CommonName,
-			)
-			if err != nil {
-				return err
-			}
-		}
-
-		_, err = db.db.Exec("INSERT INTO env_vars(var, process_id) VALUES (?, ?)",
-			strings.Join(scan.Cmd.Env, " "), processID,
-		)
-		if err != nil {
-			return err
 		}
 	}
 
@@ -172,4 +186,10 @@ CREATE TABLE env_vars (
 	FOREIGN KEY(process_id) REFERENCES processes(id)
 );
 
+CREATE TABLE files (
+	id integer PRIMARY KEY AUTOINCREMENT,
+	host_id integer,
+	path text,
+	FOREIGN KEY(host_id) REFERENCES hosts(id)
+);
 `

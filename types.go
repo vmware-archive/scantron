@@ -1,5 +1,9 @@
 package scantron
 
+type File struct {
+	Path string `json:"path"`
+}
+
 type Port struct {
 	Protocol string `json:"protocol"`
 	Address  string `json:"address"`
@@ -15,6 +19,11 @@ type Process struct {
 	Env         []string `json:"env"`
 
 	Ports []Port `json:"ports"`
+}
+
+type SystemInfo struct {
+	Processes []Process `json:"processes"`
+	Files     []File    `json:"files"`
 }
 
 func (p Process) HasFileWithPort(number int) bool {

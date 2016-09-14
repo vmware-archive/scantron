@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -68,7 +67,7 @@ func Bosh(
 	}
 }
 
-func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
+func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedHost, error) {
 	director, err := getDirector(s.boshURL, s.boshUsername, s.boshPassword, s.creds, s.boshLogger)
 	if err != nil {
 		logger.Error("failed-to-get-director", err)
@@ -163,12 +162,12 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 		return nil, err
 	}
 
-	var scannedServices []ScannedService
+	var scannedHosts []ScannedHost
 
 	wg := &sync.WaitGroup{}
 	wg.Add(len(vmInfos))
 
-	serviceChan := make(chan ScannedService)
+	hosts := make(chan ScannedHost)
 
 	for _, vmInfo := range vmInfos {
 		vmInfo := vmInfo
@@ -225,45 +224,51 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedService, error) {
 				return
 			}
 
-			var processes []scantron.Process
-			err = json.NewDecoder(result.StdoutReader()).Decode(&processes)
+			var systemInfo scantron.SystemInfo
+			err = json.NewDecoder(result.StdoutReader()).Decode(&systemInfo)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 
-			for _, process := range processes {
-				index := "?"
-				if vmInfo.Index != nil {
-					index = strconv.Itoa(*vmInfo.Index)
-				}
-
-				serviceChan <- ScannedService{
-					IP:    vmInfo.IPs[0],
-					Job:   fmt.Sprintf("%s/%s", vmInfo.JobName, index),
-					Name:  process.CommandName,
-					PID:   process.ID,
-					User:  process.User,
-					Ports: process.Ports,
-					Cmd: Cmd{
-						Cmdline: process.Cmdline,
-						Env:     process.Env,
-					},
-				}
-			}
+			scannedHost := s.convertToScannedHost(systemInfo, vmInfo.IPs[0])
+			hosts <- scannedHost
 		}()
 	}
 
 	go func() {
 		wg.Wait()
-		close(serviceChan)
+		close(hosts)
 	}()
 
-	for service := range serviceChan {
-		scannedServices = append(scannedServices, service)
+	for host := range hosts {
+		scannedHosts = append(scannedHosts, host)
 	}
 
-	return scannedServices, nil
+	return scannedHosts, nil
+}
+
+func (s *boshScanner) convertToScannedHost(host scantron.SystemInfo, ip string) ScannedHost {
+	scannedServices := []ScannedService{}
+	for _, process := range host.Processes {
+		scannedServices = append(scannedServices, ScannedService{
+			Name:  process.CommandName,
+			PID:   process.ID,
+			User:  process.User,
+			Ports: process.Ports,
+			Cmd: Cmd{
+				Cmdline: process.Cmdline,
+				Env:     process.Env,
+			},
+		})
+	}
+
+	return ScannedHost{
+		Job:      ip,
+		IP:       ip,
+		Services: scannedServices,
+		Files:    host.Files,
+	}
 }
 
 func getDirector(

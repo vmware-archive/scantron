@@ -8,43 +8,54 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
-type scannerFunc func(logger lager.Logger) ([]ScannedService, error)
+type scannerFunc func(logger lager.Logger) ([]ScannedHost, error)
 
-func (s scannerFunc) Scan(logger lager.Logger) ([]ScannedService, error) {
+func (s scannerFunc) Scan(logger lager.Logger) ([]ScannedHost, error) {
 	return s(logger)
 }
 
 func AnnotateWithTLSInformation(scanner Scanner, nmapResults scantron.NmapResults) Scanner {
-	return scannerFunc(func(logger lager.Logger) ([]ScannedService, error) {
-		results, err := scanner.Scan(logger)
+	return scannerFunc(func(logger lager.Logger) ([]ScannedHost, error) {
+		scannedHosts, err := scanner.Scan(logger)
 		if err != nil {
 			return nil, err
 		}
 
-		for i, result := range results {
-			nmapResult := nmapResults[result.IP]
+		for j, scannedHost := range scannedHosts {
 
-			for _, service := range nmapResult {
-				for _, port := range result.Ports {
-					if port.Number != service.Port {
-						continue
-					}
+			services := scannedHost.Services
 
-					if service.SSL {
-						results[i].TLSInformation.Presence = true
+			for i, hostService := range services {
+				nmapResult := nmapResults[scannedHost.IP]
 
-						hostport := net.JoinHostPort(result.IP, strconv.Itoa(port.Number))
-						cert, err := FetchTLSInformation(hostport)
-						if err == nil {
-							results[i].TLSInformation.Certificate = cert
+				for _, nmapService := range nmapResult {
+					for _, port := range hostService.Ports {
+						if port.Number != nmapService.Port {
+							continue
 						}
 
-						results[i].TLSInformation.CipherInformation = service.CipherInformation
+						if port.State != "LISTEN" {
+							continue
+						}
+
+						if nmapService.SSL {
+							services[i].TLSInformation.Presence = true
+
+							hostport := net.JoinHostPort(scannedHost.IP, strconv.Itoa(port.Number))
+							cert, err := FetchTLSInformation(hostport)
+							if err == nil {
+								services[i].TLSInformation.Certificate = cert
+							}
+
+							services[i].TLSInformation.CipherInformation = nmapService.CipherInformation
+						}
 					}
 				}
 			}
+
+			scannedHosts[j].Services = services
 		}
 
-		return results, nil
+		return scannedHosts, nil
 	})
 }

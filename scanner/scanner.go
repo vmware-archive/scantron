@@ -6,12 +6,17 @@ import (
 )
 
 type Scanner interface {
-	Scan(lager.Logger) ([]ScannedService, error)
+	Scan(lager.Logger) ([]ScannedHost, error)
+}
+
+type ScannedHost struct {
+	IP       string
+	Job      string
+	Services []ScannedService
+	Files    []scantron.File
 }
 
 type ScannedService struct {
-	IP    string
-	Job   string
 	Name  string
 	PID   int
 	User  string

@@ -37,6 +37,7 @@
 
     --uaa-client=OAUTH_CLIENT                  UAA Client
     --uaa-client-secret=OAUTH_CLIENT_SECRET    UAA Client Secret
+    --database=PATH                            Location to store report (optional and default to ./database.db)
 
 #### DIRECT-SCAN
 
@@ -44,6 +45,7 @@
     --username=USERNAME                        Username to scan with
     --password=PASSWORD                        Password to scan with
     --private-key=PATH                         Private key to scan with (optional)
+    --database=PATH                            Location to store report (optional and default to ./database.db)
 
 
 ### GENERATING NMAP RESULTS
@@ -87,20 +89,70 @@ Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML:
       --uaa-client=OAUTH_CLIENT \
       --uaa-client-secret=OAUTH_CLIENT_SECRET
 
+### SCAN FILTER
 
-### EXAMPLE OUTPUT
+Scantron only scans regular files and skips the following directories:
 
-    Host                Job             Service         PID     Port    User    SSL
-    10.85.8.91          10.85.8.91      sshd            1184    22      root    ✗
-    10.85.8.91          10.85.8.91      rpcbind         566     111     root    ✗
-    10.85.8.91          10.85.8.91      ruby            11219   4222    vcap    ✗
-    10.85.8.91          10.85.8.91      bosh-agent      834     6868    root    ✓
-    10.85.8.91          10.85.8.91      java            11357   8080    vcap    ✗
-    10.85.8.91          10.85.8.91      java            11357   8443    vcap    ✓
-    10.85.8.91          10.85.8.91      nginx           11421   25250   root    ✗
-    10.85.8.91          10.85.8.91      nginx           11427   25250   vcap    ✗
-    10.85.8.91          10.85.8.91      nginx           11428   25250   vcap    ✗
-    10.85.8.91          10.85.8.91      nginx           11323   25555   root    ✓
-    10.85.8.91          10.85.8.91      nginx           11326   25555   vcap    ✓
-    10.85.8.91          10.85.8.91      nginx           11327   25555   vcap    ✓
-    10.85.8.91          10.85.8.91      rpc.statd       651     57427   statd   ✗
+  * /proc
+  * /sys
+  * /dev
+
+### DATABASE SCHEMA
+
+Scantron produces a SQLite database for scan results with the following schema:
+
+```sql
+CREATE TABLE hosts (
+  id integer PRIMARY KEY AUTOINCREMENT,
+  name text,
+  ip text,
+  UNIQUE(ip, name)
+);
+
+CREATE TABLE processes (
+  id integer PRIMARY KEY AUTOINCREMENT,
+  host_id integer,
+  name text,
+  pid integer,
+  cmdline text,
+  user text,
+  FOREIGN KEY(host_id) REFERENCES hosts(id)
+);
+
+CREATE TABLE ports (
+  id integer PRIMARY KEY AUTOINCREMENT,
+  process_id integer,
+  protocol string,
+  address string,
+  number integer,
+  state string,
+  FOREIGN KEY(process_id) REFERENCES processes(id)
+);
+
+CREATE TABLE tls_informations (
+  id integer PRIMARY KEY AUTOINCREMENT,
+  port_id integer,
+  cert_expiration datetime,
+  cert_bits integer,
+  cert_country string,
+  cert_province string,
+  cert_locality string,
+  cert_organization string,
+  cert_common_name string,
+  FOREIGN KEY(port_id) REFERENCES ports(id)
+);
+
+CREATE TABLE env_vars (
+  id integer PRIMARY KEY AUTOINCREMENT,
+  process_id integer,
+  var text,
+  FOREIGN KEY(process_id) REFERENCES processes(id)
+);
+
+CREATE TABLE files (
+  id integer PRIMARY KEY AUTOINCREMENT,
+  host_id integer,
+  path text,
+  FOREIGN KEY(host_id) REFERENCES hosts(id)
+);
+```

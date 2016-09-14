@@ -73,6 +73,7 @@ var _ = Describe("Sqlite", func() {
 				"hosts",
 				"processes",
 				"ports",
+				"files",
 				"tls_informations",
 				"env_vars",
 			))
@@ -82,8 +83,8 @@ var _ = Describe("Sqlite", func() {
 	Describe("SaveReport", func() {
 		var (
 			db             *commands.Database
-			services       []scanner.ScannedService
-			service        scanner.ScannedService
+			hosts          []scanner.ScannedHost
+			host           scanner.ScannedHost
 			dbPath         string
 			sqliteDB       *sql.DB
 			certExpiration time.Time
@@ -96,7 +97,7 @@ var _ = Describe("Sqlite", func() {
 			db, err = commands.NewDatabase(dbPath)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = db.SaveReport(services)
+			err = db.SaveReport(hosts)
 			Expect(err).NotTo(HaveOccurred())
 
 			sqliteDB, err = sql.Open("sqlite3", dbPath)
@@ -108,46 +109,51 @@ var _ = Describe("Sqlite", func() {
 			sqliteDB.Close()
 		})
 
-		Context("with a single service", func() {
+		Context("with a single host", func() {
 			BeforeEach(func() {
 				var err error
 				certExpiration, err = time.Parse(time.RFC3339, "2012-11-01T22:08:41+00:00")
 				Expect(err).NotTo(HaveOccurred())
 
-				service = scanner.ScannedService{
-					IP:   "10.0.0.1",
-					Job:  "custom_name/0",
-					Name: "server-name",
-					PID:  213,
-					User: "root",
-					Ports: []scantron.Port{
-						{
-							Protocol: "TCP",
-							Address:  "123.0.0.1",
-							Number:   123,
-						},
-					},
-					TLSInformation: scanner.TLSInformation{
-						Presence: true,
-						Certificate: &scanner.Certificate{
-							Expiration: certExpiration,
-							Bits:       234,
-							Subject: scanner.CertificateSubject{
-								Country:      "some-country",
-								Province:     "some-province",
-								Locality:     "some-locality",
-								Organization: "some-organization",
-								CommonName:   "some-common-name",
+				host = scanner.ScannedHost{
+					IP:  "10.0.0.1",
+					Job: "custom_name/0",
+					Services: []scanner.ScannedService{{
+						Name: "server-name",
+						PID:  213,
+						User: "root",
+						Ports: []scantron.Port{
+							{
+								Protocol: "TCP",
+								Address:  "123.0.0.1",
+								Number:   123,
 							},
 						},
-					},
-					Cmd: scanner.Cmd{
-						Cmdline: []string{"this", "is", "a", "cmd"},
-						Env:     []string{"PATH=this", "OTHER=that"},
+						TLSInformation: scanner.TLSInformation{
+							Presence: true,
+							Certificate: &scanner.Certificate{
+								Expiration: certExpiration,
+								Bits:       234,
+								Subject: scanner.CertificateSubject{
+									Country:      "some-country",
+									Province:     "some-province",
+									Locality:     "some-locality",
+									Organization: "some-organization",
+									CommonName:   "some-common-name",
+								},
+							},
+						},
+						Cmd: scanner.Cmd{
+							Cmdline: []string{"this", "is", "a", "cmd"},
+							Env:     []string{"PATH=this", "OTHER=that"},
+						},
+					}},
+					Files: []scantron.File{
+						{Path: "some-file-path"},
 					},
 				}
 
-				services = []scanner.ScannedService{service}
+				hosts = []scanner.ScannedHost{host}
 			})
 
 			It("records a process", func() {
@@ -167,15 +173,18 @@ var _ = Describe("Sqlite", func() {
 							 tls_informations.cert_locality,
 							 tls_informations.cert_organization,
 							 tls_informations.cert_common_name,
-							 env_vars.var
+							 env_vars.var,
+							 files.path
 				FROM   hosts,
 							 processes,
 							 ports,
 							 tls_informations,
-							 env_vars
+							 env_vars,
+							 files
 				WHERE  hosts.id = processes.host_id
 							 AND ports.process_id = processes.id
 							 AND ports.id = tls_informations.port_id
+							 AND files.host_id = hosts.id
 						   AND env_vars.process_id=processes.id`)
 				Expect(err).NotTo(HaveOccurred())
 				defer rows.Close()
@@ -194,12 +203,13 @@ var _ = Describe("Sqlite", func() {
 					tlsCertCommonName string
 					tlsCertBits int
 					tlsCertExp  time.Time
+					file_path   string
 				)
 
 				err = rows.Scan(&name, &ip, &pid, &user, &cmdline, &portProtocol,
 					&portAddress, &portNumber, &tlsCertExp, &tlsCertBits,
 					&tlsCertCountry, &tlsCertProvince, &tlsCertLocality,
-					&tlsCertOrganization, &tlsCertCommonName, &env)
+					&tlsCertOrganization, &tlsCertCommonName, &env, &file_path)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(name).To(Equal("custom_name/0"))
@@ -217,13 +227,18 @@ var _ = Describe("Sqlite", func() {
 				Expect(tlsCertCommonName).To(Equal("some-common-name"))
 				Expect(cmdline).To(Equal("this is a cmd"))
 				Expect(env).To(Equal("PATH=this OTHER=that"))
+				Expect(file_path).To(Equal("some-file-path"))
 			})
 
 			Context("when the service does not have a certificate", func() {
 				BeforeEach(func() {
+					service := host.Services[0]
+
 					service.TLSInformation.Certificate = nil
 					service.TLSInformation.Presence = false
-					services = []scanner.ScannedService{service}
+
+					host.Services[0] = service
+
 				})
 
 				It("records a process", func() {
@@ -283,7 +298,7 @@ var _ = Describe("Sqlite", func() {
 
 		Context("with a multiple services that have the same host and job", func() {
 			BeforeEach(func() {
-				services = []scanner.ScannedService{
+				hosts = []scanner.ScannedHost{
 					{
 						IP:  "10.0.0.1",
 						Job: "custom_name/0",
@@ -313,7 +328,7 @@ var _ = Describe("Sqlite", func() {
 
 		Context("with a multiple services on different hosts", func() {
 			BeforeEach(func() {
-				services = []scanner.ScannedService{
+				hosts = []scanner.ScannedHost{
 					{
 						IP:  "10.0.0.1",
 						Job: "custom_name/0",

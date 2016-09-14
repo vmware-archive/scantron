@@ -81,7 +81,31 @@ func main() {
 		jsonProcesses = append(jsonProcesses, jsonProcess)
 	}
 
-	json.NewEncoder(os.Stdout).Encode(jsonProcesses)
+	bs, err := exec.Command(
+		"find", "/",
+		"-type", "f",
+		"-perm", "-o+w",
+		"-not", "-path", "/proc/*",
+		"-not", "-path", "/sys/*",
+		"-not", "-path", "/dev/*",
+	).Output()
+	findResult := string(bs)
+	findLines := strings.Split(findResult, "\n")
+	findFiles := []scantron.File{}
+	for _, line := range findLines {
+		if line != "" {
+			findFiles = append(findFiles, scantron.File{
+				Path: line,
+			})
+		}
+	}
+
+	systemInfo := scantron.SystemInfo{
+		Processes: jsonProcesses,
+		Files:     findFiles,
+	}
+
+	json.NewEncoder(os.Stdout).Encode(systemInfo)
 }
 
 func readFile(path string) ([]string, error) {

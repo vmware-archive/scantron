@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bufio"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -34,7 +35,7 @@ type BoshScanCommand struct {
 		PrivateKeyPath string `long:"gateway-private-key" description:"BOSH VM gateway private key" value-name:"PATH"`
 	} `group:"Gateway"`
 
-	Database string `long:"database" description:"location of database where scan output will be stored" value-name:"PATH"`
+	Database string `long:"database" description:"location of database where scan output will be stored" value-name:"PATH" default:"./database.db"`
 }
 
 func (command *BoshScanCommand) Execute(args []string) error {
@@ -72,12 +73,7 @@ func (command *BoshScanCommand) Execute(args []string) error {
 		nmapResults,
 	)
 
-	var db *Database
-	if command.Database == "" {
-		db, err = NewDatabase("./database.db")
-	} else {
-		db, err = NewDatabase(command.Database)
-	}
+	db, err := NewDatabase(command.Database)
 	if err != nil {
 		log.Fatalf("failed to create database: %s", err.Error())
 	}
@@ -94,10 +90,7 @@ func (command *BoshScanCommand) Execute(args []string) error {
 
 	db.Close()
 
-	err = showReport(results)
-	if err != nil {
-		log.Fatalf("failed to flush tabwriter %s", err.Error())
-	}
+	fmt.Println("Report is saved in SQLite3 database:", command.Database)
 
 	return nil
 }

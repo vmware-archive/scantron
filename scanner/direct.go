@@ -24,10 +24,10 @@ func Direct(nmapResults scantron.NmapResults, machine *scantron.Machine) Scanner
 	}
 }
 
-func (d *direct) Scan(logger lager.Logger) ([]ScannedService, error) {
+func (d *direct) Scan(logger lager.Logger) ([]ScannedHost, error) {
 	l := logger.Session("scan")
 
-	var scannedServices []ScannedService
+	var scannedHosts []ScannedHost
 	var auth []ssh.AuthMethod
 
 	if d.machine.Key != nil {
@@ -76,17 +76,28 @@ func (d *direct) Scan(logger lager.Logger) ([]ScannedService, error) {
 		return nil, err
 	}
 
-	var processes []scantron.Process
-	err = json.Unmarshal(bs, &processes)
+	scannedHost, err := d.decodeScannedHost(bs)
 	if err != nil {
 		endpointLogger.Error("failed-to-unmarshal-output", err)
-		return nil, err
 	}
+	scannedHosts = append(scannedHosts, scannedHost)
 
-	for _, process := range processes {
+	return scannedHosts, nil
+}
+
+func (d *direct) decodeScannedHost(bs []byte) (ScannedHost, error) {
+	var host scantron.SystemInfo
+	err := json.Unmarshal(bs, &host)
+	if err != nil {
+		return ScannedHost{}, err
+	}
+	return d.convertToScannedHost(host)
+}
+
+func (d *direct) convertToScannedHost(host scantron.SystemInfo) (ScannedHost, error) {
+	scannedServices := []ScannedService{}
+	for _, process := range host.Processes {
 		scannedServices = append(scannedServices, ScannedService{
-			Job:   d.machine.Address,
-			IP:    d.machine.Address,
 			Name:  process.CommandName,
 			PID:   process.ID,
 			User:  process.User,
@@ -98,7 +109,13 @@ func (d *direct) Scan(logger lager.Logger) ([]ScannedService, error) {
 		})
 	}
 
-	return scannedServices, nil
+	return ScannedHost{
+		Job:      d.machine.Address,
+		IP:       d.machine.Address,
+		Services: scannedServices,
+		Files:    host.Files,
+	}, nil
+
 }
 
 func sftpScanBinary(conn *ssh.Client, filepath string) (*sftp.Client, error) {
