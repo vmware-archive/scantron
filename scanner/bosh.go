@@ -225,14 +225,14 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedHost, error) {
 			}
 
 			var systemInfo scantron.SystemInfo
+
 			err = json.NewDecoder(result.StdoutReader()).Decode(&systemInfo)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 
-			scannedHost := convertToScannedHost(systemInfo, vmInfo.IPs[0])
-			hosts <- scannedHost
+			hosts <- convertToScannedHost(systemInfo, vmInfo.IPs[0])
 		}()
 	}
 
