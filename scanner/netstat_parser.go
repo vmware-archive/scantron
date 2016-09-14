@@ -10,7 +10,7 @@ import (
 
 type NetstatInfo struct {
 	CommandName    string
-	ID             string
+	PID            string
 	LocalAddress   string
 	ForeignAddress string
 	State          string
@@ -60,7 +60,7 @@ func ParseNetstatLine(line string) NetstatInfo {
 
 	return NetstatInfo{
 		CommandName:    cmd,
-		ID:             id,
+		PID:            id,
 		LocalAddress:   netstat[3],
 		ForeignAddress: netstat[4],
 		State:          netstat[5],
@@ -86,7 +86,7 @@ func CreateNetstatPort(info NetstatInfo) NetstatPort {
 	localPort := CreatePortFromAddress(info.LocalAddress, info.Protocol, info.State)
 	foreignPort := CreatePortFromAddress(info.ForeignAddress, info.Protocol, info.State)
 
-	id, _ := strconv.Atoi(info.ID)
+	id, _ := strconv.Atoi(info.PID)
 	return NetstatPort{
 		CommandName: info.CommandName,
 		PID:         id,

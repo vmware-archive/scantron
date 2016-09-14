@@ -23,7 +23,7 @@ tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      
 		Expect(scanner.ParseNetstatOutput(input)).To(Equal([]scanner.NetstatInfo{
 			{
 				CommandName:    "java",
-				ID:             "1317",
+				PID:            "1317",
 				LocalAddress:   "127.0.0.1:8080",
 				ForeignAddress: "0.0.0.0:*",
 				State:          "LISTEN",
