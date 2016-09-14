@@ -232,7 +232,8 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedHost, error) {
 				return
 			}
 
-			hosts <- convertToScannedHost(systemInfo, vmInfo.IPs[0])
+			boshName := fmt.Sprintf("%s/%s", vmInfo.JobName, vmInfo.ID)
+			hosts <- convertToScannedHost(systemInfo, boshName, vmInfo.IPs[0])
 		}()
 	}
 

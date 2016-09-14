@@ -34,7 +34,6 @@ func (db *Database) Close() error {
 }
 
 func (db *Database) SaveReport(scans []scanner.ScannedHost) error {
-
 	for _, scan := range scans {
 		var hostID int
 		query := "SELECT id FROM hosts WHERE name = ? AND ip = ?"

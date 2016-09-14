@@ -91,7 +91,7 @@ func (d *direct) decodeScannedHost(bs []byte) (ScannedHost, error) {
 	if err != nil {
 		return ScannedHost{}, err
 	}
-	return convertToScannedHost(host, d.machine.Address), nil
+	return convertToScannedHost(host, d.machine.Address, d.machine.Address), nil
 }
 
 func sftpScanBinary(conn *ssh.Client, filepath string) (*sftp.Client, error) {

@@ -37,7 +37,7 @@ type Cmd struct {
 	Env     []string
 }
 
-func convertToScannedHost(host scantron.SystemInfo, ip string) ScannedHost {
+func convertToScannedHost(host scantron.SystemInfo, jobName, address string) ScannedHost {
 	scannedServices := []ScannedService{}
 	for _, process := range host.Processes {
 		scannedServices = append(scannedServices, ScannedService{
@@ -53,8 +53,8 @@ func convertToScannedHost(host scantron.SystemInfo, ip string) ScannedHost {
 	}
 
 	return ScannedHost{
-		Job:      ip,
-		IP:       ip,
+		Job:      jobName,
+		IP:       address,
 		Services: scannedServices,
 		Files:    host.Files,
 	}
