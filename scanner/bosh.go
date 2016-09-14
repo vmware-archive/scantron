@@ -231,7 +231,7 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedHost, error) {
 				return
 			}
 
-			scannedHost := s.convertToScannedHost(systemInfo, vmInfo.IPs[0])
+			scannedHost := convertToScannedHost(systemInfo, vmInfo.IPs[0])
 			hosts <- scannedHost
 		}()
 	}
@@ -246,29 +246,6 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedHost, error) {
 	}
 
 	return scannedHosts, nil
-}
-
-func (s *boshScanner) convertToScannedHost(host scantron.SystemInfo, ip string) ScannedHost {
-	scannedServices := []ScannedService{}
-	for _, process := range host.Processes {
-		scannedServices = append(scannedServices, ScannedService{
-			Name:  process.CommandName,
-			PID:   process.ID,
-			User:  process.User,
-			Ports: process.Ports,
-			Cmd: Cmd{
-				Cmdline: process.Cmdline,
-				Env:     process.Env,
-			},
-		})
-	}
-
-	return ScannedHost{
-		Job:      ip,
-		IP:       ip,
-		Services: scannedServices,
-		Files:    host.Files,
-	}
 }
 
 func getDirector(

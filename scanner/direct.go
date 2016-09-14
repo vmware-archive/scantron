@@ -91,31 +91,7 @@ func (d *direct) decodeScannedHost(bs []byte) (ScannedHost, error) {
 	if err != nil {
 		return ScannedHost{}, err
 	}
-	return d.convertToScannedHost(host)
-}
-
-func (d *direct) convertToScannedHost(host scantron.SystemInfo) (ScannedHost, error) {
-	scannedServices := []ScannedService{}
-	for _, process := range host.Processes {
-		scannedServices = append(scannedServices, ScannedService{
-			Name:  process.CommandName,
-			PID:   process.ID,
-			User:  process.User,
-			Ports: process.Ports,
-			Cmd: Cmd{
-				Cmdline: process.Cmdline,
-				Env:     process.Env,
-			},
-		})
-	}
-
-	return ScannedHost{
-		Job:      d.machine.Address,
-		IP:       d.machine.Address,
-		Services: scannedServices,
-		Files:    host.Files,
-	}, nil
-
+	return convertToScannedHost(host, d.machine.Address), nil
 }
 
 func sftpScanBinary(conn *ssh.Client, filepath string) (*sftp.Client, error) {

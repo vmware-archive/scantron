@@ -36,3 +36,26 @@ type Cmd struct {
 	Cmdline []string
 	Env     []string
 }
+
+func convertToScannedHost(host scantron.SystemInfo, ip string) ScannedHost {
+	scannedServices := []ScannedService{}
+	for _, process := range host.Processes {
+		scannedServices = append(scannedServices, ScannedService{
+			Name:  process.CommandName,
+			PID:   process.ID,
+			User:  process.User,
+			Ports: process.Ports,
+			Cmd: Cmd{
+				Cmdline: process.Cmdline,
+				Env:     process.Env,
+			},
+		})
+	}
+
+	return ScannedHost{
+		Job:      ip,
+		IP:       ip,
+		Services: scannedServices,
+		Files:    host.Files,
+	}
+}
