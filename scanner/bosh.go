@@ -201,21 +201,21 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedHost, error) {
 			scpArgs := boshssh.NewSCPArgs([]string{"./proc_scan", fmt.Sprintf("%s/%d:%s", vmInfo.JobName, *vmInfo.Index, "/tmp")}, false)
 			err = scpRunner.Run(connOpts, sshResult, scpArgs)
 			if err != nil {
-				fmt.Println(err)
+				logger.Error("failed-to-scp-proc-scan", err)
 				return
 			}
 
 			cmd = "sudo mv /tmp/proc_scan /var/vcap/"
 			err = sshRunner.Run(connOpts, sshResult, strings.Split(cmd, " "))
 			if err != nil {
-				fmt.Println(err)
+				logger.Error("failed-to-move-proc-scan", err)
 				return
 			}
 			defer sshRunner.Run(connOpts, sshResult, []string{"sudo", "rm", "/var/vcap/proc_scan"})
 
 			err = sshRunner.Run(connOpts, sshResult, []string{"sudo", "/var/vcap/proc_scan"})
 			if err != nil {
-				fmt.Println(err)
+				logger.Error("failed-to-run-proc-scan", err)
 				return
 			}
 
@@ -228,7 +228,7 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedHost, error) {
 
 			err = json.NewDecoder(result.StdoutReader()).Decode(&systemInfo)
 			if err != nil {
-				fmt.Println(err)
+				logger.Error("failed-to-decode-result", err)
 				return
 			}
 
