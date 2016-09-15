@@ -1,4 +1,6 @@
 /spec/examples.txt
 vendor
 
+# Scanning Artifacts
 /proc_scan
+/*.db
