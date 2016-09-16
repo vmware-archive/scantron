@@ -22,16 +22,7 @@ type ScannedService struct {
 	User  string
 	Ports []scantron.Port
 
-	TLSInformation TLSInformation
-	Cmd            Cmd
-}
-
-type TLSInformation struct {
-	Presence          bool
-	Certificate       *Certificate
-	CipherInformation scantron.CipherInformation
-
-	ScanError error
+	Cmd Cmd
 }
 
 type Cmd struct {

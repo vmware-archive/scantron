@@ -80,35 +80,30 @@ func (db *Database) SaveReport(scans []scanner.ScannedHost) error {
 					if err != nil {
 						return err
 					}
-				}
 
-				if service.TLSInformation.ScanError != nil {
 					portID, err := res.LastInsertId()
 					if err != nil {
 						return err
 					}
 
-					_, err = db.db.Exec(`
+					if port.TLSInformation.ScanError != nil {
+						_, err = db.db.Exec(`
 						INSERT INTO tls_scan_errors (
 							 port_id,
 							 cert_scan_error
 						) VALUES (?, ?)`,
-						portID,
-						service.TLSInformation.ScanError.Error(),
-					)
-					if err != nil {
-						return err
-					}
-				}
-
-				if service.TLSInformation.Certificate != nil {
-					portID, err := res.LastInsertId()
-					if err != nil {
-						return err
+							portID,
+							port.TLSInformation.ScanError.Error(),
+						)
+						if err != nil {
+							return err
+						}
 					}
 
-					cert := service.TLSInformation.Certificate
-					_, err = db.db.Exec(`
+					if port.TLSInformation.Certificate != nil {
+						cert := port.TLSInformation.Certificate
+
+						_, err = db.db.Exec(`
 						INSERT INTO tls_informations (
 							 port_id,
 							 cert_expiration,
@@ -119,17 +114,18 @@ func (db *Database) SaveReport(scans []scanner.ScannedHost) error {
 							 cert_organization,
 							 cert_common_name
 						 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-						portID,
-						cert.Expiration,
-						cert.Bits,
-						cert.Subject.Country,
-						cert.Subject.Province,
-						cert.Subject.Locality,
-						cert.Subject.Organization,
-						cert.Subject.CommonName,
-					)
-					if err != nil {
-						return err
+							portID,
+							cert.Expiration,
+							cert.Bits,
+							cert.Subject.Country,
+							cert.Subject.Province,
+							cert.Subject.Locality,
+							cert.Subject.Organization,
+							cert.Subject.CommonName,
+						)
+						if err != nil {
+							return err
+						}
 					}
 				}
 

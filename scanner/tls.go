@@ -5,29 +5,11 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"fmt"
-	"time"
+
+	"github.com/pivotal-cf/scantron"
 )
 
-type Certificate struct {
-	Expiration time.Time
-	Bits       int
-	Subject    CertificateSubject
-}
-
-type CertificateSubject struct {
-	Country  string
-	Province string
-	Locality string
-
-	Organization string
-	CommonName   string
-}
-
-func (cs CertificateSubject) String() string {
-	return fmt.Sprintf("/C=%s/ST=%s/L=%s/O=%s/CN=%s", cs.Country, cs.Province, cs.Locality, cs.Organization, cs.CommonName)
-}
-
-func FetchTLSInformation(hostport string) (*Certificate, error) {
+func FetchTLSInformation(hostport string) (*scantron.Certificate, error) {
 	config := &tls.Config{
 		// We never send secret information over this TLS connection. We're just
 		// probing it.
@@ -55,10 +37,10 @@ func FetchTLSInformation(hostport string) (*Certificate, error) {
 		panic(msg)
 	}
 
-	certificate := &Certificate{
+	certificate := &scantron.Certificate{
 		Bits:       bits,
 		Expiration: cert.NotAfter,
-		Subject: CertificateSubject{
+		Subject: scantron.CertificateSubject{
 			Country:  singleton(cert.Subject.Country),
 			Province: singleton(cert.Subject.Province),
 			Locality: singleton(cert.Subject.Locality),

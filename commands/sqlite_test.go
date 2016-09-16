@@ -129,20 +129,20 @@ var _ = Describe("Sqlite", func() {
 								Protocol: "TCP",
 								Address:  "123.0.0.1",
 								Number:   123,
-							},
-						},
-						TLSInformation: scanner.TLSInformation{
-							Presence:  true,
-							ScanError: errors.New("this was a terrible error"),
-							Certificate: &scanner.Certificate{
-								Expiration: certExpiration,
-								Bits:       234,
-								Subject: scanner.CertificateSubject{
-									Country:      "some-country",
-									Province:     "some-province",
-									Locality:     "some-locality",
-									Organization: "some-organization",
-									CommonName:   "some-common-name",
+								TLSInformation: scantron.TLSInformation{
+									Presence:  true,
+									ScanError: errors.New("this was a terrible error"),
+									Certificate: &scantron.Certificate{
+										Expiration: certExpiration,
+										Bits:       234,
+										Subject: scantron.CertificateSubject{
+											Country:      "some-country",
+											Province:     "some-province",
+											Locality:     "some-locality",
+											Organization: "some-organization",
+											CommonName:   "some-common-name",
+										},
+									},
 								},
 							},
 						},
@@ -242,11 +242,10 @@ var _ = Describe("Sqlite", func() {
 				BeforeEach(func() {
 					service := host.Services[0]
 
-					service.TLSInformation.Certificate = nil
-					service.TLSInformation.Presence = false
+					service.Ports[0].TLSInformation.Certificate = nil
+					service.Ports[0].TLSInformation.Presence = false
 
 					host.Services[0] = service
-
 				})
 
 				It("records a process", func() {

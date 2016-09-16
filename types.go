@@ -1,5 +1,10 @@
 package scantron
 
+import (
+	"fmt"
+	"time"
+)
+
 type File struct {
 	Path string `json:"path"`
 }
@@ -9,6 +14,35 @@ type Port struct {
 	Address  string `json:"address"`
 	Number   int    `json:"number"`
 	State    string `json:"state"`
+
+	TLSInformation TLSInformation
+}
+
+type TLSInformation struct {
+	Presence          bool
+	Certificate       *Certificate
+	CipherInformation CipherInformation
+
+	ScanError error
+}
+
+type Certificate struct {
+	Expiration time.Time
+	Bits       int
+	Subject    CertificateSubject
+}
+
+type CertificateSubject struct {
+	Country  string
+	Province string
+	Locality string
+
+	Organization string
+	CommonName   string
+}
+
+func (cs CertificateSubject) String() string {
+	return fmt.Sprintf("/C=%s/ST=%s/L=%s/O=%s/CN=%s", cs.Country, cs.Province, cs.Locality, cs.Organization, cs.CommonName)
 }
 
 type Process struct {

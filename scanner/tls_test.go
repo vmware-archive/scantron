@@ -9,6 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/scanner"
 )
 
@@ -50,7 +51,7 @@ var _ = Describe("TLS", func() {
 
 	Describe("Certificate Subject", func() {
 		It("displays in a familiar format", func() {
-			subject := scanner.CertificateSubject{
+			subject := scantron.CertificateSubject{
 				Country:  "US",
 				Province: "California",
 				Locality: "San Francisco",
