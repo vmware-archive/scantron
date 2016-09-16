@@ -6,49 +6,22 @@ import (
 )
 
 type Scanner interface {
-	Scan(lager.Logger) ([]ScannedHost, error)
+	Scan(lager.Logger) ([]ScanResult, error)
 }
 
-type ScannedHost struct {
-	IP       string
-	Job      string
-	Services []ScannedService
+type ScanResult struct {
+	IP  string
+	Job string
+
+	Services []scantron.Process
 	Files    []scantron.File
 }
 
-type ScannedService struct {
-	Name  string
-	PID   int
-	User  string
-	Ports []scantron.Port
-
-	Cmd Cmd
-}
-
-type Cmd struct {
-	Cmdline []string
-	Env     []string
-}
-
-func convertToScannedHost(host scantron.SystemInfo, jobName, address string) ScannedHost {
-	scannedServices := []ScannedService{}
-	for _, process := range host.Processes {
-		scannedServices = append(scannedServices, ScannedService{
-			Name:  process.CommandName,
-			PID:   process.ID,
-			User:  process.User,
-			Ports: process.Ports,
-			Cmd: Cmd{
-				Cmdline: process.Cmdline,
-				Env:     process.Env,
-			},
-		})
-	}
-
-	return ScannedHost{
+func buildScanResult(host scantron.SystemInfo, jobName, address string) ScanResult {
+	return ScanResult{
 		Job:      jobName,
 		IP:       address,
-		Services: scannedServices,
+		Services: host.Processes,
 		Files:    host.Files,
 	}
 }

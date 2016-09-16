@@ -34,7 +34,7 @@ func (db *Database) Close() error {
 	return db.db.Close()
 }
 
-func (db *Database) SaveReport(scans []scanner.ScannedHost) error {
+func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 	for _, scan := range scans {
 		var hostID int
 		query := "SELECT id FROM hosts WHERE name = ? AND ip = ?"
@@ -57,8 +57,7 @@ func (db *Database) SaveReport(scans []scanner.ScannedHost) error {
 			hostID = int(insertedID)
 
 			for _, service := range scan.Services {
-
-				cmdline := strings.Join(service.Cmd.Cmdline, " ")
+				cmdline := strings.Join(service.Cmdline, " ")
 				res, err := db.db.Exec(
 					"INSERT INTO processes(host_id, name, pid, cmdline, user) VALUES (?, ?, ?, ?, ?)",
 					hostID, scan.Job, service.PID, cmdline, service.User,
@@ -130,7 +129,7 @@ func (db *Database) SaveReport(scans []scanner.ScannedHost) error {
 				}
 
 				_, err = db.db.Exec("INSERT INTO env_vars(var, process_id) VALUES (?, ?)",
-					strings.Join(service.Cmd.Env, " "), processID,
+					strings.Join(service.Env, " "), processID,
 				)
 				if err != nil {
 					return err

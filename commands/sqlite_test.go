@@ -85,8 +85,8 @@ var _ = Describe("Sqlite", func() {
 	Describe("SaveReport", func() {
 		var (
 			db             *commands.Database
-			hosts          []scanner.ScannedHost
-			host           scanner.ScannedHost
+			hosts          []scanner.ScanResult
+			host           scanner.ScanResult
 			dbPath         string
 			sqliteDB       *sql.DB
 			certExpiration time.Time
@@ -117,13 +117,15 @@ var _ = Describe("Sqlite", func() {
 				certExpiration, err = time.Parse(time.RFC3339, "2012-11-01T22:08:41+00:00")
 				Expect(err).NotTo(HaveOccurred())
 
-				host = scanner.ScannedHost{
+				host = scanner.ScanResult{
 					IP:  "10.0.0.1",
 					Job: "custom_name/0",
-					Services: []scanner.ScannedService{{
-						Name: "server-name",
-						PID:  213,
-						User: "root",
+					Services: []scantron.Process{{
+						CommandName: "server-name",
+						PID:         213,
+						User:        "root",
+						Cmdline:     []string{"this", "is", "a", "cmd"},
+						Env:         []string{"PATH=this", "OTHER=that"},
 						Ports: []scantron.Port{
 							{
 								Protocol: "TCP",
@@ -146,17 +148,13 @@ var _ = Describe("Sqlite", func() {
 								},
 							},
 						},
-						Cmd: scanner.Cmd{
-							Cmdline: []string{"this", "is", "a", "cmd"},
-							Env:     []string{"PATH=this", "OTHER=that"},
-						},
 					}},
 					Files: []scantron.File{
 						{Path: "some-file-path"},
 					},
 				}
 
-				hosts = []scanner.ScannedHost{host}
+				hosts = []scanner.ScanResult{host}
 			})
 
 			It("records a process", func() {
@@ -305,7 +303,7 @@ var _ = Describe("Sqlite", func() {
 
 		Context("with a multiple services that have the same host and job", func() {
 			BeforeEach(func() {
-				hosts = []scanner.ScannedHost{
+				hosts = []scanner.ScanResult{
 					{
 						IP:  "10.0.0.1",
 						Job: "custom_name/0",
@@ -335,7 +333,7 @@ var _ = Describe("Sqlite", func() {
 
 		Context("with a multiple services on different hosts", func() {
 			BeforeEach(func() {
-				hosts = []scanner.ScannedHost{
+				hosts = []scanner.ScanResult{
 					{
 						IP:  "10.0.0.1",
 						Job: "custom_name/0",

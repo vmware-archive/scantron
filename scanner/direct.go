@@ -24,10 +24,10 @@ func Direct(nmapResults scantron.NmapResults, machine *scantron.Machine) Scanner
 	}
 }
 
-func (d *direct) Scan(logger lager.Logger) ([]ScannedHost, error) {
+func (d *direct) Scan(logger lager.Logger) ([]ScanResult, error) {
 	l := logger.Session("scan")
 
-	var scannedHosts []ScannedHost
+	var scannedHosts []ScanResult
 	var auth []ssh.AuthMethod
 
 	if d.machine.Key != nil {
@@ -85,13 +85,13 @@ func (d *direct) Scan(logger lager.Logger) ([]ScannedHost, error) {
 	return scannedHosts, nil
 }
 
-func (d *direct) decodeScannedHost(bs []byte) (ScannedHost, error) {
+func (d *direct) decodeScannedHost(bs []byte) (ScanResult, error) {
 	var host scantron.SystemInfo
 	err := json.Unmarshal(bs, &host)
 	if err != nil {
-		return ScannedHost{}, err
+		return ScanResult{}, err
 	}
-	return convertToScannedHost(host, d.machine.Address, d.machine.Address), nil
+	return buildScanResult(host, d.machine.Address, d.machine.Address), nil
 }
 
 func sftpScanBinary(conn *ssh.Client, filepath string) (*sftp.Client, error) {

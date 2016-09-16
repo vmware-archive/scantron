@@ -47,7 +47,7 @@ func (cs CertificateSubject) String() string {
 
 type Process struct {
 	CommandName string   `json:"name"`
-	ID          int      `json:"id"`
+	PID         int      `json:"pid"`
 	User        string   `json:"user"`
 	Cmdline     []string `json:"cmdline"`
 	Env         []string `json:"env"`

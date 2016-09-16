@@ -8,14 +8,14 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
-type scannerFunc func(logger lager.Logger) ([]ScannedHost, error)
+type scannerFunc func(logger lager.Logger) ([]ScanResult, error)
 
-func (s scannerFunc) Scan(logger lager.Logger) ([]ScannedHost, error) {
+func (s scannerFunc) Scan(logger lager.Logger) ([]ScanResult, error) {
 	return s(logger)
 }
 
 func AnnotateWithTLSInformation(scanner Scanner, nmapResults scantron.NmapResults) Scanner {
-	return scannerFunc(func(logger lager.Logger) ([]ScannedHost, error) {
+	return scannerFunc(func(logger lager.Logger) ([]ScanResult, error) {
 		scannedHosts, err := scanner.Scan(logger)
 		if err != nil {
 			return nil, err

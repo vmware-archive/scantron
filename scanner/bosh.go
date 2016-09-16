@@ -67,7 +67,7 @@ func Bosh(
 	}
 }
 
-func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedHost, error) {
+func (s *boshScanner) Scan(logger lager.Logger) ([]ScanResult, error) {
 	director, err := getDirector(s.boshURL, s.boshUsername, s.boshPassword, s.creds, s.boshLogger)
 	if err != nil {
 		logger.Error("failed-to-get-director", err)
@@ -162,12 +162,12 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedHost, error) {
 		return nil, err
 	}
 
-	var scannedHosts []ScannedHost
+	var scannedHosts []ScanResult
 
 	wg := &sync.WaitGroup{}
 	wg.Add(len(vmInfos))
 
-	hosts := make(chan ScannedHost)
+	hosts := make(chan ScanResult)
 
 	for _, vmInfo := range vmInfos {
 		vmInfo := vmInfo
@@ -233,7 +233,7 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScannedHost, error) {
 			}
 
 			boshName := fmt.Sprintf("%s/%s", vmInfo.JobName, vmInfo.ID)
-			hosts <- convertToScannedHost(systemInfo, boshName, vmInfo.IPs[0])
+			hosts <- buildScanResult(systemInfo, boshName, vmInfo.IPs[0])
 		}()
 	}
 

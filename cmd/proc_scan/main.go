@@ -30,7 +30,7 @@ func main() {
 
 		jsonProcess := scantron.Process{
 			CommandName: process.Executable(),
-			ID:          pid,
+			PID:         pid,
 			User:        user(pid),
 			Cmdline:     cmdline(pid),
 			Env:         env(pid),
