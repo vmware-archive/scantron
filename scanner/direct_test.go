@@ -11,14 +11,14 @@ import (
 	"code.cloudfoundry.org/lager/lagertest"
 
 	"github.com/pivotal-cf/scantron"
+	"github.com/pivotal-cf/scantron/remotemachine/remotemachinefakes"
 	"github.com/pivotal-cf/scantron/scanner"
-	"github.com/pivotal-cf/scantron/scantronfakes"
 )
 
 var _ = Describe("Direct Scanning", func() {
 	var (
 		directScan scanner.Scanner
-		machine    *scantronfakes.FakeRemoteMachine
+		machine    *remotemachinefakes.FakeRemoteMachine
 
 		systemInfo scantron.SystemInfo
 
@@ -27,7 +27,7 @@ var _ = Describe("Direct Scanning", func() {
 	)
 
 	BeforeEach(func() {
-		machine = &scantronfakes.FakeRemoteMachine{}
+		machine = &remotemachinefakes.FakeRemoteMachine{}
 
 		systemInfo = scantron.SystemInfo{
 			Processes: []scantron.Process{

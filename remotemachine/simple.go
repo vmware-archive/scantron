@@ -1,4 +1,4 @@
-package scantron
+package remotemachine
 
 import (
 	"bytes"
@@ -6,30 +6,18 @@ import (
 	"io"
 	"os"
 
+	"github.com/pivotal-cf/scantron"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )
 
-//go:generate counterfeiter . RemoteMachine
-
-type RemoteMachine interface {
-	Address() string
-
-	UploadFile(localPath, remotePath string) error
-	DeleteFile(remotePath string) error
-
-	RunCommand(string) (io.Reader, error)
-
-	Close() error
-}
-
 type remoteMachine struct {
-	machine Machine
+	machine scantron.Machine
 
 	conn *ssh.Client
 }
 
-func NewRemoteMachine(machine Machine) RemoteMachine {
+func NewSimple(machine scantron.Machine) RemoteMachine {
 	return &remoteMachine{
 		machine: machine,
 	}

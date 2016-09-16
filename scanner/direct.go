@@ -8,13 +8,14 @@ import (
 	"code.cloudfoundry.org/lager"
 
 	"github.com/pivotal-cf/scantron"
+	"github.com/pivotal-cf/scantron/remotemachine"
 )
 
 type direct struct {
-	machine scantron.RemoteMachine
+	machine remotemachine.RemoteMachine
 }
 
-func Direct(machine scantron.RemoteMachine) Scanner {
+func Direct(machine remotemachine.RemoteMachine) Scanner {
 	return &direct{
 		machine: machine,
 	}

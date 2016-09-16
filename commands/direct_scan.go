@@ -12,6 +12,7 @@ import (
 	nmap "github.com/lair-framework/go-nmap"
 
 	"github.com/pivotal-cf/scantron"
+	"github.com/pivotal-cf/scantron/remotemachine"
 	"github.com/pivotal-cf/scantron/scanner"
 )
 
@@ -61,7 +62,7 @@ func (command *DirectScanCommand) Execute(args []string) error {
 		Key:      privateKey,
 	}
 
-	remoteMachine := scantron.NewRemoteMachine(machine)
+	remoteMachine := remotemachine.NewSimple(machine)
 	defer remoteMachine.Close()
 
 	s := scanner.AnnotateWithTLSInformation(
