@@ -9,16 +9,17 @@ import (
 	"strings"
 	"sync"
 
+	"code.cloudfoundry.org/lager"
+
 	boshcmd "github.com/cloudfoundry/bosh-init/cmd"
 	boshconfig "github.com/cloudfoundry/bosh-init/cmd/config"
 	boshdir "github.com/cloudfoundry/bosh-init/director"
 	boshssh "github.com/cloudfoundry/bosh-init/ssh"
 	boshuaa "github.com/cloudfoundry/bosh-init/uaa"
 	boshui "github.com/cloudfoundry/bosh-init/ui"
-	"github.com/pivotal-cf/scantron"
-	"github.com/pivotal-golang/lager"
-
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
+	"github.com/pivotal-cf/scantron"
 )
 
 type boshScanner struct {

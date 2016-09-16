@@ -3,118 +3,66 @@ package scanner
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"io"
 
-	"golang.org/x/crypto/ssh"
+	"code.cloudfoundry.org/lager"
 
 	"github.com/pivotal-cf/scantron"
-	"github.com/pivotal-golang/lager"
-	"github.com/pkg/sftp"
 )
 
 type direct struct {
-	nmapResults scantron.NmapResults
-	machine     *scantron.Machine
+	machine scantron.RemoteMachine
 }
 
-func Direct(nmapResults scantron.NmapResults, machine *scantron.Machine) Scanner {
+func Direct(machine scantron.RemoteMachine) Scanner {
 	return &direct{
-		nmapResults: nmapResults,
-		machine:     machine,
+		machine: machine,
 	}
 }
 
 func (d *direct) Scan(logger lager.Logger) ([]ScanResult, error) {
 	l := logger.Session("scan")
 
-	var scannedHosts []ScanResult
-	var auth []ssh.AuthMethod
-
-	if d.machine.Key != nil {
-		auth = []ssh.AuthMethod{
-			ssh.PublicKeys(d.machine.Key),
-		}
-	} else {
-		auth = []ssh.AuthMethod{
-			ssh.Password(d.machine.Password),
-		}
-	}
-
-	config := &ssh.ClientConfig{
-		User: d.machine.Username,
-		Auth: auth,
-	}
-
-	endpoint := fmt.Sprintf("%s:22", d.machine.Address)
+	endpoint := fmt.Sprintf("%s", d.machine.Address())
 	endpointLogger := l.Session("dial", lager.Data{
 		"endpoint": endpoint,
 	})
 
-	conn, err := ssh.Dial("tcp", endpoint, config)
-	if err != nil {
-		return nil, err
-	}
-
 	filepath := "./proc_scan"
 
-	sftp, err := sftpScanBinary(conn, filepath)
-	if err != nil {
-		endpointLogger.Error("failed-to-setup-sftp", err)
-		return nil, err
-	}
-	defer sftp.Remove(filepath)
-
-	session, err := conn.NewSession()
-	if err != nil {
-		endpointLogger.Error("failed-to-create-session", err)
+	if err := d.machine.UploadFile(filepath, filepath); err != nil {
+		endpointLogger.Error("failed-to-upload-file", err)
 		return nil, err
 	}
 
-	bs, err := session.Output(fmt.Sprintf("echo %s | sudo -S -- %s", d.machine.Password, filepath))
+	defer d.machine.DeleteFile(filepath)
+
+	output, err := d.machine.RunCommand(filepath)
 	if err != nil {
-		endpointLogger.Error("failed-to-run-proc-scan", err)
+		endpointLogger.Error("failed-to-run-command", err, lager.Data{
+			"command": filepath,
+		})
 		return nil, err
 	}
 
-	scannedHost, err := d.decodeScannedHost(bs)
+	scannedHost, err := d.decodeScannedHost(output)
 	if err != nil {
 		endpointLogger.Error("failed-to-unmarshal-output", err)
+		return nil, err
 	}
-	scannedHosts = append(scannedHosts, scannedHost)
+
+	scannedHosts := []ScanResult{scannedHost}
 
 	return scannedHosts, nil
 }
 
-func (d *direct) decodeScannedHost(bs []byte) (ScanResult, error) {
+func (d *direct) decodeScannedHost(reader io.Reader) (ScanResult, error) {
 	var host scantron.SystemInfo
-	err := json.Unmarshal(bs, &host)
+
+	err := json.NewDecoder(reader).Decode(&host)
 	if err != nil {
 		return ScanResult{}, err
 	}
-	return buildScanResult(host, d.machine.Address, d.machine.Address), nil
-}
 
-func sftpScanBinary(conn *ssh.Client, filepath string) (*sftp.Client, error) {
-	sftp, err := sftp.NewClient(conn)
-	if err != nil {
-		return nil, err
-	}
-	defer sftp.Close()
-
-	srcFile, err := os.Open(filepath)
-	if err != nil {
-		return nil, err
-	}
-	defer srcFile.Close()
-
-	dstFile, err := sftp.Create(filepath)
-	if err != nil {
-		return nil, err
-	}
-	defer dstFile.Close()
-
-	dstFile.ReadFrom(srcFile)
-	sftp.Chmod(filepath, 0700)
-
-	return sftp, nil
+	return buildScanResult(host, d.machine.Address(), d.machine.Address()), nil
 }

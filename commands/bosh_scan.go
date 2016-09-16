@@ -7,9 +7,9 @@ import (
 	"log"
 	"os"
 
+	"code.cloudfoundry.org/lager"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	nmap "github.com/lair-framework/go-nmap"
-	"github.com/pivotal-golang/lager"
 
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/scanner"

@@ -8,8 +8,8 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
+	"code.cloudfoundry.org/lager"
 	nmap "github.com/lair-framework/go-nmap"
-	"github.com/pivotal-golang/lager"
 
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/scanner"
@@ -54,16 +54,18 @@ func (command *DirectScanCommand) Execute(args []string) error {
 		}
 	}
 
-	machine := &scantron.Machine{
+	machine := scantron.Machine{
 		Address:  command.Address,
 		Username: command.Username,
 		Password: command.Password,
 		Key:      privateKey,
 	}
 
+	remoteMachine := scantron.NewRemoteMachine(machine)
+	defer remoteMachine.Close()
+
 	s := scanner.AnnotateWithTLSInformation(
-		scanner.Direct(nmapResults, machine),
-		nmapResults,
+		scanner.Direct(remoteMachine), nmapResults,
 	)
 
 	db, err := NewDatabase(command.Database)

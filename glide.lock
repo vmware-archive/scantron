@@ -1,6 +1,8 @@
-hash: 6c7adef329b67bbfc9ca3b4c4322ed52ce7f812d5e3d9ea32ca1eca7b67a2ac2
-updated: 2016-09-09T11:02:38.241518146-07:00
+hash: b999607355ee319b94101d9ff5f2789a9f91ededef9c6a0ba3f8d656d7d987f6
+updated: 2016-09-16T15:08:09.492085693-07:00
 imports:
+- name: code.cloudfoundry.org/lager
+  version: 62951a8009ab331bb21dc418074fa54e66eb9b6a
 - name: github.com/aws/aws-sdk-go
   version: f34b74c96bfd27df35643adeb14d8431ca047df5
   subpackages:
@@ -174,7 +176,7 @@ imports:
 - name: github.com/pivotal-golang/yaml
   version: 8b09e4a33107d942293b5ef6f32254124ccaf8a8
 - name: github.com/pkg/errors
-  version: 17b591df37844cde689f4d5813e5cea0927d8dd2
+  version: a887431f7f6ef7687b556dbf718d9f351d4858a0
 - name: github.com/pkg/sftp
   version: 8197a2e580736b78d704be0fc47b2324c0591a32
 - name: github.com/vito/go-interact

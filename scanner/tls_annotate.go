@@ -4,8 +4,9 @@ import (
 	"net"
 	"strconv"
 
+	"code.cloudfoundry.org/lager"
+
 	"github.com/pivotal-cf/scantron"
-	"github.com/pivotal-golang/lager"
 )
 
 type scannerFunc func(logger lager.Logger) ([]ScanResult, error)
