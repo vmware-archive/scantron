@@ -43,7 +43,9 @@ func AnnotateWithTLSInformation(scanner Scanner, nmapResults scantron.NmapResult
 
 							hostport := net.JoinHostPort(scannedHost.IP, strconv.Itoa(port.Number))
 							cert, err := FetchTLSInformation(hostport)
-							if err == nil {
+							if err != nil {
+								services[i].TLSInformation.ScanError = err
+							} else {
 								services[i].TLSInformation.Certificate = cert
 							}
 

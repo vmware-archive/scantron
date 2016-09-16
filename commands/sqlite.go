@@ -73,10 +73,28 @@ func (db *Database) SaveReport(scans []scanner.ScannedHost) error {
 				}
 
 				for _, port := range service.Ports {
-
 					res, err = db.db.Exec(
 						"INSERT INTO ports(process_id, protocol, address, number, state) VALUES (?, ?, ?, ?, ?)",
 						processID, port.Protocol, port.Address, port.Number, port.State,
+					)
+					if err != nil {
+						return err
+					}
+				}
+
+				if service.TLSInformation.ScanError != nil {
+					portID, err := res.LastInsertId()
+					if err != nil {
+						return err
+					}
+
+					_, err = db.db.Exec(`
+						INSERT INTO tls_scan_errors (
+							 port_id,
+							 cert_scan_error
+						) VALUES (?, ?)`,
+						portID,
+						service.TLSInformation.ScanError.Error(),
 					)
 					if err != nil {
 						return err
@@ -176,6 +194,13 @@ CREATE TABLE tls_informations (
 	cert_locality string,
 	cert_organization string,
 	cert_common_name string,
+	FOREIGN KEY(port_id) REFERENCES ports(id)
+);
+
+CREATE TABLE tls_scan_errors (
+	id integer PRIMARY KEY AUTOINCREMENT,
+	port_id integer,
+	cert_scan_error string,
 	FOREIGN KEY(port_id) REFERENCES ports(id)
 );
 

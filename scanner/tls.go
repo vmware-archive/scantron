@@ -36,7 +36,6 @@ func FetchTLSInformation(hostport string) (*Certificate, error) {
 
 	conn, err := tls.Dial("tcp", hostport, config)
 	if err != nil {
-		fmt.Println("err:", err.Error())
 		return nil, err
 	}
 	defer conn.Close()

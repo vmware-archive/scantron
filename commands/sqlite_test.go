@@ -2,6 +2,7 @@ package commands_test
 
 import (
 	"database/sql"
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -75,6 +76,7 @@ var _ = Describe("Sqlite", func() {
 				"ports",
 				"files",
 				"tls_informations",
+				"tls_scan_errors",
 				"env_vars",
 			))
 		})
@@ -130,7 +132,8 @@ var _ = Describe("Sqlite", func() {
 							},
 						},
 						TLSInformation: scanner.TLSInformation{
-							Presence: true,
+							Presence:  true,
+							ScanError: errors.New("this was a terrible error"),
 							Certificate: &scanner.Certificate{
 								Expiration: certExpiration,
 								Bits:       234,
@@ -173,17 +176,20 @@ var _ = Describe("Sqlite", func() {
 							 tls_informations.cert_locality,
 							 tls_informations.cert_organization,
 							 tls_informations.cert_common_name,
+							 tls_scan_errors.cert_scan_error,
 							 env_vars.var,
 							 files.path
 				FROM   hosts,
 							 processes,
 							 ports,
 							 tls_informations,
+							 tls_scan_errors,
 							 env_vars,
 							 files
 				WHERE  hosts.id = processes.host_id
 							 AND ports.process_id = processes.id
 							 AND ports.id = tls_informations.port_id
+							 AND ports.id = tls_scan_errors.port_id
 							 AND files.host_id = hosts.id
 						   AND env_vars.process_id=processes.id`)
 				Expect(err).NotTo(HaveOccurred())
@@ -201,15 +207,16 @@ var _ = Describe("Sqlite", func() {
 					tlsCertLocality,
 					tlsCertOrganization,
 					tlsCertCommonName string
-					tlsCertBits int
-					tlsCertExp  time.Time
-					file_path   string
+					tlsCertBits   int
+					tlsCertExp    time.Time
+					certScanError string
+					filePath      string
 				)
 
 				err = rows.Scan(&name, &ip, &pid, &user, &cmdline, &portProtocol,
 					&portAddress, &portNumber, &tlsCertExp, &tlsCertBits,
 					&tlsCertCountry, &tlsCertProvince, &tlsCertLocality,
-					&tlsCertOrganization, &tlsCertCommonName, &env, &file_path)
+					&tlsCertOrganization, &tlsCertCommonName, &certScanError, &env, &filePath)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(name).To(Equal("custom_name/0"))
@@ -225,9 +232,10 @@ var _ = Describe("Sqlite", func() {
 				Expect(tlsCertLocality).To(Equal("some-locality"))
 				Expect(tlsCertOrganization).To(Equal("some-organization"))
 				Expect(tlsCertCommonName).To(Equal("some-common-name"))
+				Expect(certScanError).To(Equal("this was a terrible error"))
 				Expect(cmdline).To(Equal("this is a cmd"))
 				Expect(env).To(Equal("PATH=this OTHER=that"))
-				Expect(file_path).To(Equal("some-file-path"))
+				Expect(filePath).To(Equal("some-file-path"))
 			})
 
 			Context("when the service does not have a certificate", func() {

@@ -30,6 +30,8 @@ type TLSInformation struct {
 	Presence          bool
 	Certificate       *Certificate
 	CipherInformation scantron.CipherInformation
+
+	ScanError error
 }
 
 type Cmd struct {
