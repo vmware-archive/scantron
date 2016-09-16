@@ -23,7 +23,6 @@ import (
 )
 
 type boshScanner struct {
-	nmapResults           scantron.NmapResults
 	creds                 boshconfig.Creds
 	deploymentName        string
 	boshURL               string
@@ -36,7 +35,6 @@ type boshScanner struct {
 }
 
 func Bosh(
-	nmapResults scantron.NmapResults,
 	deploymentName string,
 	boshURL string,
 	boshUsername string,
@@ -49,7 +47,6 @@ func Bosh(
 	gatewayPrivateKeyPath string,
 ) Scanner {
 	return &boshScanner{
-		nmapResults: nmapResults,
 		creds: boshconfig.Creds{
 			Client:       uaaClient,
 			ClientSecret: uaaClientSecret,

@@ -58,7 +58,6 @@ func (command *BoshScanCommand) Execute(args []string) error {
 
 	s := scanner.AnnotateWithTLSInformation(
 		scanner.Bosh(
-			nmapResults,
 			command.Director.Deployment,
 			command.Director.URL,
 			command.Director.Username,
