@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"strings"
 
+	// Include SQLite3 for database.
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/pivotal-cf/scantron/scanner"
