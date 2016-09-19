@@ -1,23 +1,29 @@
-package scanner
+package remotemachine
 
 import (
 	"bytes"
 	"io"
+	"sync"
 
 	boshssh "github.com/cloudfoundry/bosh-init/ssh"
 )
 
 type MemWriter struct {
 	instances map[string]*memWriterInstance
+	lock      *sync.RWMutex
 }
 
 func NewMemWriter() *MemWriter {
 	return &MemWriter{
 		instances: map[string]*memWriterInstance{},
+		lock:      &sync.RWMutex{},
 	}
 }
 
 func (w *MemWriter) ForInstance(jobName, indexOrID, host string) boshssh.InstanceWriter {
+	w.lock.Lock()
+	defer w.lock.Unlock()
+
 	instance := &memWriterInstance{
 		jobName:   jobName,
 		indexOrID: indexOrID,
@@ -33,6 +39,9 @@ func (w *MemWriter) ForInstance(jobName, indexOrID, host string) boshssh.Instanc
 func (w *MemWriter) Flush() {}
 
 func (w *MemWriter) ResultsForHost(host string) *memWriterInstance {
+	w.lock.RLock()
+	defer w.lock.RUnlock()
+
 	if instance, ok := w.instances[host]; ok {
 		return instance
 	}

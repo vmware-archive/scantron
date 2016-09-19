@@ -8,10 +8,12 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/lager"
+	boshconfig "github.com/cloudfoundry/bosh-init/cmd/config"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	nmap "github.com/lair-framework/go-nmap"
 
 	"github.com/pivotal-cf/scantron"
+	"github.com/pivotal-cf/scantron/remotemachine"
 	"github.com/pivotal-cf/scantron/scanner"
 )
 
@@ -56,19 +58,28 @@ func (command *BoshScanCommand) Execute(args []string) error {
 	}
 	nmapResults := scantron.BuildNmapResults(nmapRun)
 
+	director, err := remotemachine.NewBoshDirector(
+		logger,
+		boshconfig.Creds{
+			Client:       command.Director.Client,
+			ClientSecret: command.Director.ClientSecret,
+		},
+		command.Director.Deployment,
+		command.Director.URL,
+		command.Director.Username,
+		command.Director.Password,
+		boshLogger,
+		command.Gateway.Username,
+		command.Gateway.Host,
+		command.Gateway.PrivateKeyPath,
+	)
+	if err != nil {
+		log.Fatalf("failed to set up director: %s", err.Error())
+	}
+	defer director.Cleanup()
+
 	s := scanner.AnnotateWithTLSInformation(
-		scanner.Bosh(
-			command.Director.Deployment,
-			command.Director.URL,
-			command.Director.Username,
-			command.Director.Password,
-			boshLogger,
-			command.Director.Client,
-			command.Director.ClientSecret,
-			command.Gateway.Username,
-			command.Gateway.Host,
-			command.Gateway.PrivateKeyPath,
-		),
+		scanner.Bosh(director),
 		nmapResults,
 	)
 

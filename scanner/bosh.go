@@ -3,235 +3,82 @@ package scanner
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"os/signal"
-	"strings"
+	"strconv"
 	"sync"
 
 	"code.cloudfoundry.org/lager"
 
-	boshcmd "github.com/cloudfoundry/bosh-init/cmd"
-	boshconfig "github.com/cloudfoundry/bosh-init/cmd/config"
-	boshdir "github.com/cloudfoundry/bosh-init/director"
-	boshssh "github.com/cloudfoundry/bosh-init/ssh"
-	boshuaa "github.com/cloudfoundry/bosh-init/uaa"
-	boshui "github.com/cloudfoundry/bosh-init/ui"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-
 	"github.com/pivotal-cf/scantron"
+	"github.com/pivotal-cf/scantron/remotemachine"
 )
 
 type boshScanner struct {
-	creds                 boshconfig.Creds
-	deploymentName        string
-	boshURL               string
-	boshUsername          string
-	boshPassword          string
-	boshLogger            boshlog.Logger
-	gatewayUsername       string
-	gatewayHost           string
-	gatewayPrivateKeyPath string
+	director remotemachine.BoshDirector
 }
 
-func Bosh(
-	deploymentName string,
-	boshURL string,
-	boshUsername string,
-	boshPassword string,
-	boshLogger boshlog.Logger,
-	uaaClient string,
-	uaaClientSecret string,
-	gatewayUsername string,
-	gatewayHost string,
-	gatewayPrivateKeyPath string,
-) Scanner {
+func Bosh(director remotemachine.BoshDirector) Scanner {
 	return &boshScanner{
-		creds: boshconfig.Creds{
-			Client:       uaaClient,
-			ClientSecret: uaaClientSecret,
-		},
-
-		deploymentName: deploymentName,
-
-		boshURL:      boshURL,
-		boshUsername: boshUsername,
-		boshPassword: boshPassword,
-		boshLogger:   boshLogger,
-
-		gatewayUsername:       gatewayUsername,
-		gatewayHost:           gatewayHost,
-		gatewayPrivateKeyPath: gatewayPrivateKeyPath,
+		director: director,
 	}
 }
 
 func (s *boshScanner) Scan(logger lager.Logger) ([]ScanResult, error) {
-	director, err := getDirector(s.boshURL, s.boshUsername, s.boshPassword, s.creds, s.boshLogger)
-	if err != nil {
-		logger.Error("failed-to-get-director", err)
-		return nil, err
-	}
-
-	deployment, err := director.FindDeployment(s.deploymentName)
-	if err != nil {
-		logger.Error("failed-to-find-deployment", err)
-		return nil, err
-	}
-
-	vmInfos, err := deployment.VMInfos()
-	if err != nil {
-		logger.Error("failed-to-get-vm-infos", err)
-		return nil, err
-	}
-
-	inventory := &scantron.Inventory{}
-
-	for _, vmInfo := range vmInfos {
-		inventory.Hosts = append(inventory.Hosts, scantron.Host{
-			Name:      fmt.Sprintf("%s/%d", vmInfo.JobName, *vmInfo.Index),
-			Addresses: vmInfo.IPs,
-		})
-	}
-
-	ui := boshui.NewConfUI(s.boshLogger)
-	ui.EnableJSON()
-	defer ui.Flush()
-
-	deps := boshcmd.NewBasicDeps(ui, s.boshLogger)
-
-	tmpDir, err := ioutil.TempDir("", "scantron")
-	if err != nil {
-		logger.Error("failed-to-create-temp-dir", err)
-		return nil, err
-	}
-
-	tmpDirPath, err := deps.FS.ExpandPath(tmpDir)
-	if err != nil {
-		logger.Error("failed-to-expand-temp-dir-path", err)
-		return nil, err
-	}
-	defer os.RemoveAll(tmpDirPath)
-
-	err = deps.FS.ChangeTempRoot(tmpDirPath)
-	if err != nil {
-		logger.Error("failed-to-change-temp-root", err)
-		return nil, err
-	}
-
-	sshSessionFactory := func(o boshssh.ConnectionOpts, r boshdir.SSHResult) boshssh.Session {
-		return boshssh.NewSessionImpl(o, boshssh.SessionImplOpts{ForceTTY: true}, r, deps.FS)
-	}
-
-	sshWriter := NewMemWriter()
-
-	comboRunner := boshssh.NewComboRunner(
-		deps.CmdRunner,
-		sshSessionFactory,
-		signal.Notify,
-		sshWriter,
-		deps.FS,
-		ui,
-		s.boshLogger,
-	)
-
-	sshRunner := boshssh.NewNonInteractiveRunner(comboRunner)
-
-	scpSessionFactory := func(o boshssh.ConnectionOpts, r boshdir.SSHResult) boshssh.Session {
-		return boshssh.NewSessionImpl(o, boshssh.SessionImplOpts{ForceTTY: false}, r, deps.FS)
-	}
-
-	scpWriter := NewMemWriter()
-
-	scpComboRunner := boshssh.NewComboRunner(
-		deps.CmdRunner,
-		scpSessionFactory,
-		signal.Notify,
-		scpWriter,
-		deps.FS,
-		ui,
-		s.boshLogger,
-	)
-
-	scpRunner := boshssh.NewSCPRunner(scpComboRunner)
-
-	sshOpts, privKey, err := boshdir.NewSSHOpts(deps.UUIDGen)
-	if err != nil {
-		logger.Error("failed-to-create-ssh-opts", err)
-		return nil, err
-	}
-
-	var scannedHosts []ScanResult
+	vms := s.director.VMs()
 
 	wg := &sync.WaitGroup{}
-	wg.Add(len(vmInfos))
+	wg.Add(len(vms))
 
 	hosts := make(chan ScanResult)
 
-	for _, vmInfo := range vmInfos {
-		vmInfo := vmInfo
+	for _, vm := range vms {
+		vm := vm
 
 		go func() {
 			defer wg.Done()
+			machineLogger := logger.Session("scanning-machine", lager.Data{
+				"job":     vm.JobName,
+				"id":      vm.ID,
+				"index":   index(vm.Index),
+				"address": fmt.Sprintf("%s", vm.IPs[0]),
+			})
 
-			slug := boshdir.NewAllOrPoolOrInstanceSlug(vmInfo.JobName, vmInfo.ID)
-			sshResult, err := deployment.SetUpSSH(slug, sshOpts)
+			remoteMachine := s.director.ConnectTo(machineLogger, vm)
+
+			err := remoteMachine.DeleteFile("/tmp/proc_scan")
 			if err != nil {
-				logger.Error("failed-to-set-up-ssh", err)
-				return
-			}
-			defer deployment.CleanUpSSH(slug, sshOpts)
-
-			connOpts := boshssh.ConnectionOpts{
-				PrivateKey: privKey,
-
-				GatewayUsername:       s.gatewayUsername,
-				GatewayHost:           s.gatewayHost,
-				GatewayPrivateKeyPath: s.gatewayPrivateKeyPath,
-			}
-
-			cmd := "rm /tmp/proc_scan -f"
-			err = sshRunner.Run(connOpts, sshResult, strings.Split(cmd, " "))
-			if err != nil {
-				logger.Error("failed-to-run-cmd", err)
+				machineLogger.Error("failed-to-run-cmd", err)
 				return
 			}
 
-			scpArgs := boshssh.NewSCPArgs([]string{"./proc_scan", fmt.Sprintf("%s/%d:%s", vmInfo.JobName, *vmInfo.Index, "/tmp")}, false)
-			err = scpRunner.Run(connOpts, sshResult, scpArgs)
+			err = remoteMachine.UploadFile("./proc_scan", "/tmp")
 			if err != nil {
-				logger.Error("failed-to-scp-proc-scan", err)
+				machineLogger.Error("failed-to-scp-proc-scan", err)
 				return
 			}
 
-			cmd = "sudo mv /tmp/proc_scan /var/vcap/"
-			err = sshRunner.Run(connOpts, sshResult, strings.Split(cmd, " "))
+			_, err = remoteMachine.RunCommand("mv /tmp/proc_scan /var/vcap/")
 			if err != nil {
-				logger.Error("failed-to-move-proc-scan", err)
+				machineLogger.Error("failed-to-move-proc-scan", err)
 				return
 			}
-			defer sshRunner.Run(connOpts, sshResult, []string{"sudo", "rm", "/var/vcap/proc_scan"})
+			defer remoteMachine.DeleteFile("/var/vcap/proc_scan")
 
-			err = sshRunner.Run(connOpts, sshResult, []string{"sudo", "/var/vcap/proc_scan"})
+			output, err := remoteMachine.RunCommand("/var/vcap/proc_scan")
 			if err != nil {
-				logger.Error("failed-to-run-proc-scan", err)
-				return
-			}
-
-			result := sshWriter.ResultsForHost(vmInfo.IPs[0])
-			if result == nil {
+				machineLogger.Error("failed-to-run-proc-scan", err)
 				return
 			}
 
 			var systemInfo scantron.SystemInfo
 
-			err = json.NewDecoder(result.StdoutReader()).Decode(&systemInfo)
+			err = json.NewDecoder(output).Decode(&systemInfo)
 			if err != nil {
-				logger.Error("failed-to-decode-result", err)
+				machineLogger.Error("failed-to-decode-result", err)
 				return
 			}
 
-			boshName := fmt.Sprintf("%s/%s", vmInfo.JobName, vmInfo.ID)
-			hosts <- buildScanResult(systemInfo, boshName, vmInfo.IPs[0])
+			boshName := fmt.Sprintf("%s/%s", vm.JobName, vm.ID)
+			hosts <- buildScanResult(systemInfo, boshName, vm.IPs[0])
 		}()
 	}
 
@@ -240,6 +87,8 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScanResult, error) {
 		close(hosts)
 	}()
 
+	var scannedHosts []ScanResult
+
 	for host := range hosts {
 		scannedHosts = append(scannedHosts, host)
 	}
@@ -247,63 +96,10 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScanResult, error) {
 	return scannedHosts, nil
 }
 
-func getDirector(
-	boshURL string,
-	boshUsername string,
-	boshPassword string,
-	creds boshconfig.Creds,
-	logger boshlog.Logger,
-) (boshdir.Director, error) {
-	dirConfig, err := boshdir.NewConfigFromURL(boshURL)
-	if err != nil {
-		return nil, err
+func index(index *int) string {
+	if index == nil {
+		return "?"
 	}
 
-	uaa, err := getUAA(dirConfig, creds, logger)
-	if err != nil {
-		return nil, err
-	}
-
-	if creds.IsUAAClient() {
-		dirConfig.TokenFunc = boshuaa.NewClientTokenSession(uaa).TokenFunc
-	} else {
-		dirConfig.Username = boshUsername
-		dirConfig.Password = boshPassword
-	}
-
-	director, err := boshdir.NewFactory(logger).New(dirConfig, boshdir.NewNoopTaskReporter(), boshdir.NewNoopFileReporter())
-	if err != nil {
-		return nil, err
-	}
-
-	return director, nil
-}
-
-func getUAA(dirConfig boshdir.Config, creds boshconfig.Creds, logger boshlog.Logger) (boshuaa.UAA, error) {
-	director, err := boshdir.NewFactory(logger).New(dirConfig, boshdir.NewNoopTaskReporter(), boshdir.NewNoopFileReporter())
-	if err != nil {
-		return nil, err
-	}
-
-	info, err := director.Info()
-	if err != nil {
-		return nil, err
-	}
-
-	uaaURL := info.Auth.Options["url"]
-
-	uaaURLStr, ok := uaaURL.(string)
-	if !ok {
-		return nil, err
-	}
-
-	uaaConfig, err := boshuaa.NewConfigFromURL(uaaURLStr)
-	if err != nil {
-		return nil, err
-	}
-
-	uaaConfig.Client = creds.Client
-	uaaConfig.ClientSecret = creds.ClientSecret
-
-	return boshuaa.NewFactory(logger).New(uaaConfig)
+	return strconv.Itoa(*index)
 }
