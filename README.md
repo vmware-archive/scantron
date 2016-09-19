@@ -142,6 +142,13 @@ CREATE TABLE tls_informations (
   FOREIGN KEY(port_id) REFERENCES ports(id)
 );
 
+CREATE TABLE tls_scan_errors (
+  id integer PRIMARY KEY AUTOINCREMENT,
+  port_id integer,
+  cert_scan_error string,
+  FOREIGN KEY(port_id) REFERENCES ports(id)
+);
+
 CREATE TABLE env_vars (
   id integer PRIMARY KEY AUTOINCREMENT,
   process_id integer,
