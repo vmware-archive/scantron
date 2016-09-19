@@ -28,6 +28,12 @@ func main() {
 	for _, process := range processes {
 		pid := process.Pid()
 
+		err := refreshProcess(process)
+		if err != nil {
+			// process has gone away
+			continue
+		}
+
 		jsonProcess := scantron.Process{
 			CommandName: process.Executable(),
 			PID:         pid,
@@ -110,11 +116,12 @@ func env(pid int) []string {
 func worldWritableFiles() []scantron.File {
 	bs, err := exec.Command(
 		"find", "/",
-		"-type", "f",
-		"-perm", "-o+w",
-		"-not", "-path", "/proc/*",
-		"-not", "-path", "/sys/*",
-		"-not", "-path", "/dev/*",
+		"-path", "/proc", "-prune",
+		"-o", "-path", "/sys", "-prune",
+		"-o", "-path", "/dev", "-prune",
+		"-o", "!", "-readable", "-prune",
+		"-o", "-type", "f", "-perm", "-o+w",
+		"-print",
 	).Output()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error: failed to get list of world-writable files:", err)
