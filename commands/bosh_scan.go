@@ -38,6 +38,7 @@ type BoshScanCommand struct {
 	} `group:"Gateway"`
 
 	Database string `long:"database" description:"location of database where scan output will be stored" value-name:"PATH" default:"./database.db"`
+	Append   bool   `long:"append" description:"append to an existing database if it exists"`
 }
 
 func (command *BoshScanCommand) Execute(args []string) error {
@@ -83,7 +84,8 @@ func (command *BoshScanCommand) Execute(args []string) error {
 		nmapResults,
 	)
 
-	db, err := NewDatabase(command.Database)
+	db, err := OpenOrCreateDatabase(command.Database, command.Append)
+
 	if err != nil {
 		log.Fatalf("failed to create database: %s", err.Error())
 	}

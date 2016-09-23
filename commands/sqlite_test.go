@@ -33,7 +33,7 @@ var _ = Describe("Sqlite", func() {
 		It("creates a new database file", func() {
 			dbPath := filepath.Join(tmpdir, "database.db")
 
-			db, err := commands.NewDatabase(dbPath)
+			db, err := commands.CreateDatabase(dbPath)
 			Expect(err).NotTo(HaveOccurred())
 			defer db.Close()
 
@@ -43,7 +43,7 @@ var _ = Describe("Sqlite", func() {
 		It("creates the required tables", func() {
 			dbPath := filepath.Join(tmpdir, "database.db")
 
-			db, err := commands.NewDatabase(dbPath)
+			db, err := commands.CreateDatabase(dbPath)
 			Expect(err).NotTo(HaveOccurred())
 			defer db.Close()
 
@@ -96,7 +96,7 @@ var _ = Describe("Sqlite", func() {
 			dbPath = filepath.Join(tmpdir, "database.db")
 
 			var err error
-			db, err = commands.NewDatabase(dbPath)
+			db, err = commands.CreateDatabase(dbPath)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = db.SaveReport(hosts)

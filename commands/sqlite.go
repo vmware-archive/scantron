@@ -2,6 +2,8 @@ package commands
 
 import (
 	"database/sql"
+	"errors"
+	"os"
 	"strings"
 
 	// Include SQLite3 for database.
@@ -14,13 +16,40 @@ type Database struct {
 	db *sql.DB
 }
 
-func NewDatabase(path string) (*Database, error) {
-	db, err := sql.Open("sqlite3", path)
+func OpenOrCreateDatabase(path string, shouldAppend bool) (*Database, error) {
+	_, err := os.Stat(path)
+	fileExists := !os.IsNotExist(err)
+
+	if fileExists && !shouldAppend {
+		return nil, errors.New(path + " already exists")
+	}
+
+	var db *Database
+	if shouldAppend && fileExists {
+		db, err = OpenDatabase(path)
+	} else {
+		db, err = CreateDatabase(path)
+	}
+
+	return db, err
+}
+
+func CreateDatabase(path string) (*Database, error) {
+	db, err := OpenDatabase(path)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = db.Exec(createDDL)
+	_, err = db.db.Exec(createDDL)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+func OpenDatabase(path string) (*Database, error) {
+	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, err
 	}
