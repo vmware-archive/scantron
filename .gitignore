@@ -4,3 +4,7 @@ vendor
 # Scanning Artifacts
 /proc_scan
 /*.db
+
+# go-bindata
+/data/proc_scan
+proc_scan.go

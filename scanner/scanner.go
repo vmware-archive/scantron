@@ -1,6 +1,10 @@
 package scanner
 
 import (
+	"bytes"
+	"io"
+	"os"
+
 	"code.cloudfoundry.org/lager"
 
 	"github.com/pivotal-cf/scantron"
@@ -25,4 +29,21 @@ func buildScanResult(host scantron.SystemInfo, jobName, address string) ScanResu
 		Services: host.Processes,
 		Files:    host.Files,
 	}
+}
+
+func convertBinaryToFile(binary []byte, filePath string) error {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	buffer := bytes.NewBuffer(binary)
+
+	_, err = io.Copy(file, buffer)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

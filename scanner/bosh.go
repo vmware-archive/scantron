@@ -2,7 +2,10 @@ package scanner
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"strconv"
 	"sync"
 
@@ -30,6 +33,28 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScanResult, error) {
 
 	hosts := make(chan ScanResult)
 
+	binary, err := scantron.Asset("data/proc_scan")
+	if err != nil {
+		logger.Error("failed-to-find-proc-scan", err)
+		return []ScanResult{}, errors.New("failed-to-find-proc-scan-binary")
+	}
+
+	tmpFile, err := ioutil.TempFile("", "proc_scan")
+	if err != nil {
+		logger.Error("failed-to-create-file", err)
+		return nil, err
+	}
+	srcFilePath := tmpFile.Name()
+	defer os.Remove(srcFilePath)
+
+	if err := convertBinaryToFile(binary, srcFilePath); err != nil {
+		logger.Error("failed-to-convert-proc-scan-binary-to-file", err)
+		return []ScanResult{}, errors.New("failed-to-convert-proc-scan")
+	}
+
+	os.Chmod(srcFilePath, 0700)
+	defer os.Remove(srcFilePath)
+
 	for _, vm := range vms {
 		vm := vm
 
@@ -50,7 +75,7 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScanResult, error) {
 				return
 			}
 
-			err = remoteMachine.UploadFile("./proc_scan", "/tmp")
+			err = remoteMachine.UploadFile(srcFilePath, "/tmp/proc_scan")
 			if err != nil {
 				machineLogger.Error("failed-to-scp-proc-scan", err)
 				return

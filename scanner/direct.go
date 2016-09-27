@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 
 	"code.cloudfoundry.org/lager"
 
@@ -29,19 +31,36 @@ func (d *direct) Scan(logger lager.Logger) ([]ScanResult, error) {
 		"endpoint": endpoint,
 	})
 
-	filepath := "./proc_scan"
+	binary, err := scantron.Asset("data/proc_scan")
+	if err != nil {
+		endpointLogger.Error("failed-to-locate-proc-scan", err)
+		return nil, err
+	}
 
-	if err := d.machine.UploadFile(filepath, filepath); err != nil {
+	tmpFile, err := ioutil.TempFile("", "proc_scan")
+	if err != nil {
+		endpointLogger.Error("failed-to-create-file", err)
+		return nil, err
+	}
+	srcFilePath := tmpFile.Name()
+	defer os.Remove(srcFilePath)
+
+	if err := convertBinaryToFile(binary, srcFilePath); err != nil {
+		endpointLogger.Error("failed-to-convert-proc-scan-binary", err)
+		return nil, err
+	}
+	dstFilePath := "./proc_scan"
+	defer d.machine.DeleteFile(dstFilePath)
+
+	if err := d.machine.UploadFile(srcFilePath, dstFilePath); err != nil {
 		endpointLogger.Error("failed-to-upload-file", err)
 		return nil, err
 	}
 
-	defer d.machine.DeleteFile(filepath)
-
-	output, err := d.machine.RunCommand(filepath)
+	output, err := d.machine.RunCommand(dstFilePath)
 	if err != nil {
 		endpointLogger.Error("failed-to-run-command", err, lager.Data{
-			"command": filepath,
+			"command": dstFilePath,
 		})
 		return nil, err
 	}
