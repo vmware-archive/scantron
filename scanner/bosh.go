@@ -69,26 +69,15 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScanResult, error) {
 
 			remoteMachine := s.director.ConnectTo(machineLogger, vm)
 
-			err := remoteMachine.DeleteFile("/tmp/proc_scan")
-			if err != nil {
-				machineLogger.Error("failed-to-run-cmd", err)
-				return
-			}
-
-			err = remoteMachine.UploadFile(srcFilePath, "/tmp/proc_scan")
+			err = remoteMachine.UploadFile(srcFilePath, "~/proc_scan")
 			if err != nil {
 				machineLogger.Error("failed-to-scp-proc-scan", err)
 				return
 			}
 
-			_, err = remoteMachine.RunCommand("mv /tmp/proc_scan /var/vcap/")
-			if err != nil {
-				machineLogger.Error("failed-to-move-proc-scan", err)
-				return
-			}
-			defer remoteMachine.DeleteFile("/var/vcap/proc_scan")
+			defer remoteMachine.DeleteFile("~/proc_scan")
 
-			output, err := remoteMachine.RunCommand("/var/vcap/proc_scan")
+			output, err := remoteMachine.RunCommand("~/proc_scan")
 			if err != nil {
 				machineLogger.Error("failed-to-run-proc-scan", err)
 				return
