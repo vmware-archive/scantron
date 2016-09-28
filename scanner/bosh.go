@@ -68,6 +68,7 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScanResult, error) {
 			})
 
 			remoteMachine := s.director.ConnectTo(machineLogger, vm)
+			defer remoteMachine.Close()
 
 			err = remoteMachine.UploadFile(srcFilePath, "~/proc_scan")
 			if err != nil {
