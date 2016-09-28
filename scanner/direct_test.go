@@ -61,7 +61,7 @@ var _ = Describe("Direct Scanning", func() {
 		Expect(machine.UploadFileCallCount()).To(Equal(1))
 
 		localPath, remotePath := machine.UploadFileArgsForCall(0)
-		Expect(localPath).To(Equal("./proc_scan"))
+		Expect(localPath).To(ContainSubstring("/proc_scan"))
 		Expect(remotePath).To(Equal("./proc_scan"))
 	})
 

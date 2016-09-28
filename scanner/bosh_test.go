@@ -73,33 +73,11 @@ var _ = Describe("Bosh Scanning", func() {
 		scanResults, scanErr = boshScan.Scan(logger)
 	})
 
-	It("cleans up after any previously failed scans", func() {
-		Expect(machine.DeleteFileCallCount()).To(Equal(2))
+	It("cleans up the proc_scan binary after the scanning is done", func() {
+		Expect(machine.DeleteFileCallCount()).To(Equal(1))
 
 		remotePath := machine.DeleteFileArgsForCall(0)
-		Expect(remotePath).To(Equal("/tmp/proc_scan"))
-	})
-
-	It("uploads the proc_scan binary to the remote machine", func() {
-		Expect(machine.UploadFileCallCount()).To(Equal(1))
-
-		localPath, remotePath := machine.UploadFileArgsForCall(0)
-		Expect(localPath).To(Equal("./proc_scan"))
-		Expect(remotePath).To(Equal("/tmp"))
-	})
-
-	It("moves the uploaded binary to a filesystem that allows execution", func() {
-		Expect(machine.RunCommandCallCount()).To(Equal(2))
-
-		command := machine.RunCommandArgsForCall(0)
-		Expect(command).To(Equal("mv /tmp/proc_scan /var/vcap/"))
-	})
-
-	It("cleans up the proc_scan binary after the scanning is done", func() {
-		Expect(machine.DeleteFileCallCount()).To(Equal(2))
-
-		remotePath := machine.DeleteFileArgsForCall(1)
-		Expect(remotePath).To(Equal("/var/vcap/proc_scan"))
+		Expect(remotePath).To(Equal("~/proc_scan"))
 	})
 
 	It("returns a report from the deployment", func() {
