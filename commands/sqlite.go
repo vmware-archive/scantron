@@ -16,6 +16,10 @@ type Database struct {
 	db *sql.DB
 }
 
+func (d *Database) DB() *sql.DB {
+	return d.db
+}
+
 func OpenOrCreateDatabase(path string, shouldAppend bool) (*Database, error) {
 	_, err := os.Stat(path)
 	fileExists := !os.IsNotExist(err)
