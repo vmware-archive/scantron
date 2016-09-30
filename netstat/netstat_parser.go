@@ -1,4 +1,4 @@
-package scanner
+package netstat
 
 import (
 	"bufio"

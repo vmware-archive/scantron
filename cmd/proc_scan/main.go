@@ -11,7 +11,7 @@ import (
 
 	ps "github.com/mitchellh/go-ps"
 	"github.com/pivotal-cf/scantron"
-	"github.com/pivotal-cf/scantron/scanner"
+	"github.com/pivotal-cf/scantron/netstat"
 )
 
 func main() {
@@ -74,13 +74,13 @@ func readFile(path string) ([]string, error) {
 	return output, nil
 }
 
-func getNetstatPorts() scanner.NetstatPorts {
+func getNetstatPorts() netstat.NetstatPorts {
 	bs, err := exec.Command("netstat", "-at", "-4", "--numeric-ports", "-u", "-p").Output()
 	if err != nil {
-		return []scanner.NetstatPort{}
+		return []netstat.NetstatPort{}
 	}
 
-	return scanner.ParseNetstatOutputForPort(string(bs))
+	return netstat.ParseNetstatOutputForPort(string(bs))
 }
 
 func user(pid int) string {

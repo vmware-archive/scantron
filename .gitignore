@@ -1,7 +1,9 @@
+.DS_Store
 /spec/examples.txt
 vendor
 
 # Scanning Artifacts
+/scantron
 /proc_scan
 /*.db
 
