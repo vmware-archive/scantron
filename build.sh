@@ -3,7 +3,7 @@
 set -e
 set -x
 
-go install github.com/jteeuwen/go-bindata/go-bindata
+go install ./vendor/github.com/jteeuwen/go-bindata/go-bindata
 
 GOOS=linux GOARCH=amd64 go build -o data/proc_scan ./cmd/proc_scan
 
