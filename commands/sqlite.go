@@ -89,7 +89,7 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 				cmdline := strings.Join(service.Cmdline, " ")
 				res, err := db.db.Exec(
 					"INSERT INTO processes(host_id, name, pid, cmdline, user) VALUES (?, ?, ?, ?, ?)",
-					hostID, scan.Job, service.PID, cmdline, service.User,
+					hostID, service.CommandName, service.PID, cmdline, service.User,
 				)
 				if err != nil {
 					return err
