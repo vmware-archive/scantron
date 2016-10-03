@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	ps "github.com/mitchellh/go-ps"
+	ps "github.com/keybase/go-ps"
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/netstat"
 )
