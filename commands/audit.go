@@ -40,7 +40,7 @@ func showReport(report audit.AuditResult) {
 	}
 
 	if len(report.ExtraHosts) > 0 {
-		fmt.Println("found hosts in report that were not in the manifest:")
+		fmt.Println("found hosts in report that were not matched in the manifest:")
 
 		for _, host := range report.ExtraHosts {
 			fmt.Println(host)

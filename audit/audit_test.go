@@ -46,9 +46,9 @@ var _ = Describe("Audit", func() {
 	Context("when the manifest and report match", func() {
 		BeforeEach(func() {
 			mani = manifest.Manifest{
-				Hosts: []manifest.Host{
+				Specs: []manifest.Spec{
 					{
-						Name: "host1",
+						Prefix: "host1",
 						Processes: []manifest.Process{
 							{
 								Command: "command1",
@@ -58,7 +58,7 @@ var _ = Describe("Audit", func() {
 						},
 					},
 					{
-						Name: "host2",
+						Prefix: "host2",
 						Processes: []manifest.Process{
 							{
 								Command: "command2",
@@ -119,9 +119,9 @@ var _ = Describe("Audit", func() {
 	Context("when there is an missing and extra host in the report", func() {
 		BeforeEach(func() {
 			mani = manifest.Manifest{
-				Hosts: []manifest.Host{
+				Specs: []manifest.Spec{
 					{
-						Name: "host1",
+						Prefix: "host1",
 						Processes: []manifest.Process{
 							{
 								Command: "command1",
@@ -131,7 +131,7 @@ var _ = Describe("Audit", func() {
 						},
 					},
 					{
-						Name: "host3",
+						Prefix: "host3",
 						Processes: []manifest.Process{
 							{
 								Command: "command3",
@@ -190,9 +190,9 @@ var _ = Describe("Audit", func() {
 	Context("when there is a missing process in the report", func() {
 		BeforeEach(func() {
 			mani = manifest.Manifest{
-				Hosts: []manifest.Host{
+				Specs: []manifest.Spec{
 					{
-						Name: "host1",
+						Prefix: "host1",
 						Processes: []manifest.Process{
 							{
 								Command: "command1",
@@ -241,9 +241,9 @@ var _ = Describe("Audit", func() {
 	Context("when there is an unexpected or missing port in the report", func() {
 		BeforeEach(func() {
 			mani = manifest.Manifest{
-				Hosts: []manifest.Host{
+				Specs: []manifest.Spec{
 					{
-						Name: "host1",
+						Prefix: "host1",
 						Processes: []manifest.Process{
 							{
 								Command: "command1",
@@ -309,9 +309,9 @@ var _ = Describe("Audit", func() {
 	Context("when one of processes is running with incorrect user", func() {
 		BeforeEach(func() {
 			mani = manifest.Manifest{
-				Hosts: []manifest.Host{
+				Specs: []manifest.Spec{
 					{
-						Name: "host1",
+						Prefix: "host1",
 						Processes: []manifest.Process{
 							{
 								Command: "command1",

@@ -47,11 +47,19 @@ type MismatchedProcess struct {
 
 type Port int
 
+type AuditInput map[string]manifest.Spec
+
 func Audit(db *sql.DB, m manifest.Manifest) (AuditResult, error) {
 	result := AuditResult{
 		Hosts: make(map[string]HostResult),
 	}
-	missing, extras, err := lookForMissingAndExtraHosts(db, m.Hosts)
+
+	input, err := mapHostnameToSpec(db, m)
+	if err != nil {
+		return AuditResult{}, err
+	}
+
+	missing, extras, err := lookForMissingAndExtraHosts(db, m.Specs)
 	if err != nil {
 		return AuditResult{}, err
 	}
@@ -59,86 +67,126 @@ func Audit(db *sql.DB, m manifest.Manifest) (AuditResult, error) {
 	result.ExtraHosts = extras
 	result.MissingHostType = missing
 
-	for _, host := range m.Hosts {
-		missingProcs, err := lookForMissingProcesses(db, host)
+	for host, spec := range input {
+		hostResult, err := auditHost(db, host, spec)
 		if err != nil {
 			return AuditResult{}, err
 		}
 
-		missingPorts, err := lookForMissingPorts(db, host)
-		if err != nil {
-			return AuditResult{}, err
-		}
-
-		hostResult := result.Hosts[host.Name]
-		hostResult.MissingPorts = missingPorts
-		hostResult.MissingProcesses = missingProcs
-		result.Hosts[host.Name] = hostResult
-
-		err = findUnexpectedPorts(db, host, result)
-		if err != nil {
-			return AuditResult{}, err
-		}
-
-		err = verifyProcessUsers(db, host, result)
-		if err != nil {
-			return AuditResult{}, err
-		}
+		result.Hosts[host] = hostResult
 	}
 
 	return result, nil
 }
 
-func findUnexpectedPorts(db *sql.DB, host manifest.Host, result AuditResult) error {
-	expectedPorts := host.ExpectedPorts()
+func auditHost(db *sql.DB, host string, spec manifest.Spec) (HostResult, error) {
+	missingProcs, err := lookForMissingProcesses(db, host, spec)
+	if err != nil {
+		return HostResult{}, err
+	}
+
+	missingPorts, err := lookForMissingPorts(db, host, spec)
+	if err != nil {
+		return HostResult{}, err
+	}
+
+	unexpectedPorts, err := findUnexpectedPorts(db, host, spec)
+	if err != nil {
+		return HostResult{}, err
+	}
+
+	mismatchedProcesses, err := verifyProcessUsers(db, host, spec)
+	if err != nil {
+		return HostResult{}, err
+	}
+
+	return HostResult{
+		MissingProcesses:    missingProcs,
+		MissingPorts:        missingPorts,
+		UnexpectedPorts:     unexpectedPorts,
+		MismatchedProcesses: mismatchedProcesses,
+	}, nil
+}
+
+func mapHostnameToSpec(db *sql.DB, m manifest.Manifest) (AuditInput, error) {
+	input := AuditInput{}
+
+	for _, spec := range m.Specs {
+		rows, err := db.Query(`
+			SELECT hosts.name
+			FROM hosts
+			WHERE hosts.name LIKE ? || '%'
+		`, spec.Prefix)
+
+		if err != nil {
+			return AuditInput{}, err
+		}
+
+		defer rows.Close()
+
+		var hostName string
+
+		for rows.Next() {
+			err := rows.Scan(&hostName)
+			if err != nil {
+				return AuditInput{}, err
+			}
+
+			input[hostName] = spec
+		}
+	}
+
+	return input, nil
+}
+
+func findUnexpectedPorts(db *sql.DB, host string, spec manifest.Spec) ([]Port, error) {
+	expectedPorts := spec.ExpectedPorts()
 
 	args := []interface{}{}
 	for _, port := range expectedPorts {
 		args = append(args, port)
 	}
-	args = append(args, host.Name)
+	args = append(args, host)
 
 	rows, err := db.Query(`
-			SELECT hosts.name, ports.number
-			FROM ports
-				INNER JOIN processes
-					ON ports.process_id = processes.id
-				INNER JOIN hosts
-					ON processes.host_id = hosts.id
-			WHERE ports.number NOT IN (`+inPlaceholder(len(expectedPorts))+`)
-				AND ports.state = "LISTEN"
-				AND ports.address != "127.0.0.1"
-				AND hosts.name LIKE ? || '%'
-		`, args...)
+		SELECT ports.number
+		FROM ports
+			INNER JOIN processes
+				ON ports.process_id = processes.id
+			INNER JOIN hosts
+				ON processes.host_id = hosts.id
+		WHERE ports.number NOT IN (`+inPlaceholder(len(expectedPorts))+`)
+			AND ports.state = "LISTEN"
+			AND ports.address != "127.0.0.1"
+			AND hosts.name = ?
+	`, args...)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer rows.Close()
 
-	var hostName string
+	var unexpectedPorts []Port
 	var unexpectedPort int
 
 	for rows.Next() {
-		err := rows.Scan(&hostName, &unexpectedPort)
+		err := rows.Scan(&unexpectedPort)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		hostResults := result.Hosts[hostName]
-		hostResults.UnexpectedPorts = append(hostResults.UnexpectedPorts, Port(unexpectedPort))
-		result.Hosts[hostName] = hostResults
+		unexpectedPorts = append(unexpectedPorts, Port(unexpectedPort))
 	}
 
-	return nil
+	return unexpectedPorts, nil
 }
 
 func inPlaceholder(count int) string {
 	return strings.Join(strings.Split(strings.Repeat("?", count), ""), ", ")
 }
 
-func lookForMissingAndExtraHosts(db *sql.DB, manifestHosts []manifest.Host) ([]string, []string, error) {
+func lookForMissingAndExtraHosts(db *sql.DB, manifestHosts []manifest.Spec) ([]string, []string, error) {
 	rows, err := db.Query(`
 		SELECT hosts.name
 		FROM hosts
@@ -169,8 +217,9 @@ func lookForMissingAndExtraHosts(db *sql.DB, manifestHosts []manifest.Host) ([]s
 		found := false
 
 		for _, manifestHost := range manifestHosts {
-			if strings.HasPrefix(reportHost, manifestHost.Name) {
+			if strings.HasPrefix(reportHost, manifestHost.Prefix) {
 				found = true
+				break
 			}
 		}
 
@@ -183,23 +232,26 @@ func lookForMissingAndExtraHosts(db *sql.DB, manifestHosts []manifest.Host) ([]s
 		found := false
 
 		for _, reportHost := range reportHosts {
-			if strings.HasPrefix(reportHost, manifestHost.Name) {
+			if strings.HasPrefix(reportHost, manifestHost.Prefix) {
 				found = true
+				break
 			}
 		}
 
 		if !found {
-			missings = append(missings, manifestHost.Name)
+			missings = append(missings, manifestHost.Prefix)
 		}
 	}
 
 	return missings, extras, nil
 }
 
-func verifyProcessUsers(db *sql.DB, host manifest.Host, result AuditResult) error {
-	for _, proc := range host.Processes {
+func verifyProcessUsers(db *sql.DB, host string, spec manifest.Spec) ([]MismatchedProcess, error) {
+	mismatched := []MismatchedProcess{}
+
+	for _, proc := range spec.Processes {
 		rows, err := db.Query(`
-			SELECT DISTINCT hosts.name, processes.user, processes.name
+			SELECT DISTINCT processes.user, processes.name
 			FROM processes
 				INNER JOIN hosts
 					ON processes.host_id = hosts.id
@@ -207,43 +259,39 @@ func verifyProcessUsers(db *sql.DB, host manifest.Host, result AuditResult) erro
 					ON processes.id = ports.process_id
 			WHERE processes.user != ?
 				AND processes.name = ?
-				AND hosts.name LIKE ? || '%'
-		`, proc.User, proc.Command, host.Name)
+				AND hosts.name = ?
+		`, proc.User, proc.Command, host)
 
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		defer rows.Close()
 
-		var hostName, processUser, processCommand string
+		var processUser, processCommand string
 
 		for rows.Next() {
-			err := rows.Scan(&hostName, &processUser, &processCommand)
+			err := rows.Scan(&processUser, &processCommand)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
-			hostResults := result.Hosts[hostName]
-			processResult := MismatchedProcess{
+			mismatched = append(mismatched, MismatchedProcess{
 				Command:  processCommand,
 				Field:    "user",
 				Actual:   processUser,
 				Expected: proc.User,
-			}
-
-			hostResults.MismatchedProcesses = append(hostResults.MismatchedProcesses, processResult)
-			result.Hosts[hostName] = hostResults
+			})
 		}
 	}
 
-	return nil
+	return mismatched, nil
 }
 
-func lookForMissingProcesses(db *sql.DB, host manifest.Host) ([]string, error) {
+func lookForMissingProcesses(db *sql.DB, host string, spec manifest.Spec) ([]string, error) {
 	missingCommands := []string{}
 
-	for _, proc := range host.Processes {
+	for _, command := range spec.ExpectedCommands() {
 		var count int
 
 		err := db.QueryRow(`
@@ -252,25 +300,25 @@ func lookForMissingProcesses(db *sql.DB, host manifest.Host) ([]string, error) {
 				JOIN hosts
 					ON processes.host_id = hosts.id
 			WHERE processes.name = ?
-				AND hosts.name LIKE ? || '%'
-		`, proc.Command, host.Name).Scan(&count)
+				AND hosts.name = ?
+		`, command, host).Scan(&count)
 
 		if err != nil {
 			return nil, err
 		}
 
 		if count == 0 {
-			missingCommands = append(missingCommands, proc.Command)
+			missingCommands = append(missingCommands, command)
 		}
 	}
 
 	return missingCommands, nil
 }
 
-func lookForMissingPorts(db *sql.DB, host manifest.Host) ([]Port, error) {
+func lookForMissingPorts(db *sql.DB, host string, spec manifest.Spec) ([]Port, error) {
 	missingPorts := []Port{}
 
-	for _, port := range host.ExpectedPorts() {
+	for _, port := range spec.ExpectedPorts() {
 		var count int
 
 		err := db.QueryRow(`
@@ -281,8 +329,8 @@ func lookForMissingPorts(db *sql.DB, host manifest.Host) ([]Port, error) {
 				JOIN hosts
 					ON processes.host_id = hosts.id
 			WHERE ports.number = ?
-				AND hosts.name LIKE ? || '%'
-		`, port, host.Name).Scan(&count)
+				AND hosts.name = ?
+		`, port, host).Scan(&count)
 
 		if err != nil {
 			return nil, err

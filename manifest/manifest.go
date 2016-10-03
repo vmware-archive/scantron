@@ -1,11 +1,11 @@
 package manifest
 
 type Manifest struct {
-	Hosts []Host
+	Specs []Spec `yaml:"specs"`
 }
 
-type Host struct {
-	Name      string `yaml:"name"`
+type Spec struct {
+	Prefix    string `yaml:"prefix"`
 	Processes []Process
 }
 
@@ -17,7 +17,7 @@ type Process struct {
 
 type Port int
 
-func (h Host) ExpectedPorts() []Port {
+func (h Spec) ExpectedPorts() []Port {
 	var ports []Port
 
 	for _, proc := range h.Processes {
@@ -25,4 +25,14 @@ func (h Host) ExpectedPorts() []Port {
 	}
 
 	return ports
+}
+
+func (h Spec) ExpectedCommands() []string {
+	var commands []string
+
+	for _, proc := range h.Processes {
+		commands = append(commands, proc.Command)
+	}
+
+	return commands
 }

@@ -1,5 +1,5 @@
-hosts:
-- name: host1
+specs:
+- prefix: host1
   processes:
   - command: command1
     user: root
@@ -13,7 +13,7 @@ hosts:
     - 8230
     - 2852
 
-- name: host2
+- prefix: host2
   processes:
   - command: command3
     user: user3

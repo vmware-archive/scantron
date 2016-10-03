@@ -13,9 +13,9 @@ var _ = Describe("Parser", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(m).To(Equal(manifest.Manifest{
-			Hosts: []manifest.Host{
+			Specs: []manifest.Spec{
 				{
-					Name: "host1",
+					Prefix: "host1",
 					Processes: []manifest.Process{
 						{
 							Command: "command1",
@@ -30,7 +30,7 @@ var _ = Describe("Parser", func() {
 					},
 				},
 				{
-					Name: "host2",
+					Prefix: "host2",
 					Processes: []manifest.Process{
 						{
 							Command: "command3",
