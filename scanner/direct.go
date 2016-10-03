@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"os"
 
 	"code.cloudfoundry.org/lager"
@@ -84,5 +85,10 @@ func (d *direct) decodeScannedHost(reader io.Reader) (ScanResult, error) {
 		return ScanResult{}, err
 	}
 
-	return buildScanResult(host, d.machine.Address(), d.machine.Address()), nil
+	hostname, _, err := net.SplitHostPort(d.machine.Address())
+	if err != nil {
+		return ScanResult{}, err
+	}
+
+	return buildScanResult(host, hostname, hostname), nil
 }

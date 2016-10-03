@@ -46,7 +46,7 @@ var _ = Describe("Direct Scanning", func() {
 		err := json.NewEncoder(buffer).Encode(systemInfo)
 		Expect(err).NotTo(HaveOccurred())
 
-		machine.AddressReturns("10.0.0.1")
+		machine.AddressReturns("10.0.0.1:22")
 		machine.RunCommandReturns(buffer, nil)
 
 		directScan = scanner.Direct(machine)
