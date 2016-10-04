@@ -56,4 +56,30 @@ var _ = Describe("Parser", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
+
+	Context("when the file has semantic errors", func() {
+		It("returns an error when specs is misnamed", func() {
+			_, err := manifest.Parse("semantic_err_specs.yml")
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError("file is empty"))
+		})
+
+		It("returns an error when prefix is misnamed", func() {
+			_, err := manifest.Parse("semantic_err_prefix.yml")
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError("prefix undefined"))
+		})
+
+		FIt("returns an error when process info is missing", func() {
+			_, err := manifest.Parse("semantic_err_command.yml")
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError("process info missing"))
+		})
+
+		It("returns an error when processes are undefined", func() {
+			_, err := manifest.Parse("semantic_err_processes.yml")
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError("incorrect yaml format"))
+		})
+	})
 })

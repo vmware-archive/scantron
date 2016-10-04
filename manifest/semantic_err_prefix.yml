@@ -1,0 +1,28 @@
+specs:
+- prefix: host1
+  processes:
+  - command: command1
+    user: root
+    ports:
+    - 1234
+    - 5678
+    - 9012
+  - command: command2
+    user: user2
+    ports:
+    - 8230
+    - 2852
+
+- name: host2
+  processes:
+  - command: command3
+    user: user3
+    ports:
+    - 9876
+    - 5432
+
+- name: host3
+  processes:
+  - processes: command3
+    user: user3
+    ports:

@@ -1,0 +1,12 @@
+specs:
+- prefix: host1
+  processes:
+  - command: command1
+    user: root
+    ports:
+    - 1234
+    - 5678
+    - 9012
+  - user: user2
+    ports:
+    - 8230
