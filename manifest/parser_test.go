@@ -70,7 +70,7 @@ var _ = Describe("Parser", func() {
 			Expect(err).To(MatchError("prefix undefined"))
 		})
 
-		FIt("returns an error when process info is missing", func() {
+		It("returns an error when process info is missing", func() {
 			_, err := manifest.Parse("semantic_err_command.yml")
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError("process info missing"))
