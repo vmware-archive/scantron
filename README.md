@@ -17,7 +17,7 @@
 
 ### SYNOPSIS
 
-    scantron <bosh-scan|direct-scan> [command options]
+    scantron <bosh-scan|direct-scan|audit> [command options]
 
 
 ### COMMAND OPTIONS
@@ -46,6 +46,11 @@
     --password=PASSWORD                        Password to scan with
     --private-key=PATH                         Private key to scan with (optional)
     --database=PATH                            Location to store report (optional and default to ./database.db)
+
+#### AUDIT
+
+    --database=PATH                            Path to report database (default: ./database.db)
+    --manifest=PATH                            Path to manifest
 
 
 ### GENERATING NMAP RESULTS
@@ -88,6 +93,9 @@ Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML:
       --gateway-private-key=PATH \
       --uaa-client=OAUTH_CLIENT \
       --uaa-client-secret=OAUTH_CLIENT_SECRET
+
+     # AUDIT
+     scantron audit --manifest bosh.yml
 
 ### SCAN FILTER
 
@@ -162,4 +170,41 @@ CREATE TABLE files (
   path text,
   FOREIGN KEY(host_id) REFERENCES hosts(id)
 );
+```
+
+### MANIFEST FORMAT
+
+Scantron audits the hosts, processes, and ports in the database against the user-generated manifest file.
+
+For Ops Manager where VMs can have the same prefix, such as cloud_controller and cloud_controller_worker, append "-" to the prefixes: "cloud_controller-" and "cloud_controller_worker-".
+
+This is an example of the manifest file:
+
+```
+specs:
+- prefix: cloud_controller-
+  processes:
+  - command: sshd
+    user: root
+    ignore_ports: true
+  - command: rpcbind
+    user: root
+    ports:
+    - 111
+  - command: metron
+    user: vcap
+    ports:
+    - 6061
+  - command: consul
+    user: vcap
+    ports:
+    - 8301
+  - command: nginx
+    user: root
+    ports:
+    - 9022
+  - command: ruby
+    user: vcap
+    ports:
+    - 33861
 ```
