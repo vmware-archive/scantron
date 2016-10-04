@@ -19,6 +19,10 @@ var _ = Describe("Manifest", func() {
 				Command: "command-2",
 				Ports:   []manifest.Port{93, 235, 2493},
 			},
+			{
+				Command: "ignore-command",
+				Ignore:  true,
+			},
 		},
 	}
 
@@ -41,7 +45,17 @@ var _ = Describe("Manifest", func() {
 			Expect(host.ExpectedCommands()).To(ConsistOf(
 				"command-1",
 				"command-2",
+				"ignore-command",
 			))
+		})
+	})
+
+	Describe("checking if we should ignore ports for a process", func() {
+		It("checks if the flag is set", func() {
+			Expect(host.ShouldIgnorePortsForCommand("command-1")).To(BeFalse())
+			Expect(host.ShouldIgnorePortsForCommand("missing")).To(BeFalse())
+
+			Expect(host.ShouldIgnorePortsForCommand("ignore-command")).To(BeTrue())
 		})
 	})
 })

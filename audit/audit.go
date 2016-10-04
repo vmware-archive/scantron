@@ -149,7 +149,7 @@ func findUnexpectedPorts(db *sql.DB, host string, spec manifest.Spec) ([]Port, e
 	args = append(args, host)
 
 	rows, err := db.Query(`
-		SELECT ports.number
+		SELECT ports.number, processes.name
 		FROM ports
 			INNER JOIN processes
 				ON ports.process_id = processes.id
@@ -169,11 +169,16 @@ func findUnexpectedPorts(db *sql.DB, host string, spec manifest.Spec) ([]Port, e
 
 	var unexpectedPorts []Port
 	var unexpectedPort int
+	var processName string
 
 	for rows.Next() {
-		err := rows.Scan(&unexpectedPort)
+		err := rows.Scan(&unexpectedPort, &processName)
 		if err != nil {
 			return nil, err
+		}
+
+		if spec.ShouldIgnorePortsForCommand(processName) {
+			continue
 		}
 
 		unexpectedPorts = append(unexpectedPorts, Port(unexpectedPort))

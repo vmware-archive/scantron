@@ -13,6 +13,7 @@ type Process struct {
 	Command string `yaml:"command"`
 	User    string `yaml:"user"`
 	Ports   []Port `yaml:"ports"`
+	Ignore  bool   `yaml:"ignore_ports"`
 }
 
 type Port int
@@ -35,4 +36,14 @@ func (h Spec) ExpectedCommands() []string {
 	}
 
 	return commands
+}
+
+func (h Spec) ShouldIgnorePortsForCommand(command string) bool {
+	for _, process := range h.Processes {
+		if process.Command == command {
+			return process.Ignore
+		}
+	}
+
+	return false
 }

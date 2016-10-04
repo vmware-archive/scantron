@@ -250,6 +250,11 @@ var _ = Describe("Audit", func() {
 								User:    "root",
 								Ports:   []manifest.Port{1234, 80},
 							},
+							{
+								Command: "command2",
+								User:    "root",
+								Ignore:  true,
+							},
 						},
 					},
 				},
@@ -279,6 +284,16 @@ var _ = Describe("Audit", func() {
 								{
 									Number: 234,
 									State:  "CLOSE_WAIT",
+								},
+							},
+						},
+						{
+							CommandName: "command2",
+							User:        "root",
+							Ports: []scantron.Port{
+								{
+									Number: 57332,
+									State:  "LISTEN",
 								},
 							},
 						},
