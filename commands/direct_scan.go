@@ -24,7 +24,6 @@ type DirectScanCommand struct {
 	Password   string `long:"password" description:"Password of machine to scan" value-name:"PASSWORD" required:"true"`
 	PrivateKey string `long:"private-key" description:"Private key of machine to scan" value-name:"PATH"`
 	Database   string `long:"database" description:"location of database where scan output will be stored" value-name:"PATH" default:"./database.db"`
-	Append     bool   `long:"append" description:"append to an existing database if it exists"`
 }
 
 func (command *DirectScanCommand) Execute(args []string) error {
@@ -70,7 +69,7 @@ func (command *DirectScanCommand) Execute(args []string) error {
 		scanner.Direct(remoteMachine), nmapResults,
 	)
 
-	db, err := OpenOrCreateDatabase(command.Database, command.Append)
+	db, err := OpenOrCreateDatabase(command.Database)
 
 	if err != nil {
 		log.Fatalf("failed to create database: %s", err.Error())

@@ -2,7 +2,6 @@ package commands
 
 import (
 	"database/sql"
-	"errors"
 	"os"
 	"strings"
 	"time"
@@ -21,16 +20,11 @@ func (d *Database) DB() *sql.DB {
 	return d.db
 }
 
-func OpenOrCreateDatabase(path string, shouldAppend bool) (*Database, error) {
-	_, err := os.Stat(path)
-	fileExists := !os.IsNotExist(err)
-
-	if fileExists && !shouldAppend {
-		return nil, errors.New(path + " already exists")
-	}
-
+func OpenOrCreateDatabase(path string) (*Database, error) {
 	var db *Database
-	if shouldAppend && fileExists {
+	_, err := os.Stat(path)
+
+	if !os.IsNotExist(err) {
 		db, err = OpenDatabase(path)
 	} else {
 		db, err = CreateDatabase(path)
