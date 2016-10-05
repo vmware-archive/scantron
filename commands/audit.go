@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/pivotal-cf/scantron/audit"
@@ -28,15 +29,13 @@ func (command *AuditCommand) Execute(args []string) error {
 		return err
 	}
 
-	showReport(report)
-
-	return nil
+	return ShowReport(report)
 }
 
-func showReport(report audit.AuditResult) {
+func ShowReport(report audit.AuditResult) error {
 	if report.OK() {
 		fmt.Println("ok")
-		return
+		return nil
 	}
 
 	if len(report.ExtraHosts) > 0 {
@@ -108,4 +107,6 @@ func showReport(report audit.AuditResult) {
 			fmt.Println()
 		}
 	}
+
+	return errors.New("audit mismatch")
 }
