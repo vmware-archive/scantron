@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"strings"
+	"time"
 
 	// Include SQLite3 for database.
 	_ "github.com/mattn/go-sqlite3"
@@ -68,21 +69,34 @@ func (db *Database) Close() error {
 }
 
 func (db *Database) SaveReport(scans []scanner.ScanResult) error {
+	var reportID int
+	res, err := db.db.Exec("INSERT INTO reports(timestamp) VALUES (?)", time.Now())
+	if err != nil {
+		return err
+	}
+
+	insertedID, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	reportID = int(insertedID)
+
 	for _, scan := range scans {
 		var hostID int
-		query := "SELECT id FROM hosts WHERE name = ? AND ip = ?"
-		err := db.db.QueryRow(query, scan.Job, scan.IP).Scan(&hostID)
+		query := "SELECT id FROM hosts WHERE name = ? AND ip = ? AND report_id = ?"
+		err := db.db.QueryRow(query, scan.Job, scan.IP, reportID).Scan(&hostID)
 		if err != nil {
 			if err != sql.ErrNoRows {
 				return err
 			}
 
-			res, err := db.db.Exec("INSERT INTO hosts(name, ip) VALUES (?, ?)", scan.Job, scan.IP)
+			res, err = db.db.Exec("INSERT INTO hosts(name, ip, report_id) VALUES (?, ?, ?)", scan.Job, scan.IP, reportID)
 			if err != nil {
 				return err
 			}
 
-			insertedID, err := res.LastInsertId()
+			insertedID, err = res.LastInsertId()
 			if err != nil {
 				return err
 			}
@@ -185,11 +199,19 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 }
 
 var createDDL = `
+CREATE TABLE reports (
+	id integer PRIMARY KEY AUTOINCREMENT,
+	timestamp datetime,
+	UNIQUE(timestamp)
+);
+
 CREATE TABLE hosts (
 	id integer PRIMARY KEY AUTOINCREMENT,
+	report_id integer,
 	name text,
 	ip text,
-	UNIQUE(ip, name)
+	UNIQUE(ip, name, report_id)
+	FOREIGN KEY(report_id) REFERENCES reports(id)
 );
 
 CREATE TABLE processes (

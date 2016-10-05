@@ -71,6 +71,7 @@ var _ = Describe("Sqlite", func() {
 			}
 
 			Expect(tables).To(ConsistOf(
+				"reports",
 				"hosts",
 				"processes",
 				"ports",
@@ -298,6 +299,35 @@ var _ = Describe("Sqlite", func() {
 
 					Expect(count).To(BeZero())
 				})
+			})
+
+			It("belongs to a report", func() {
+				saveTime := time.Now()
+
+				rows, err := sqliteDB.Query(`
+				SELECT reports.id,
+				       reports.timestamp,
+				       hosts.name,
+				       hosts.ip
+				FROM   hosts,
+							 reports
+				WHERE  hosts.report_id = reports.id`)
+				Expect(err).NotTo(HaveOccurred())
+				defer rows.Close()
+
+				hasRows := rows.Next()
+				Expect(hasRows).To(BeTrue())
+
+				var reportId, name, ip string
+				var reportTime time.Time
+
+				err = rows.Scan(&reportId, &reportTime, &name, &ip)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(reportId).To(Equal("1"))
+				Expect(reportTime).Should(BeTemporally("~", saveTime.UTC(), time.Second))
+				Expect(name).To(Equal("custom_name/0"))
+				Expect(ip).To(Equal("10.0.0.1"))
 			})
 		})
 
