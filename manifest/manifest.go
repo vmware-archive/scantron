@@ -13,7 +13,7 @@ type Process struct {
 	Command string `yaml:"command"`
 	User    string `yaml:"user"`
 	Ports   []Port `yaml:"ports"`
-	Ignore  bool   `yaml:"ignore_ports"`
+	Ignore  bool   `yaml:"ignore_ports,omitempty"`
 }
 
 type Port int
