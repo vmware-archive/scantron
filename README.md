@@ -174,9 +174,18 @@ CREATE TABLE files (
 
 ### MANIFEST FORMAT
 
-Scantron audits the hosts, processes, and ports in the database against the user-generated manifest file.
+Scantron audits the hosts, processes, and ports in the database against the
+user-generated manifest file.
 
-For Ops Manager where VMs can have the same prefix, such as cloud_controller and cloud_controller_worker, append "-" to the prefixes: "cloud_controller-" and "cloud_controller_worker-".
+For Ops Manager where VMs can have the same prefix, such as cloud_controller
+and cloud_controller_worker, append "-" to the prefixes: "cloud_controller-"
+and "cloud_controller_worker-".
+
+Many hosts (especially those which are based of the BOSH stemcell) will start
+processes that bind to an ephemeral, random port when they start. To avoid
+caring about these ports when we perform an audit you can add `ignore_ports:
+true` to the process. There is an example of this below for the `rpc.statd`
+process.
 
 This is an example of the manifest file:
 
@@ -186,7 +195,8 @@ specs:
   processes:
   - command: sshd
     user: root
-    ignore_ports: true
+    ports:
+    - 22
   - command: rpcbind
     user: root
     ports:
@@ -207,4 +217,7 @@ specs:
     user: vcap
     ports:
     - 33861
+  - command: rpc.statd
+    user: root
+    ignore_ports: true
 ```
