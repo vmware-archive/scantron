@@ -3,6 +3,8 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/pivotal-cf/scantron/audit"
 	"github.com/pivotal-cf/scantron/manifest"
@@ -29,82 +31,82 @@ func (command *AuditCommand) Execute(args []string) error {
 		return err
 	}
 
-	return ShowReport(report)
+	return ShowReport(os.Stdout, report)
 }
 
-func ShowReport(report audit.AuditResult) error {
+func ShowReport(output io.Writer, report audit.AuditResult) error {
 	if report.OK() {
-		fmt.Println("ok")
+		fmt.Fprintln(output, "ok")
 		return nil
 	}
 
 	if len(report.ExtraHosts) > 0 {
-		fmt.Println("found hosts in report that were not matched in the manifest:")
+		fmt.Fprintln(output, "found hosts in report that were not matched in the manifest:")
 
 		for _, host := range report.ExtraHosts {
-			fmt.Println(host)
+			fmt.Fprintln(output, host)
 		}
 
-		fmt.Println()
+		fmt.Fprintln(output)
 	}
 
 	if len(report.MissingHostType) > 0 {
-		fmt.Println("found host types in the manifest that were not found in the scan:")
+		fmt.Fprintln(output, "found host types in the manifest that were not found in the scan:")
 
 		for _, host := range report.MissingHostType {
-			fmt.Println(host)
+			fmt.Fprintln(output, host)
 		}
 
-		fmt.Println()
+		fmt.Fprintln(output)
 	}
 
 	for host, hostReport := range report.Hosts {
 		if hostReport.OK() {
-			fmt.Printf("ok  %s\n", host)
+			fmt.Fprintf(output, "ok  %s\n", host)
 			continue
 		} else {
-			fmt.Printf("err %s\n", host)
+			fmt.Fprintf(output, "err %s\n", host)
 		}
 
 		if len(hostReport.UnexpectedPorts) > 0 {
-			fmt.Println("  found unexpected ports:")
+			fmt.Fprintln(output, "  found unexpected ports:")
 
 			for _, port := range hostReport.UnexpectedPorts {
-				fmt.Printf("    %d\n", port)
+				fmt.Fprintf(output, "    %d\n", port)
 			}
 
-			fmt.Println()
+			fmt.Fprintln(output)
 		}
 
 		if len(hostReport.MissingPorts) > 0 {
-			fmt.Println("  did not find ports that were mentioned in manifest:")
+			fmt.Fprintln(output, "  did not find ports that were mentioned in manifest:")
 
 			for _, port := range hostReport.MissingPorts {
-				fmt.Printf("    %d\n", port)
+				fmt.Fprintf(output, "    %d\n", port)
 			}
 
-			fmt.Println()
+			fmt.Fprintln(output)
 		}
 
 		if len(hostReport.MissingProcesses) > 0 {
-			fmt.Println("  did not find processes that were mentioned in manifest:")
+			fmt.Fprintln(output, "  did not find processes that were mentioned in manifest:")
 
 			for _, process := range hostReport.MissingProcesses {
-				fmt.Printf("    %s\n", process)
+				fmt.Fprintf(output, "    %s\n", process)
 			}
 
-			fmt.Println()
+			fmt.Fprintln(output)
 		}
 
 		if len(hostReport.MismatchedProcesses) > 0 {
-			fmt.Println("  processes were found but there mismatches between their attributes:")
+			fmt.Fprintln(output, "  processes were found but there mismatches between their attributes:")
 
 			for _, process := range hostReport.MismatchedProcesses {
-				fmt.Printf("    %s: %s should be '%s' but was actually '%s'\n", process.Command,
+				fmt.Fprintf(output, "    %s: %s should be '%s' but was actually '%s'\n", process.Command,
 					process.Field, process.Expected, process.Actual)
 			}
 
-			fmt.Println()
+			fmt.Fprintln(output)
 		}
 	}
 

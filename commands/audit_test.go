@@ -15,13 +15,14 @@ var _ = Describe("Audit", func() {
 		)
 
 		JustBeforeEach(func() {
-			err = commands.ShowReport(auditReport)
+			err = commands.ShowReport(GinkgoWriter, auditReport)
 		})
 
 		Context("When report does not have mismatch", func() {
 			BeforeEach(func() {
 				auditReport = audit.AuditResult{}
 			})
+
 			It("does not error", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -36,6 +37,7 @@ var _ = Describe("Audit", func() {
 					},
 				}
 			})
+
 			It("returns error", func() {
 				Expect(err).To(HaveOccurred())
 			})
