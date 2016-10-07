@@ -36,11 +36,6 @@ func (command *AuditCommand) Execute(args []string) error {
 }
 
 func ShowReport(output io.Writer, report audit.AuditResult) error {
-	if report.OK() {
-		fmt.Fprintln(output, "ok")
-		return nil
-	}
-
 	if len(report.ExtraHosts) > 0 {
 		fmt.Fprintln(output, "found hosts in report that were not matched in the manifest:")
 
@@ -111,5 +106,9 @@ func ShowReport(output io.Writer, report audit.AuditResult) error {
 		}
 	}
 
-	return AuditError
+	if report.OK() {
+		return nil
+	} else {
+		return AuditError
+	}
 }

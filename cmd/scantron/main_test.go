@@ -45,7 +45,10 @@ var _ = Describe("Main", func() {
 			databasePath = filepath.Join(tmpdir, "database.db")
 			hosts = []scanner.ScanResult{
 				{
-					Job: "prefix-name",
+					Job: "prefix-name-1",
+				},
+				{
+					Job: "prefix-name-2",
 				},
 			}
 		})
@@ -115,6 +118,19 @@ var _ = Describe("Main", func() {
 
 				Eventually(process).Should(gexec.Exit(3))
 			})
+		})
+
+		It("shows ok for each host", func() {
+			command := exec.Command(scantronPath, "audit", "--database", databasePath, "--manifest", manifestPath)
+			process, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(process).Should(gexec.Exit(0))
+
+			output := process.Buffer().Contents()
+
+			Expect(output).To(ContainSubstring("ok  prefix-name-1"))
+			Expect(output).To(ContainSubstring("ok  prefix-name-2"))
 		})
 	})
 })
