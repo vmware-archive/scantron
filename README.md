@@ -110,6 +110,12 @@ Scantron only scans regular files and skips the following directories:
 Scantron produces a SQLite database for scan results with the following schema:
 
 ```sql
+CREATE TABLE reports (
+  id integer PRIMARY KEY AUTOINCREMENT,
+  timestamp datetime,
+  UNIQUE(timestamp)
+);
+
 CREATE TABLE hosts (
   id integer PRIMARY KEY AUTOINCREMENT,
   name text,
