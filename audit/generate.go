@@ -1,6 +1,7 @@
 package audit
 
 import (
+	"bytes"
 	"database/sql"
 	"io"
 
@@ -11,27 +12,52 @@ import (
 func GenerateManifest(writer io.Writer, db *sql.DB) error {
 	m := manifest.Manifest{}
 
-	specs, err := getSpecsFor(db)
+	latestReportId, err := latestReportID(db)
+	if err != nil {
+		return err
+	}
+
+	specs, err := getSpecsFor(db, latestReportId)
 	if err != nil {
 		return err
 	}
 	m.Specs = specs
 
-	bytes, err := yaml.Marshal(m)
+	bs, err := yaml.Marshal(m)
 	if err != nil {
 		return err
 	}
-	writer.Write(bytes)
-	return nil
+
+	_, err = io.Copy(writer, bytes.NewReader(bs))
+	return err
 }
 
-func getSpecsFor(db *sql.DB) ([]manifest.Spec, error) {
-	rows, err := db.Query(`
-			SELECT hosts.id, hosts.name
-			FROM hosts`)
+func latestReportID(db *sql.DB) (int, error) {
+	var latestReportId int
+
+	err := db.QueryRow(`
+			SELECT id
+			FROM reports
+			ORDER BY timestamp DESC
+			LIMIT 1
+	`).Scan(&latestReportId)
 
 	if err != nil {
-		panic("write the test for me!")
+		return 0, err
+	}
+
+	return latestReportId, nil
+}
+
+func getSpecsFor(db *sql.DB, latestReportId int) ([]manifest.Spec, error) {
+	rows, err := db.Query(`
+			SELECT hosts.id, hosts.name
+			FROM hosts
+			WHERE hosts.report_id = ?
+	`, latestReportId)
+
+	if err != nil {
+		return nil, err
 	}
 
 	defer rows.Close()
@@ -71,8 +97,8 @@ func getProcessesFor(db *sql.DB, hostId int) ([]manifest.Process, error) {
 				JOIN ports
 					ON processes.id = ports.process_id
 			WHERE processes.host_id = ?
-			  AND ports.address != "127.0.0.1"
-			  AND ports.state = "LISTEN"
+				AND ports.address != "127.0.0.1"
+				AND ports.state = "LISTEN"
 		`, hostId)
 	if err != nil {
 		return nil, err
@@ -112,6 +138,8 @@ func getPortsFor(db *sql.DB, processId int) ([]manifest.Port, error) {
 		SELECT ports.number
 		FROM ports
 		WHERE ports.process_id = ?
+			AND ports.address != "127.0.0.1"
+			AND ports.state = "LISTEN"
 	`, processId)
 	if err != nil {
 		return nil, err
