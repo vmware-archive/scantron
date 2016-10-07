@@ -8,3 +8,16 @@ type ScantronCommand struct {
 }
 
 var Scantron ScantronCommand
+
+type ExitStatusError struct {
+	message    string
+	exitStatus int
+}
+
+func (e ExitStatusError) ExitStatus() int {
+	return e.exitStatus
+}
+
+func (e ExitStatusError) Error() string {
+	return e.message
+}

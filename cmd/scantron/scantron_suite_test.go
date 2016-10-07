@@ -14,16 +14,16 @@ func TestCredAlertCli(t *testing.T) {
 	RunSpecs(t, "CLI Suite")
 }
 
-var cliPath string
+var scantronPath string
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 	var err error
-	cliPath, err = gexec.Build("github.com/pivotal-cf/scantron/cmd/scantron")
+	scantronPath, err = gexec.Build("github.com/pivotal-cf/scantron/cmd/scantron")
 	Expect(err).NotTo(HaveOccurred())
 
-	return []byte(cliPath)
+	return []byte(scantronPath)
 }, func(data []byte) {
-	cliPath = string(data)
+	scantronPath = string(data)
 })
 
 var _ = SynchronizedAfterSuite(func() {}, func() {

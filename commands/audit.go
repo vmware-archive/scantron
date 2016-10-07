@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +8,8 @@ import (
 	"github.com/pivotal-cf/scantron/audit"
 	"github.com/pivotal-cf/scantron/manifest"
 )
+
+var AuditError = ExitStatusError{message: "audit mismatch", exitStatus: 3}
 
 type AuditCommand struct {
 	Database string `long:"database" description:"path to report database" value-name:"PATH" default:"./database.db"`
@@ -110,5 +111,5 @@ func ShowReport(output io.Writer, report audit.AuditResult) error {
 		}
 	}
 
-	return errors.New("audit mismatch")
+	return AuditError
 }

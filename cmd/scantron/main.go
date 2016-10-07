@@ -12,6 +12,10 @@ func main() {
 
 	_, err := parser.Parse()
 	if err != nil {
+		if esErr, ok := err.(commands.ExitStatusError); ok {
+			os.Exit(esErr.ExitStatus())
+		}
+
 		os.Exit(1)
 	}
 }
