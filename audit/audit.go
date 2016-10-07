@@ -54,12 +54,17 @@ func Audit(db *sql.DB, m manifest.Manifest) (AuditResult, error) {
 		Hosts: make(map[string]HostResult),
 	}
 
-	input, err := mapHostnameToSpec(db, m)
+	latestReportId, err := latestReportID(db)
 	if err != nil {
 		return AuditResult{}, err
 	}
 
-	missing, extras, err := lookForMissingAndExtraHosts(db, m.Specs)
+	input, err := mapHostnameToSpec(db, m, latestReportId)
+	if err != nil {
+		return AuditResult{}, err
+	}
+
+	missing, extras, err := lookForMissingAndExtraHosts(db, m.Specs, latestReportId)
 	if err != nil {
 		return AuditResult{}, err
 	}
@@ -68,7 +73,7 @@ func Audit(db *sql.DB, m manifest.Manifest) (AuditResult, error) {
 	result.MissingHostType = missing
 
 	for host, spec := range input {
-		hostResult, err := auditHost(db, host, spec)
+		hostResult, err := auditHost(db, host, spec, latestReportId)
 		if err != nil {
 			return AuditResult{}, err
 		}
@@ -79,23 +84,23 @@ func Audit(db *sql.DB, m manifest.Manifest) (AuditResult, error) {
 	return result, nil
 }
 
-func auditHost(db *sql.DB, host string, spec manifest.Spec) (HostResult, error) {
-	missingProcs, err := lookForMissingProcesses(db, host, spec)
+func auditHost(db *sql.DB, host string, spec manifest.Spec, reportId int) (HostResult, error) {
+	missingProcs, err := lookForMissingProcesses(db, host, spec, reportId)
 	if err != nil {
 		return HostResult{}, err
 	}
 
-	missingPorts, err := lookForMissingPorts(db, host, spec)
+	missingPorts, err := lookForMissingPorts(db, host, spec, reportId)
 	if err != nil {
 		return HostResult{}, err
 	}
 
-	unexpectedPorts, err := findUnexpectedPorts(db, host, spec)
+	unexpectedPorts, err := findUnexpectedPorts(db, host, spec, reportId)
 	if err != nil {
 		return HostResult{}, err
 	}
 
-	mismatchedProcesses, err := verifyProcessUsers(db, host, spec)
+	mismatchedProcesses, err := verifyProcessUsers(db, host, spec, reportId)
 	if err != nil {
 		return HostResult{}, err
 	}
@@ -108,7 +113,7 @@ func auditHost(db *sql.DB, host string, spec manifest.Spec) (HostResult, error) 
 	}, nil
 }
 
-func mapHostnameToSpec(db *sql.DB, m manifest.Manifest) (AuditInput, error) {
+func mapHostnameToSpec(db *sql.DB, m manifest.Manifest, reportId int) (AuditInput, error) {
 	input := AuditInput{}
 
 	for _, spec := range m.Specs {
@@ -116,7 +121,8 @@ func mapHostnameToSpec(db *sql.DB, m manifest.Manifest) (AuditInput, error) {
 			SELECT hosts.name
 			FROM hosts
 			WHERE hosts.name LIKE ? || '%'
-		`, spec.Prefix)
+				AND hosts.report_id = ?
+		`, spec.Prefix, reportId)
 
 		if err != nil {
 			return AuditInput{}, err
@@ -139,14 +145,14 @@ func mapHostnameToSpec(db *sql.DB, m manifest.Manifest) (AuditInput, error) {
 	return input, nil
 }
 
-func findUnexpectedPorts(db *sql.DB, host string, spec manifest.Spec) ([]Port, error) {
+func findUnexpectedPorts(db *sql.DB, host string, spec manifest.Spec, reportId int) ([]Port, error) {
 	expectedPorts := spec.ExpectedPorts()
 
 	args := []interface{}{}
 	for _, port := range expectedPorts {
 		args = append(args, port)
 	}
-	args = append(args, host)
+	args = append(args, host, reportId)
 
 	rows, err := db.Query(`
 		SELECT ports.number, processes.name
@@ -159,6 +165,7 @@ func findUnexpectedPorts(db *sql.DB, host string, spec manifest.Spec) ([]Port, e
 			AND ports.state = "LISTEN"
 			AND ports.address != "127.0.0.1"
 			AND hosts.name = ?
+			AND hosts.report_id = ?
 	`, args...)
 
 	if err != nil {
@@ -191,11 +198,12 @@ func inPlaceholder(count int) string {
 	return strings.Join(strings.Split(strings.Repeat("?", count), ""), ", ")
 }
 
-func lookForMissingAndExtraHosts(db *sql.DB, manifestHosts []manifest.Spec) ([]string, []string, error) {
+func lookForMissingAndExtraHosts(db *sql.DB, manifestHosts []manifest.Spec, reportId int) ([]string, []string, error) {
 	rows, err := db.Query(`
 		SELECT hosts.name
 		FROM hosts
-	`)
+		WHERE hosts.report_id = ?
+	`, reportId)
 
 	if err != nil {
 		return nil, nil, err
@@ -251,7 +259,7 @@ func lookForMissingAndExtraHosts(db *sql.DB, manifestHosts []manifest.Spec) ([]s
 	return missings, extras, nil
 }
 
-func verifyProcessUsers(db *sql.DB, host string, spec manifest.Spec) ([]MismatchedProcess, error) {
+func verifyProcessUsers(db *sql.DB, host string, spec manifest.Spec, reportId int) ([]MismatchedProcess, error) {
 	mismatched := []MismatchedProcess{}
 
 	for _, proc := range spec.Processes {
@@ -265,7 +273,8 @@ func verifyProcessUsers(db *sql.DB, host string, spec manifest.Spec) ([]Mismatch
 			WHERE processes.user != ?
 				AND processes.name = ?
 				AND hosts.name = ?
-		`, proc.User, proc.Command, host)
+				AND hosts.report_id = ?
+		`, proc.User, proc.Command, host, reportId)
 
 		if err != nil {
 			return nil, err
@@ -293,7 +302,7 @@ func verifyProcessUsers(db *sql.DB, host string, spec manifest.Spec) ([]Mismatch
 	return mismatched, nil
 }
 
-func lookForMissingProcesses(db *sql.DB, host string, spec manifest.Spec) ([]string, error) {
+func lookForMissingProcesses(db *sql.DB, host string, spec manifest.Spec, reportId int) ([]string, error) {
 	missingCommands := []string{}
 
 	for _, command := range spec.ExpectedCommands() {
@@ -306,7 +315,8 @@ func lookForMissingProcesses(db *sql.DB, host string, spec manifest.Spec) ([]str
 					ON processes.host_id = hosts.id
 			WHERE processes.name = ?
 				AND hosts.name = ?
-		`, command, host).Scan(&count)
+				AND hosts.report_id = ?
+		`, command, host, reportId).Scan(&count)
 
 		if err != nil {
 			return nil, err
@@ -320,7 +330,7 @@ func lookForMissingProcesses(db *sql.DB, host string, spec manifest.Spec) ([]str
 	return missingCommands, nil
 }
 
-func lookForMissingPorts(db *sql.DB, host string, spec manifest.Spec) ([]Port, error) {
+func lookForMissingPorts(db *sql.DB, host string, spec manifest.Spec, reportId int) ([]Port, error) {
 	missingPorts := []Port{}
 
 	for _, port := range spec.ExpectedPorts() {
@@ -335,7 +345,8 @@ func lookForMissingPorts(db *sql.DB, host string, spec manifest.Spec) ([]Port, e
 					ON processes.host_id = hosts.id
 			WHERE ports.number = ?
 				AND hosts.name = ?
-		`, port, host).Scan(&count)
+				AND hosts.report_id = ?
+		`, port, host, reportId).Scan(&count)
 
 		if err != nil {
 			return nil, err
