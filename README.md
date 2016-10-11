@@ -52,7 +52,10 @@
     --database=PATH                            Path to report database (default: ./database.db)
     --manifest=PATH                            Path to manifest
 
+#### GENERATE-MANIFEST
 
+    --database=PATH                            Path to report database (default: ./database.db)
+    
 ### GENERATING NMAP RESULTS
 
 Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML:
