@@ -111,25 +111,6 @@ func CreateNetstatPort(info NetstatInfo) NetstatPort {
 
 }
 
-func ParseNetstatOutput(output string) []NetstatInfo {
-	scanner := bufio.NewScanner(strings.NewReader(output))
-	result := []NetstatInfo{}
-
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		info := ParseNetstatLine(line)
-
-		if len(info.CommandName) == 0 {
-			continue
-		}
-
-		result = append(result, info)
-	}
-
-	return result
-}
-
 func ParseNetstatOutputForPort(output string) []NetstatPort {
 	scanner := bufio.NewScanner(strings.NewReader(output))
 	result := []NetstatPort{}

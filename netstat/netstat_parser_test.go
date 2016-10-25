@@ -9,29 +9,6 @@ import (
 )
 
 var _ = Describe("NetstatParser", func() {
-	It("ignores a non-line", func() {
-		input := `
-this is a line of text that is not right
-`
-		Expect(netstat.ParseNetstatOutput(input)).To(Equal([]netstat.NetstatInfo{}))
-	})
-
-	It("parses a single line correctly", func() {
-		input := `
-tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      1317/java
-		`
-		Expect(netstat.ParseNetstatOutput(input)).To(Equal([]netstat.NetstatInfo{
-			{
-				CommandName:    "java",
-				PID:            "1317",
-				LocalAddress:   "127.0.0.1:8080",
-				ForeignAddress: "0.0.0.0:*",
-				State:          "LISTEN",
-				Protocol:       "tcp",
-			},
-		}))
-	})
-
 	It("parses and converts a single line correctly", func() {
 		input := `
 tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      1317/java
