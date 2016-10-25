@@ -99,4 +99,30 @@ udp        0      0 127.0.0.2:8080          0.0.0.0:*               LISTEN      
 			},
 		}))
 	})
+
+	Context("when the socket state is missing because it is a raw socket", func() {
+		It("still parses that", func() {
+			input := "udp        0      0 127.0.0.1:53            0.0.0.0:*                           4113/consul"
+
+			Expect(netstat.ParseNetstatOutputForPort(input)).To(Equal([]netstat.NetstatPort{
+				{
+					CommandName: "consul",
+					PID:         4113,
+					Local: scantron.Port{
+						Protocol: "udp",
+						Address:  "127.0.0.1",
+						Number:   53,
+						State:    "",
+					},
+					Foreign: scantron.Port{
+						Protocol: "udp",
+						Address:  "0.0.0.0",
+						Number:   0,
+						State:    "",
+					},
+					State: "",
+				},
+			}))
+		})
+	})
 })

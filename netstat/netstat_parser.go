@@ -42,28 +42,42 @@ func (ps NetstatPorts) LocalPortsForPID(pid int) []scantron.Port {
 func ParseNetstatLine(line string) NetstatInfo {
 	netstat := strings.Fields(line)
 
-	if len(netstat) < 7 {
-		return NetstatInfo{}
-	}
-	protocol := netstat[0]
-	if !((protocol == "tcp") || (protocol == "udp")) {
+	var protocol, localAddress, foreignAddress, state, process string
+
+	if len(netstat) < 6 {
 		return NetstatInfo{}
 	}
 
-	out := strings.Split(netstat[6], "/")
-	if len(out) < 2 {
+	protocol = netstat[0]
+	localAddress = netstat[3]
+	foreignAddress = netstat[4]
+
+	if len(netstat) == 6 {
+		state = ""
+		process = netstat[5]
+	} else {
+		state = netstat[5]
+		process = netstat[6]
+	}
+
+	if (protocol != "tcp") && (protocol != "udp") {
 		return NetstatInfo{}
 	}
 
-	id := out[0]
-	cmd := out[1]
+	processTokens := strings.Split(process, "/")
+	if len(processTokens) < 2 {
+		return NetstatInfo{}
+	}
+
+	pid := processTokens[0]
+	cmd := processTokens[1]
 
 	return NetstatInfo{
 		CommandName:    cmd,
-		PID:            id,
-		LocalAddress:   netstat[3],
-		ForeignAddress: netstat[4],
-		State:          netstat[5],
+		PID:            pid,
+		LocalAddress:   localAddress,
+		ForeignAddress: foreignAddress,
+		State:          state,
 		Protocol:       protocol,
 	}
 }
