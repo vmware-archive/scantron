@@ -15,21 +15,13 @@ tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      
 		`
 		Expect(netstat.ParseNetstatOutputForPort(input)).To(Equal([]netstat.NetstatPort{
 			{
-				CommandName: "java",
-				PID:         1317,
-				Local: scantron.Port{
+				PID: 1317,
+				Port: scantron.Port{
 					Protocol: "tcp",
 					Address:  "127.0.0.1",
 					Number:   8080,
 					State:    "LISTEN",
 				},
-				Foreign: scantron.Port{
-					Protocol: "tcp",
-					Address:  "0.0.0.0",
-					Number:   0,
-					State:    "LISTEN",
-				},
-				State: "LISTEN",
 			},
 		}))
 	})
@@ -41,38 +33,22 @@ udp        0      0 127.0.0.2:8080          0.0.0.0:*               LISTEN      
 		`
 		Expect(netstat.ParseNetstatOutputForPort(input)).To(Equal([]netstat.NetstatPort{
 			{
-				CommandName: "java",
-				PID:         1317,
-				Local: scantron.Port{
+				PID: 1317,
+				Port: scantron.Port{
 					Protocol: "tcp",
 					Address:  "127.0.0.1",
 					Number:   8080,
 					State:    "LISTEN",
 				},
-				Foreign: scantron.Port{
-					Protocol: "tcp",
-					Address:  "0.0.0.0",
-					Number:   0,
-					State:    "LISTEN",
-				},
-				State: "LISTEN",
 			},
 			{
-				CommandName: "java",
-				PID:         1318,
-				Local: scantron.Port{
+				PID: 1318,
+				Port: scantron.Port{
 					Protocol: "udp",
 					Address:  "127.0.0.2",
 					Number:   8080,
 					State:    "LISTEN",
 				},
-				Foreign: scantron.Port{
-					Protocol: "udp",
-					Address:  "0.0.0.0",
-					Number:   0,
-					State:    "LISTEN",
-				},
-				State: "LISTEN",
 			},
 		}))
 	})
@@ -83,21 +59,13 @@ udp        0      0 127.0.0.2:8080          0.0.0.0:*               LISTEN      
 
 			Expect(netstat.ParseNetstatOutputForPort(input)).To(Equal([]netstat.NetstatPort{
 				{
-					CommandName: "consul",
-					PID:         4113,
-					Local: scantron.Port{
+					PID: 4113,
+					Port: scantron.Port{
 						Protocol: "udp",
 						Address:  "127.0.0.1",
 						Number:   53,
 						State:    "",
 					},
-					Foreign: scantron.Port{
-						Protocol: "udp",
-						Address:  "0.0.0.0",
-						Number:   0,
-						State:    "",
-					},
-					State: "",
 				},
 			}))
 		})

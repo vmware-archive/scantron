@@ -18,11 +18,8 @@ type NetstatInfo struct {
 }
 
 type NetstatPort struct {
-	CommandName string
-	PID         int
-	Local       scantron.Port
-	Foreign     scantron.Port
-	State       string
+	PID  int
+	Port scantron.Port
 }
 
 type NetstatPorts []NetstatPort
@@ -32,20 +29,36 @@ func (ps NetstatPorts) LocalPortsForPID(pid int) []scantron.Port {
 
 	for _, nsPort := range ps {
 		if nsPort.PID == pid {
-			result = append(result, nsPort.Local)
+			result = append(result, nsPort.Port)
 		}
 	}
 
 	return result
 }
 
-func ParseNetstatLine(line string) NetstatInfo {
+func ParseNetstatOutputForPort(output string) []NetstatPort {
+	scanner := bufio.NewScanner(strings.NewReader(output))
+	result := []NetstatPort{}
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		info, valid := parseNetstatLine(line)
+
+		if valid {
+			result = append(result, createNetstatPort(info))
+		}
+	}
+
+	return result
+}
+
+func parseNetstatLine(line string) (NetstatInfo, bool) {
 	netstat := strings.Fields(line)
 
 	var protocol, localAddress, foreignAddress, state, process string
 
 	if len(netstat) < 6 {
-		return NetstatInfo{}
+		return NetstatInfo{}, false
 	}
 
 	protocol = netstat[0]
@@ -61,12 +74,12 @@ func ParseNetstatLine(line string) NetstatInfo {
 	}
 
 	if (protocol != "tcp") && (protocol != "udp") {
-		return NetstatInfo{}
+		return NetstatInfo{}, false
 	}
 
 	processTokens := strings.Split(process, "/")
 	if len(processTokens) < 2 {
-		return NetstatInfo{}
+		return NetstatInfo{}, false
 	}
 
 	pid := processTokens[0]
@@ -79,10 +92,10 @@ func ParseNetstatLine(line string) NetstatInfo {
 		ForeignAddress: foreignAddress,
 		State:          state,
 		Protocol:       protocol,
-	}
+	}, true
 }
 
-func CreatePortFromAddress(infoAddress string, protocol string, state string) scantron.Port {
+func createPortFromAddress(infoAddress string, protocol string, state string) scantron.Port {
 
 	localPortInfo := strings.Split(infoAddress, ":")
 	address := localPortInfo[0]
@@ -96,37 +109,12 @@ func CreatePortFromAddress(infoAddress string, protocol string, state string) sc
 	}
 }
 
-func CreateNetstatPort(info NetstatInfo) NetstatPort {
-	localPort := CreatePortFromAddress(info.LocalAddress, info.Protocol, info.State)
-	foreignPort := CreatePortFromAddress(info.ForeignAddress, info.Protocol, info.State)
+func createNetstatPort(info NetstatInfo) NetstatPort {
+	port := createPortFromAddress(info.LocalAddress, info.Protocol, info.State)
 
 	id, _ := strconv.Atoi(info.PID)
 	return NetstatPort{
-		CommandName: info.CommandName,
-		PID:         id,
-		State:       info.State,
-		Local:       localPort,
-		Foreign:     foreignPort,
+		PID:  id,
+		Port: port,
 	}
-
-}
-
-func ParseNetstatOutputForPort(output string) []NetstatPort {
-	scanner := bufio.NewScanner(strings.NewReader(output))
-	result := []NetstatPort{}
-
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		info := ParseNetstatLine(line)
-
-		if len(info.CommandName) == 0 {
-			continue
-		}
-
-		port := CreateNetstatPort(info)
-		result = append(result, port)
-	}
-
-	return result
 }
