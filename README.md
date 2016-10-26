@@ -17,15 +17,14 @@
 
 ### SYNOPSIS
 
-    scantron <bosh-scan|direct-scan|audit> [command options]
+    scantron <bosh-scan|direct-scan|generate-manifest|audit> [command options]
 
 
 ### COMMAND OPTIONS
 
-    --nmap-results=PATH                        Path to nmap results XML (See GENERATING NMAP RESULTS)
-
 #### BOSH-SCAN
 
+    --nmap-results=PATH                        Path to nmap results XML (See GENERATING NMAP RESULTS)
     --director-url=URL                         BOSH Director URL
     --director-username=USERNAME               BOSH Director username
     --director-password=PASSWORD               BOSH Director password
@@ -37,28 +36,30 @@
 
     --uaa-client=OAUTH_CLIENT                  UAA Client
     --uaa-client-secret=OAUTH_CLIENT_SECRET    UAA Client Secret
-    --database=PATH                            Location to store report (optional and default to ./database.db)
+    --database=PATH                            Location to store report (default: ./database.db)
 
 #### DIRECT-SCAN
 
+    --nmap-results=PATH                        Path to nmap results XML (See GENERATING NMAP RESULTS)
     --address=ADDRESS                          Address to scan
     --username=USERNAME                        Username to scan with
     --password=PASSWORD                        Password to scan with
     --private-key=PATH                         Private key to scan with (optional)
-    --database=PATH                            Location to store report (optional and default to ./database.db)
+    --database=PATH                            Location to store report (default: ./database.db)
+
+#### GENERATE-MANIFEST
+
+    --database=PATH                            Path to report database (default: ./database.db)
 
 #### AUDIT
 
     --database=PATH                            Path to report database (default: ./database.db)
     --manifest=PATH                            Path to manifest
 
-#### GENERATE-MANIFEST
 
-    --database=PATH                            Path to report database (default: ./database.db)
-    
 ### GENERATING NMAP RESULTS
 
-Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML:
+Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML. These XML results are used to extract host information internally in `direct-scan` and `bosh-scan`. For more on nmap see [here](http://www.explainshell.com/explain?cmd=nmap+-oX+results.xml+-v+--script+ssl-enum-ciphers+-sV+-p+-+10.0.0.1-6):
 
     nmap -oX results.xml -v --script ssl-enum-ciphers -sV -p - 10.0.0.1-6
 
@@ -97,6 +98,9 @@ Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML:
       --uaa-client=OAUTH_CLIENT \
       --uaa-client-secret=OAUTH_CLIENT_SECRET
 
+     # GENERATE-MANIFEST
+     scantron generate-manifest > bosh.yml
+     
      # AUDIT
      scantron audit --manifest bosh.yml
 
@@ -108,9 +112,15 @@ Scantron only scans regular files and skips the following directories:
   * /sys
   * /dev
 
+### AUDIT
+
+Prior to running audit, run `bosh-scan` or `direct-scan` to create a report (see Database Schema). Then `generate-manifest` (see Manifest Format) to create a starting point with a known-good configuration.  Some hand-tweaking may be necessary to handle non-deterministic ports in the generated manifest file. The resulting manifest file is compared against report.
+
+Audit outputs the audited hosts along with either `err` or `ok`. When there's any error, audit highlights the mismatched processes, ports, and/or permissions and returns with exit code 3. If audit does not have any errors, it will return with exit code 0.
+
 ### DATABASE SCHEMA
 
-Scantron produces a SQLite database for scan results with the following schema:
+Scantron produces a SQLite database for scan reports with the following schema:
 
 ```sql
 CREATE TABLE reports (
