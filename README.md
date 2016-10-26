@@ -59,7 +59,10 @@
 
 ### GENERATING NMAP RESULTS
 
-Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML. These XML results are used to extract host information internally in `direct-scan` and `bosh-scan`. For more on nmap see [here](http://www.explainshell.com/explain?cmd=nmap+-oX+results.xml+-v+--script+ssl-enum-ciphers+-sV+-p+-+10.0.0.1-6):
+Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML.
+These XML results are used to extract host information internally in
+`direct-scan` and `bosh-scan`. For more on nmap see
+[here](http://www.explainshell.com/explain?cmd=nmap+-oX+results.xml+-v+--script+ssl-enum-ciphers+-sV+-p+-+10.0.0.1-6):
 
     nmap -oX results.xml -v --script ssl-enum-ciphers -sV -p - 10.0.0.1-6
 
@@ -100,7 +103,7 @@ Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML. These
 
      # GENERATE-MANIFEST
      scantron generate-manifest > bosh.yml
-     
+
      # AUDIT
      scantron audit --manifest bosh.yml
 
@@ -114,81 +117,42 @@ Scantron only scans regular files and skips the following directories:
 
 ### AUDIT
 
-Prior to running audit, run `bosh-scan` or `direct-scan` to create a report (see Database Schema). Then `generate-manifest` (see Manifest Format) to create a starting point with a known-good configuration.  Some hand-tweaking may be necessary to handle non-deterministic ports in the generated manifest file. The resulting manifest file is compared against report.
+Prior to running audit, run `bosh-scan` or `direct-scan` to create a report
+(see Database Schema). Then `generate-manifest` (see Manifest Format) to create
+a starting point with a known-good configuration.  Some hand-tweaking may be
+necessary to handle non-deterministic ports in the generated manifest file. The
+resulting manifest file is compared against report.
 
-Audit outputs the audited hosts along with either `err` or `ok`. When there's any error, audit highlights the mismatched processes, ports, and/or permissions and returns with exit code 3. If audit does not have any errors, it will return with exit code 0.
+Audit outputs the audited hosts along with either `err` or `ok`. When there's
+any error, audit highlights the mismatched processes, ports, and/or permissions
+and returns with exit code 3. If audit does not have any errors, it will return
+with exit code 0.
 
 ### DATABASE SCHEMA
 
 Scantron produces a SQLite database for scan reports with the following schema:
 
-```sql
-CREATE TABLE reports (
-  id integer PRIMARY KEY AUTOINCREMENT,
-  timestamp datetime,
-  UNIQUE(timestamp)
-);
+![Database Schema](images/schema.png)
 
-CREATE TABLE hosts (
-  id integer PRIMARY KEY AUTOINCREMENT,
-  name text,
-  ip text,
-  UNIQUE(ip, name)
-);
+Each scan creates a report with many hosts in it. Hosts represent scanned VMs
+which contain the list of world writable files and processes running on that
+machine. Each process is referenced by the port it is listening on and its
+environment variables. TLS information is provided for a port when the port is
+expecting TLS connections.
 
-CREATE TABLE processes (
-  id integer PRIMARY KEY AUTOINCREMENT,
-  host_id integer,
-  name text,
-  pid integer,
-  cmdline text,
-  user text,
-  FOREIGN KEY(host_id) REFERENCES hosts(id)
-);
+### EXAMPLE QUERIES
 
-CREATE TABLE ports (
-  id integer PRIMARY KEY AUTOINCREMENT,
-  process_id integer,
-  protocol string,
-  address string,
-  number integer,
-  state string,
-  FOREIGN KEY(process_id) REFERENCES processes(id)
-);
+Finding all of the hosts which are listening on a particular port:
 
-CREATE TABLE tls_informations (
-  id integer PRIMARY KEY AUTOINCREMENT,
-  port_id integer,
-  cert_expiration datetime,
-  cert_bits integer,
-  cert_country string,
-  cert_province string,
-  cert_locality string,
-  cert_organization string,
-  cert_common_name string,
-  FOREIGN KEY(port_id) REFERENCES ports(id)
-);
-
-CREATE TABLE tls_scan_errors (
-  id integer PRIMARY KEY AUTOINCREMENT,
-  port_id integer,
-  cert_scan_error string,
-  FOREIGN KEY(port_id) REFERENCES ports(id)
-);
-
-CREATE TABLE env_vars (
-  id integer PRIMARY KEY AUTOINCREMENT,
-  process_id integer,
-  var text,
-  FOREIGN KEY(process_id) REFERENCES processes(id)
-);
-
-CREATE TABLE files (
-  id integer PRIMARY KEY AUTOINCREMENT,
-  host_id integer,
-  path text,
-  FOREIGN KEY(host_id) REFERENCES hosts(id)
-);
+``` sql
+SELECT hosts.NAME
+FROM ports
+  JOIN processes
+    ON ports.process_id = processes.id
+  JOIN hosts
+    ON processes.host_id = hosts.id
+WHERE ports.number = 6061
+  AND ports.state = "listen"
 ```
 
 ### MANIFEST FORMAT
@@ -208,7 +172,7 @@ process.
 
 This is an example of the manifest file:
 
-```
+``` yaml
 specs:
 - prefix: cloud_controller-
   processes:
