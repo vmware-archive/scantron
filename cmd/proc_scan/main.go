@@ -11,6 +11,7 @@ import (
 
 	ps "github.com/keybase/go-ps"
 	"github.com/pivotal-cf/scantron"
+	"github.com/pivotal-cf/scantron/filesystem"
 	"github.com/pivotal-cf/scantron/netstat"
 )
 
@@ -46,7 +47,9 @@ func main() {
 		jsonProcesses = append(jsonProcesses, jsonProcess)
 	}
 
-	jsonFiles := worldWritableFiles()
+	jsonFiles := filesystem.ScanFilesystem("/", []string{
+		"/dev", "/proc", "/sys",
+	})
 
 	systemInfo := scantron.SystemInfo{
 		Processes: jsonProcesses,
@@ -111,33 +114,4 @@ func env(pid int) []string {
 	}
 
 	return env
-}
-
-func worldWritableFiles() []scantron.File {
-	bs, err := exec.Command(
-		"find", "/",
-		"-path", "/proc", "-prune",
-		"-o", "-path", "/sys", "-prune",
-		"-o", "-path", "/dev", "-prune",
-		"-o", "!", "-readable", "-prune",
-		"-o", "-type", "f", "-perm", "-o+w",
-		"-print",
-	).Output()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "error: failed to get list of world-writable files:", err)
-		os.Exit(1)
-	}
-
-	findResult := string(bs)
-	findLines := strings.Split(findResult, "\n")
-	jsonFiles := []scantron.File{}
-	for _, line := range findLines {
-		if line != "" {
-			jsonFiles = append(jsonFiles, scantron.File{
-				Path: line,
-			})
-		}
-	}
-
-	return jsonFiles
 }
