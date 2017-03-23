@@ -1,53 +1,48 @@
 package filesystem
 
 import (
-	"fmt"
 	"os"
-	"os/exec"
-	"runtime"
-	"strings"
+
+	"path/filepath"
 
 	"github.com/pivotal-cf/scantron"
 )
 
-func ScanFilesystem(rootPath string, excludedPaths []string) []scantron.File {
-	arguments := []string{rootPath}
-
-	for _, path := range excludedPaths {
-		arguments = append(arguments, "-path", path, "-prune", "-o")
-	}
-
-	if runtime.GOOS != "darwin" {
-		arguments = append(arguments, "!", "-readable", "-prune", "-o")
-	}
-
-	arguments = append(arguments, "-type", "f")
-
-	if runtime.GOOS == "darwin" {
-		arguments = append(arguments, "-perm", "+007")
-	} else {
-		arguments = append(arguments, "-perm", "/007")
-	}
-
-	arguments = append(arguments, "-print")
-
-	bs, err := exec.Command("find", arguments...).Output()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "error: failed to get list of world-writable files:", err)
-		os.Exit(1)
-	}
-
-	findLines := strings.Split(string(bs), "\n")
-
+func ScanFilesystem(rootPath string, excludedPaths []string) ([]scantron.File, error) {
 	files := []scantron.File{}
 
-	for _, line := range findLines {
-		if line != "" {
+	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			for _, excludedPath := range excludedPaths {
+				if excludedPath == path {
+					return filepath.SkipDir
+				}
+			}
+
+			return nil
+		}
+
+		if !info.Mode().IsRegular() {
+			return nil
+		}
+
+		// File has world read, write or execute permission
+		if info.Mode()&07 > 0 {
 			files = append(files, scantron.File{
-				Path: line,
+				Path: path,
 			})
 		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
-	return files
+	return files, nil
 }

@@ -1,6 +1,7 @@
 package filesystem_test
 
 import (
+	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/filesystem"
 
 	"io/ioutil"
@@ -10,7 +11,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/scantron"
 )
 
 var _ = Describe("FileScanner", func() {
@@ -36,6 +36,7 @@ var _ = Describe("FileScanner", func() {
 
 	createFile := func(dirPath string, perm os.FileMode) string {
 		filePath := path.Join(dirPath, "some-file")
+
 		err := ioutil.WriteFile(filePath, []byte{}, perm)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -51,52 +52,64 @@ var _ = Describe("FileScanner", func() {
 		return dirPath
 	}
 
-	It("should return empty slice when root is empty", func() {
-		files := filesystem.ScanFilesystem(root, []string{})
-		Expect(files).To(BeEmpty())
-	})
-
-	It("should not detect files not accessible by others", func() {
+	It("does not detect files not accessible by others", func() {
 		createFile(root, 0640)
 
-		files := filesystem.ScanFilesystem(root, []string{})
+		files, err := filesystem.ScanFilesystem(root, []string{})
+		Expect(err).NotTo(HaveOccurred())
+
 		Expect(files).To(BeEmpty())
 	})
 
-	It("should detect world readable files", func() {
+	It("detects world readable files", func() {
 		filePath := createFile(root, 0004)
 
-		files := filesystem.ScanFilesystem(root, []string{})
+		files, err := filesystem.ScanFilesystem(root, []string{})
+		Expect(err).NotTo(HaveOccurred())
+
 		Expect(files).To(ConsistOf(scantron.File{Path: filePath}))
 	})
 
-	It("should detect world writable files", func() {
+	It("detects world writable files", func() {
 		filePath := createFile(root, 0002)
 
-		files := filesystem.ScanFilesystem(root, []string{})
+		files, err := filesystem.ScanFilesystem(root, []string{})
+		Expect(err).NotTo(HaveOccurred())
+
 		Expect(files).To(ConsistOf(scantron.File{Path: filePath}))
 	})
 
-	It("should detect world executable files", func() {
+	It("detects world executable files", func() {
 		filePath := createFile(root, 0001)
 
-		files := filesystem.ScanFilesystem(root, []string{})
+		files, err := filesystem.ScanFilesystem(root, []string{})
+		Expect(err).NotTo(HaveOccurred())
+
 		Expect(files).To(ConsistOf(scantron.File{Path: filePath}))
 	})
 
-	It("should exclude directories", func() {
+	It("excludes directories", func() {
 		createDir("some-dir", 0755)
 
-		files := filesystem.ScanFilesystem(root, []string{})
+		files, err := filesystem.ScanFilesystem(root, []string{})
+		Expect(err).NotTo(HaveOccurred())
+
 		Expect(files).To(BeEmpty())
 	})
 
-	It("should exclude files from the exclude list", func() {
+	It("excludes files from the exclude list", func() {
 		procDir := createDir("proc", 0755)
 
 		createFile(procDir, 0004)
 
-		files := filesystem.ScanFilesystem(root, []string{procDir})
+		files, err := filesystem.ScanFilesystem(root, []string{procDir})
+		Expect(err).NotTo(HaveOccurred())
+
 		Expect(files).To(BeEmpty())
+	})
+
+	It("returns an error when it fails to walk the filesystem", func() {
+		_, err := filesystem.ScanFilesystem("/poop", []string{})
+		Expect(err).To(HaveOccurred())
 	})
 })

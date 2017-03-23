@@ -47,9 +47,14 @@ func main() {
 		jsonProcesses = append(jsonProcesses, jsonProcess)
 	}
 
-	jsonFiles := filesystem.ScanFilesystem("/", []string{
+	jsonFiles, err := filesystem.ScanFilesystem("/", []string{
 		"/dev", "/proc", "/sys",
 	})
+
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error: failed to scan filesystem:", err)
+		os.Exit(1)
+	}
 
 	systemInfo := scantron.SystemInfo{
 		Processes: jsonProcesses,
