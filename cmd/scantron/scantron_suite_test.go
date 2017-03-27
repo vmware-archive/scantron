@@ -6,6 +6,7 @@ import (
 
 	"github.com/onsi/gomega/gexec"
 
+	"os/exec"
 	"testing"
 )
 
@@ -29,3 +30,13 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 var _ = SynchronizedAfterSuite(func() {}, func() {
 	gexec.CleanupBuildArtifacts()
 })
+
+func runCommand(args ...string) *gexec.Session {
+	cmd := exec.Command(scantronPath, args...)
+
+	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+	Expect(err).NotTo(HaveOccurred())
+	<-session.Exited
+
+	return session
+}

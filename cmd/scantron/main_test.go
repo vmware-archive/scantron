@@ -3,7 +3,6 @@ package main_test
 import (
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	yaml "gopkg.in/yaml.v2"
@@ -79,11 +78,9 @@ var _ = Describe("Main", func() {
 			})
 
 			It("exits 1", func() {
-				command := exec.Command(scantronPath, "audit", "--database", databasePath, "--manifest", manifestPath)
-				process, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
-				Expect(err).NotTo(HaveOccurred())
+				session := runCommand("audit", "--database", databasePath, "--manifest", manifestPath)
 
-				Eventually(process).Should(gexec.Exit(1))
+				Eventually(session).Should(gexec.Exit(1))
 			})
 		})
 
@@ -94,11 +91,9 @@ var _ = Describe("Main", func() {
 			})
 
 			It("exits 1", func() {
-				command := exec.Command(scantronPath, "audit", "--database", databasePath, "--manifest", manifestPath)
-				process, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
-				Expect(err).NotTo(HaveOccurred())
+				session := runCommand("audit", "--database", databasePath, "--manifest", manifestPath)
 
-				Eventually(process).Should(gexec.Exit(1))
+				Eventually(session).Should(gexec.Exit(1))
 			})
 		})
 
@@ -112,22 +107,18 @@ var _ = Describe("Main", func() {
 			})
 
 			It("exits 3", func() {
-				command := exec.Command(scantronPath, "audit", "--database", databasePath, "--manifest", manifestPath)
-				process, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
-				Expect(err).NotTo(HaveOccurred())
+				session := runCommand("audit", "--database", databasePath, "--manifest", manifestPath)
 
-				Eventually(process).Should(gexec.Exit(3))
+				Eventually(session).Should(gexec.Exit(3))
 			})
 		})
 
 		It("shows ok for each host", func() {
-			command := exec.Command(scantronPath, "audit", "--database", databasePath, "--manifest", manifestPath)
-			process, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
-			Expect(err).NotTo(HaveOccurred())
+			session := runCommand("audit", "--database", databasePath, "--manifest", manifestPath)
 
-			Eventually(process).Should(gexec.Exit(0))
+			Eventually(session).Should(gexec.Exit(0))
 
-			output := process.Buffer().Contents()
+			output := session.Out.Contents()
 
 			Expect(output).To(ContainSubstring("ok  prefix-name-1"))
 			Expect(output).To(ContainSubstring("ok  prefix-name-2"))
