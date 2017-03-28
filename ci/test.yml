@@ -11,5 +11,9 @@ inputs:
 - name: scantron
   path: go/src/github.com/pivotal-cf/scantron
 
+outputs:
+- name: scantron-binary
+  path: scantron-binary
+
 run:
   path: go/src/github.com/pivotal-cf/scantron/ci/script/ci

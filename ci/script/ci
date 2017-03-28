@@ -2,6 +2,8 @@
 
 set -e -u -o pipefail
 
+OUTPUT=$PWD/scantron-binary
+
 export GOPATH=$PWD/go
 export PATH=$GOPATH/bin:$PATH
 
@@ -14,3 +16,5 @@ pushd $GOPATH/src/github.com/pivotal-cf/scantron
 
   ginkgo -r -p -race "$@"
 popd
+
+mv $GOPATH/src/github.com/pivotal-cf/scantron/scantron $OUTPUT
