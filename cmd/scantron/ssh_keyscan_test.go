@@ -54,8 +54,7 @@ var _ = Describe("ssh-keyscan", func() {
 		session := runCommand("ssh-keyscan", "999.999.999.999")
 		Eventually(session).Should(gexec.Exit(1))
 
-		Expect(session.Err).To(gbytes.Say("error"))
-		Expect(session.Err).To(gbytes.Say("no such host"))
+		Expect(session.Err).To(gbytes.Say("error: dial tcp: lookup 999.999.999.999"))
 	})
 })
 
