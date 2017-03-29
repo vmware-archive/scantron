@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	"os/signal"
 	"strings"
@@ -204,7 +205,7 @@ type boshMachine struct {
 }
 
 func (b *boshMachine) Address() string {
-	return b.vmInfo.IPs[0]
+	return BestAddress(b.vmInfo.IPs)
 }
 
 func (b *boshMachine) UploadFile(localPath string, remotePath string) error {
@@ -297,4 +298,20 @@ func getUAA(dirConfig boshdir.Config, creds boshconfig.Creds, logger boshlog.Log
 	uaaConfig.ClientSecret = creds.ClientSecret
 
 	return boshuaa.NewFactory(logger).New(uaaConfig)
+}
+
+func BestAddress(addresses []string) string {
+	if len(addresses) == 0 {
+		panic("BestAddress: candidate list is empty")
+	}
+
+	for _, addr := range addresses {
+		if ip := net.ParseIP(addr).To4(); ip != nil {
+			if ip[0] == 10 {
+				return addr
+			}
+		}
+	}
+
+	return addresses[0]
 }
