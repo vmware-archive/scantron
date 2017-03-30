@@ -83,7 +83,7 @@ func readFile(path string) ([]string, error) {
 }
 
 func getNetstatPorts() netstat.NetstatPorts {
-	bs, err := exec.Command("netstat", "-at", "-4", "--numeric-ports", "-u", "-p").Output()
+	bs, err := exec.Command("netstat", "-at", "-4", "-6", "--numeric-ports", "-u", "-p").Output()
 	if err != nil {
 		return []netstat.NetstatPort{}
 	}
