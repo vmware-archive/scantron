@@ -53,6 +53,33 @@ udp        0      0 127.0.0.2:8080          0.0.0.0:*               LISTEN      
 		}))
 	})
 
+	It("parses both IPv4 and IPv6", func() {
+		input := `
+		tcp6       0      0 :::50051                :::*                    LISTEN      5149/rolodexd
+		udp6       0      0 :::111                  :::*                                777/rpcbind`
+
+		Expect(netstat.ParseNetstatOutputForPort(input)).To(Equal([]netstat.NetstatPort{
+			{
+				PID: 5149,
+				Port: scantron.Port{
+					Protocol: "tcp6",
+					Address:  "::",
+					Number:   50051,
+					State:    "LISTEN",
+				},
+			},
+			{
+				PID: 777,
+				Port: scantron.Port{
+					Protocol: "udp6",
+					Address:  "::",
+					Number:   111,
+					State:    "",
+				},
+			},
+		}))
+	})
+
 	Context("when the socket state is missing because it is a raw socket", func() {
 		It("still parses that", func() {
 			input := "udp        0      0 127.0.0.1:53            0.0.0.0:*                           4113/consul"

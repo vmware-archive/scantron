@@ -2,6 +2,8 @@ package netstat
 
 import (
 	"bufio"
+	"log"
+	"net"
 	"strconv"
 	"strings"
 
@@ -73,7 +75,10 @@ func parseNetstatLine(line string) (NetstatInfo, bool) {
 		process = netstat[6]
 	}
 
-	if (protocol != "tcp") && (protocol != "udp") {
+	switch protocol {
+	case "tcp", "tcp6", "udp", "udp6":
+		break
+	default:
 		return NetstatInfo{}, false
 	}
 
@@ -96,10 +101,15 @@ func parseNetstatLine(line string) (NetstatInfo, bool) {
 }
 
 func createPortFromAddress(infoAddress string, protocol string, state string) scantron.Port {
-
-	localPortInfo := strings.Split(infoAddress, ":")
-	address := localPortInfo[0]
-	number, _ := strconv.Atoi(localPortInfo[1])
+	// XXX(cb): In the netstat output IPv6 addresses are shown as :::22 whereas
+	// Go parsing requires [::]:22. We try and fix this up here but this is
+	// undoubtedly imperfect.
+	conformAddr := strings.Replace(infoAddress, "::", "[::]", 1)
+	address, port, err := net.SplitHostPort(conformAddr)
+	if err != nil {
+		log.Printf("failed to split address %q: %s", conformAddr, err)
+	}
+	number, _ := strconv.Atoi(port)
 
 	return scantron.Port{
 		Protocol: protocol,
