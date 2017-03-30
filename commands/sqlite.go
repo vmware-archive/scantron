@@ -63,8 +63,13 @@ func (db *Database) Close() error {
 }
 
 func (db *Database) SaveReport(scans []scanner.ScanResult) error {
-	var reportID int
-	res, err := db.db.Exec("INSERT INTO reports(timestamp) VALUES (?)", time.Now())
+	tx, err := db.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	res, err := tx.Exec("INSERT INTO reports(timestamp) VALUES (?)", time.Now())
 	if err != nil {
 		return err
 	}
@@ -74,18 +79,18 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 		return err
 	}
 
-	reportID = int(insertedID)
+	reportID := int(insertedID)
 
 	for _, scan := range scans {
 		var hostID int
 		query := "SELECT id FROM hosts WHERE name = ? AND ip = ? AND report_id = ?"
-		err := db.db.QueryRow(query, scan.Job, scan.IP, reportID).Scan(&hostID)
+		err := tx.QueryRow(query, scan.Job, scan.IP, reportID).Scan(&hostID)
 		if err != nil {
 			if err != sql.ErrNoRows {
 				return err
 			}
 
-			res, err = db.db.Exec("INSERT INTO hosts(name, ip, report_id) VALUES (?, ?, ?)", scan.Job, scan.IP, reportID)
+			res, err = tx.Exec("INSERT INTO hosts(name, ip, report_id) VALUES (?, ?, ?)", scan.Job, scan.IP, reportID)
 			if err != nil {
 				return err
 			}
@@ -99,7 +104,7 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 
 			for _, service := range scan.Services {
 				cmdline := strings.Join(service.Cmdline, " ")
-				res, err := db.db.Exec(
+				res, err := tx.Exec(
 					"INSERT INTO processes(host_id, name, pid, cmdline, user) VALUES (?, ?, ?, ?, ?)",
 					hostID, service.CommandName, service.PID, cmdline, service.User,
 				)
@@ -113,7 +118,7 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 				}
 
 				for _, port := range service.Ports {
-					res, err = db.db.Exec(
+					res, err = tx.Exec(
 						"INSERT INTO ports(process_id, protocol, address, number, state) VALUES (?, ?, ?, ?, ?)",
 						processID, port.Protocol, port.Address, port.Number, port.State,
 					)
@@ -127,7 +132,7 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 					}
 
 					if port.TLSInformation.ScanError != nil {
-						_, err = db.db.Exec(`
+						_, err = tx.Exec(`
 						INSERT INTO tls_scan_errors (
 							 port_id,
 							 cert_scan_error
@@ -143,7 +148,7 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 					if port.TLSInformation.Certificate != nil {
 						cert := port.TLSInformation.Certificate
 
-						_, err = db.db.Exec(`
+						_, err = tx.Exec(`
 						INSERT INTO tls_informations (
 							 port_id,
 							 cert_expiration,
@@ -169,7 +174,7 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 					}
 				}
 
-				_, err = db.db.Exec("INSERT INTO env_vars(var, process_id) VALUES (?, ?)",
+				_, err = tx.Exec("INSERT INTO env_vars(var, process_id) VALUES (?, ?)",
 					strings.Join(service.Env, " "), processID,
 				)
 				if err != nil {
@@ -178,7 +183,7 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 			}
 
 			for _, file := range scan.Files {
-				_, err = db.db.Exec(
+				_, err = tx.Exec(
 					"INSERT INTO files(host_id, path) VALUES (?, ?)",
 					hostID, file.Path,
 				)
@@ -189,7 +194,7 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 		}
 	}
 
-	return nil
+	return tx.Commit()
 }
 
 var createDDL = `
