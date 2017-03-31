@@ -10,10 +10,9 @@ image_resource:
 inputs:
 - name: scantron
 - name: scantron-binary
-- name: scantron-reports
 
 outputs:
-- name: updated-scantron-reports
+- name: scantron-reports
 
 run:
   path: scantron/ci/scan/scan.sh
