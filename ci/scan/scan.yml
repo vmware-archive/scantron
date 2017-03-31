@@ -1,0 +1,23 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: pcfsecurity/scantron-scan
+    tag: latest
+
+inputs:
+- name: scantron
+- name: scantron-binary
+
+run:
+  path: scantron/ci/scan/scan.sh
+
+params:
+  NMAP_RANGE:
+
+  BOSH_ADDRESS:
+  BOSH_CLIENT_ID:
+  BOSH_CLIENT_SECRET:
+  BOSH_DEPLOYMENT:
