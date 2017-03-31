@@ -11,6 +11,9 @@ inputs:
 - name: scantron
 - name: scantron-binary
 
+outputs:
+- name: scantron-reports
+
 run:
   path: scantron/ci/scan/scan.sh
 

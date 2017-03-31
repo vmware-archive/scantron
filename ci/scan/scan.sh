@@ -11,6 +11,7 @@ nmap -oX "$NMAP_RESULTS" -sT --script ssl-enum-ciphers -sV -p - "$NMAP_RANGE"
 
 # perform scantron scan
 ./scantron-binary/scantron bosh-scan \
+  --database scantron-results/reports.db \
   --nmap-results "$NMAP_RESULTS" \
   --director-url "$BOSH_ADDRESS" \
   --bosh-deployment "$BOSH_DEPLOYMENT" \
