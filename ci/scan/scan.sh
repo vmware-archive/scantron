@@ -7,7 +7,7 @@ chmod +x ./scantron-binary/scantron
 NMAP_RESULTS="results.xml"
 
 # perform nmap scan
-nmap -oX "$NMAP_RESULTS" -v -sT --script ssl-enum-ciphers -sV -p - "$NMAP_RANGE"
+nmap -oX "$NMAP_RESULTS" -sT --script ssl-enum-ciphers -sV -p - "$NMAP_RANGE"
 
 # perform scantron scan
 ./scantron-binary/scantron bosh-scan \
