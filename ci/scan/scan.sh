@@ -17,3 +17,6 @@ nmap -oX "$NMAP_RESULTS" -sT --script ssl-enum-ciphers -sV -p - "$NMAP_RANGE"
   --bosh-deployment "$BOSH_DEPLOYMENT" \
   --uaa-client "$BOSH_CLIENT_ID" \
   --uaa-client-secret "$BOSH_CLIENT_SECRET"
+
+# move to task output
+mv scantron-reports/reports.db updated-scantron-reports/reports.db
