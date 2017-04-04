@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"code.cloudfoundry.org/lager"
-	boshdir "github.com/cloudfoundry/bosh-init/director"
+	boshdir "github.com/cloudfoundry/bosh-cli/director"
 	"github.com/pivotal-cf/scantron/remotemachine"
 )
 
@@ -42,9 +42,8 @@ func (fake *FakeBoshDirector) VMs() []boshdir.VMInfo {
 	fake.vMsMutex.Unlock()
 	if fake.VMsStub != nil {
 		return fake.VMsStub()
-	} else {
-		return fake.vMsReturns.result1
 	}
+	return fake.vMsReturns.result1
 }
 
 func (fake *FakeBoshDirector) VMsCallCount() int {
@@ -70,9 +69,8 @@ func (fake *FakeBoshDirector) ConnectTo(arg1 lager.Logger, arg2 boshdir.VMInfo) 
 	fake.connectToMutex.Unlock()
 	if fake.ConnectToStub != nil {
 		return fake.ConnectToStub(arg1, arg2)
-	} else {
-		return fake.connectToReturns.result1
 	}
+	return fake.connectToReturns.result1
 }
 
 func (fake *FakeBoshDirector) ConnectToCallCount() int {
@@ -101,9 +99,8 @@ func (fake *FakeBoshDirector) Cleanup() error {
 	fake.cleanupMutex.Unlock()
 	if fake.CleanupStub != nil {
 		return fake.CleanupStub()
-	} else {
-		return fake.cleanupReturns.result1
 	}
+	return fake.cleanupReturns.result1
 }
 
 func (fake *FakeBoshDirector) CleanupCallCount() int {

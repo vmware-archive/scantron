@@ -2,10 +2,11 @@ package remotemachine
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"sync"
 
-	boshssh "github.com/cloudfoundry/bosh-init/ssh"
+	boshssh "github.com/cloudfoundry/bosh-cli/ssh"
 )
 
 type MemWriter struct {
@@ -20,29 +21,31 @@ func NewMemWriter() *MemWriter {
 	}
 }
 
-func (w *MemWriter) ForInstance(jobName, indexOrID, host string) boshssh.InstanceWriter {
+func (w *MemWriter) ForInstance(jobName, indexOrID string) boshssh.InstanceWriter {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 
 	instance := &memWriterInstance{
 		jobName:   jobName,
 		indexOrID: indexOrID,
-		host:      host,
 
 		stdout: bytes.NewBufferString(""),
 		stderr: bytes.NewBufferString(""),
 	}
-	w.instances[host] = instance
+
+	id := fmt.Sprintf("%s/%s", jobName, indexOrID)
+	w.instances[id] = instance
 	return instance
 }
 
 func (w *MemWriter) Flush() {}
 
-func (w *MemWriter) ResultsForHost(host string) *memWriterInstance {
+func (w *MemWriter) ResultsForInstance(jobName, indexOrID string) *memWriterInstance {
 	w.lock.RLock()
 	defer w.lock.RUnlock()
 
-	if instance, ok := w.instances[host]; ok {
+	id := fmt.Sprintf("%s/%s", jobName, indexOrID)
+	if instance, ok := w.instances[id]; ok {
 		return instance
 	}
 	return nil
@@ -51,7 +54,6 @@ func (w *MemWriter) ResultsForHost(host string) *memWriterInstance {
 type memWriterInstance struct {
 	jobName   string
 	indexOrID string
-	host      string
 
 	stdout *bytes.Buffer
 	stderr *bytes.Buffer
@@ -69,7 +71,6 @@ func (w *memWriterInstance) End(exitStatus int, err error) {
 
 func (w *memWriterInstance) JobName() string         { return w.jobName }
 func (w *memWriterInstance) IndexOrID() string       { return w.indexOrID }
-func (w *memWriterInstance) Host() string            { return w.host }
 func (w *memWriterInstance) StdoutReader() io.Reader { return w.stdout }
 func (w *memWriterInstance) StdoutString() string    { return w.stdout.String() }
 func (w *memWriterInstance) StderrReader() io.Reader { return w.stderr }

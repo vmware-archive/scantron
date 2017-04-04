@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"code.cloudfoundry.org/lager/lagertest"
-	boshdirector "github.com/cloudfoundry/bosh-init/director"
+	boshdirector "github.com/cloudfoundry/bosh-cli/director"
 
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/remotemachine/remotemachinefakes"

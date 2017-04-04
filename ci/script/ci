@@ -7,8 +7,10 @@ OUTPUT=$PWD/scantron-binary
 export GOPATH=$PWD/go
 export PATH=$GOPATH/bin:$PATH
 
+go get -u github.com/golang/dep/...
+
 pushd $GOPATH/src/github.com/pivotal-cf/scantron
-  glide install
+  dep ensure
 
   go install ./vendor/github.com/onsi/ginkgo/ginkgo
 

@@ -58,9 +58,8 @@ func (fake *FakeRemoteMachine) Address() string {
 	fake.addressMutex.Unlock()
 	if fake.AddressStub != nil {
 		return fake.AddressStub()
-	} else {
-		return fake.addressReturns.result1
 	}
+	return fake.addressReturns.result1
 }
 
 func (fake *FakeRemoteMachine) AddressCallCount() int {
@@ -86,9 +85,8 @@ func (fake *FakeRemoteMachine) UploadFile(localPath string, remotePath string) e
 	fake.uploadFileMutex.Unlock()
 	if fake.UploadFileStub != nil {
 		return fake.UploadFileStub(localPath, remotePath)
-	} else {
-		return fake.uploadFileReturns.result1
 	}
+	return fake.uploadFileReturns.result1
 }
 
 func (fake *FakeRemoteMachine) UploadFileCallCount() int {
@@ -119,9 +117,8 @@ func (fake *FakeRemoteMachine) DeleteFile(remotePath string) error {
 	fake.deleteFileMutex.Unlock()
 	if fake.DeleteFileStub != nil {
 		return fake.DeleteFileStub(remotePath)
-	} else {
-		return fake.deleteFileReturns.result1
 	}
+	return fake.deleteFileReturns.result1
 }
 
 func (fake *FakeRemoteMachine) DeleteFileCallCount() int {
@@ -152,9 +149,8 @@ func (fake *FakeRemoteMachine) RunCommand(arg1 string) (io.Reader, error) {
 	fake.runCommandMutex.Unlock()
 	if fake.RunCommandStub != nil {
 		return fake.RunCommandStub(arg1)
-	} else {
-		return fake.runCommandReturns.result1, fake.runCommandReturns.result2
 	}
+	return fake.runCommandReturns.result1, fake.runCommandReturns.result2
 }
 
 func (fake *FakeRemoteMachine) RunCommandCallCount() int {
@@ -184,9 +180,8 @@ func (fake *FakeRemoteMachine) Close() error {
 	fake.closeMutex.Unlock()
 	if fake.CloseStub != nil {
 		return fake.CloseStub()
-	} else {
-		return fake.closeReturns.result1
 	}
+	return fake.closeReturns.result1
 }
 
 func (fake *FakeRemoteMachine) CloseCallCount() int {

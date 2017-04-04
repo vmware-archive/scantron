@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/lager"
-	boshconfig "github.com/cloudfoundry/bosh-init/cmd/config"
+	boshconfig "github.com/cloudfoundry/bosh-cli/cmd/config"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	nmap "github.com/lair-framework/go-nmap"
 
@@ -24,11 +24,10 @@ type BoshScanCommand struct {
 		URL        string `long:"director-url" description:"BOSH Director URL" value-name:"URL" required:"true"`
 		Deployment string `long:"bosh-deployment" description:"BOSH Deployment" value-name:"DEPLOYMENT_NAME" required:"true"`
 
-		Username string `long:"director-username" description:"BOSH Director username" value-name:"USERNAME"`
-		Password string `long:"director-password" description:"BOSH Director password" value-name:"PASSWORD"`
+		CACert string `long:"ca-cert" description:"Director CA certificate path" value-name:"CA_CERT"`
 
-		Client       string `long:"uaa-client" description:"UAA Client" value-name:"OAUTH_CLIENT"`
-		ClientSecret string `long:"uaa-client-secret" description:"UAA Client Secret" value-name:"OAUTH_CLIENT_SECRET"`
+		Client       string `long:"client" description:"Username or UAA client" value-name:"CLIENT"`
+		ClientSecret string `long:"client-secret" description:"Password or UAA client secret" value-name:"CLIENT_SECRET"`
 	} `group:"Director & Deployment"`
 
 	Gateway struct {
@@ -64,10 +63,9 @@ func (command *BoshScanCommand) Execute(args []string) error {
 			Client:       command.Director.Client,
 			ClientSecret: command.Director.ClientSecret,
 		},
+		command.Director.CACert,
 		command.Director.Deployment,
 		command.Director.URL,
-		command.Director.Username,
-		command.Director.Password,
 		boshLogger,
 		command.Gateway.Username,
 		command.Gateway.Host,
