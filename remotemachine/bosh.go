@@ -273,26 +273,26 @@ func getDirector(
 
 	certBytes, err := ioutil.ReadFile(caCert)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	dirConfig.CACert = string(certBytes)
 
 	anonymousDirector, err := boshdir.NewFactory(logger).New(dirConfig, nil, nil)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	directorInfo, err := anonymousDirector.Info()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	if directorInfo.Auth.Type != "uaa" {
 		dirConfig.Client = creds.Client
 		dirConfig.ClientSecret = creds.ClientSecret
 	} else if creds.IsUAA() {
-		uaa, err := getUAA(dirConfig, creds, logger)
+		uaa, err := getUAA(dirConfig, creds, caCert, logger)
 		if err != nil {
 			return nil, err
 		}
@@ -313,7 +313,7 @@ func getDirector(
 	return director, nil
 }
 
-func getUAA(dirConfig boshdir.Config, creds boshconfig.Creds, logger boshlog.Logger) (boshuaa.UAA, error) {
+func getUAA(dirConfig boshdir.Config, creds boshconfig.Creds, caCert string, logger boshlog.Logger) (boshuaa.UAA, error) {
 	director, err := boshdir.NewFactory(logger).New(dirConfig, boshdir.NewNoopTaskReporter(), boshdir.NewNoopFileReporter())
 	if err != nil {
 		return nil, err
@@ -335,6 +335,8 @@ func getUAA(dirConfig boshdir.Config, creds boshconfig.Creds, logger boshlog.Log
 	if err != nil {
 		return nil, err
 	}
+
+	uaaConfig.CACert = caCert
 
 	uaaConfig.Client = creds.Client
 	uaaConfig.ClientSecret = creds.ClientSecret
