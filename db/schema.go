@@ -1,7 +1,7 @@
 package db
 
 // Update the schema version when the DDL changes
-const SchemaVersion = 2
+const SchemaVersion = 3
 
 const createDDL = `
 CREATE TABLE reports (
@@ -50,6 +50,7 @@ CREATE TABLE tls_informations (
 	cert_organization string,
 	cert_common_name string,
 	cipher_suites text,
+	mutual bool,
 	FOREIGN KEY(port_id) REFERENCES ports(id)
 );
 

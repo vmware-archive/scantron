@@ -177,6 +177,7 @@ var _ = Describe("Sqlite", func() {
 								Number:   123,
 								TLSInformation: scantron.TLSInformation{
 									ScanError: errors.New("this was a terrible error"),
+									Mutual:    true,
 									CipherInformation: tlsscan.Results{
 										"tls1.0": []string{
 											"ECDHE-NOT-REALLY-SECURE",
@@ -229,6 +230,7 @@ var _ = Describe("Sqlite", func() {
 							 tls_informations.cert_organization,
 							 tls_informations.cert_common_name,
 							 tls_informations.cipher_suites,
+							 tls_informations.mutual,
 							 tls_scan_errors.cert_scan_error,
 							 env_vars.var,
 							 files.path,
@@ -266,13 +268,15 @@ var _ = Describe("Sqlite", func() {
 					certScanError   string
 					filePath        string
 					cipherSuites    string
+					mutual          bool
 					filePermissions os.FileMode
 				)
 
 				err = rows.Scan(&name, &ip, &pid, &user, &cmdline, &portProtocol,
-					&portAddress, &portNumber, &tlsCertExp, &tlsCertBits,
-					&tlsCertCountry, &tlsCertProvince, &tlsCertLocality,
-					&tlsCertOrganization, &tlsCertCommonName, &cipherSuites, &certScanError, &env, &filePath, &filePermissions)
+					&portAddress, &portNumber, &tlsCertExp, &tlsCertBits, &tlsCertCountry,
+					&tlsCertProvince, &tlsCertLocality, &tlsCertOrganization,
+					&tlsCertCommonName, &cipherSuites, &mutual, &certScanError, &env,
+					&filePath, &filePermissions)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(name).To(Equal("custom_name/0"))
@@ -289,6 +293,7 @@ var _ = Describe("Sqlite", func() {
 				Expect(tlsCertOrganization).To(Equal("some-organization"))
 				Expect(tlsCertCommonName).To(Equal("some-common-name"))
 				Expect(cipherSuites).To(MatchJSON(`{"tls1.0": ["ECDHE-NOT-REALLY-SECURE"], "tls1.1": ["ECDHE-REALLY-SECURE"]}`))
+				Expect(mutual).To(BeTrue())
 				Expect(certScanError).To(Equal("this was a terrible error"))
 				Expect(cmdline).To(Equal("this is a cmd"))
 				Expect(env).To(Equal("PATH=this OTHER=that"))

@@ -14,8 +14,9 @@ import (
 
 var ErrExpectedAbort = errors.New("tls: aborting handshake")
 
-func FetchTLSInformation(host, port string) (*scantron.Certificate, error) {
+func FetchTLSInformation(host, port string) (*scantron.Certificate, bool, error) {
 	certs := []x509.Certificate{}
+	mutual := false
 
 	config := &tls.Config{
 		// We never send secret information over this TLS connection. We're just
@@ -31,14 +32,22 @@ func FetchTLSInformation(host, port string) (*scantron.Certificate, error) {
 				certs = append(certs, *cert)
 			}
 
-			return ErrExpectedAbort
+			return nil
+		},
+		GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
+			mutual = true
+			return nil, ErrExpectedAbort
 		},
 	}
 
 	hostport := net.JoinHostPort(host, port)
-	_, err := tls.Dial("tcp", hostport, config)
+	conn, err := tls.Dial("tcp", hostport, config)
 	if err != nil && err != ErrExpectedAbort {
-		return nil, err
+		return nil, false, err
+	}
+
+	if conn != nil {
+		_ = conn.Close()
 	}
 
 	// XXX: We only get the first certificate given to us.
@@ -68,7 +77,7 @@ func FetchTLSInformation(host, port string) (*scantron.Certificate, error) {
 		},
 	}
 
-	return certificate, nil
+	return certificate, mutual, nil
 }
 
 func singleton(array []string) string {

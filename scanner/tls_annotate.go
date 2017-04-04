@@ -47,11 +47,12 @@ func AnnotateWithTLSInformation(scanner Scanner) Scanner {
 
 					port.TLSInformation.CipherInformation = results
 
-					cert, err := FetchTLSInformation(host, portNum)
+					cert, mutual, err := FetchTLSInformation(host, portNum)
 					if err != nil {
 						port.TLSInformation.ScanError = err
 					} else {
 						port.TLSInformation.Certificate = cert
+						port.TLSInformation.Mutual = mutual
 					}
 
 					ports[n] = port

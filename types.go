@@ -25,6 +25,7 @@ type Port struct {
 type TLSInformation struct {
 	Certificate       *Certificate
 	CipherInformation tlsscan.Results
+	Mutual            bool
 
 	ScanError error
 }

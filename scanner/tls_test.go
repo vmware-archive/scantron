@@ -60,8 +60,9 @@ var _ = Describe("TLS", func() {
 			It("should show TLS certificate details", func() {
 				host, port := hostport(server.URL)
 
-				cert, err := scanner.FetchTLSInformation(host, port)
+				cert, mutual, err := scanner.FetchTLSInformation(host, port)
 				Expect(err).ShouldNot(HaveOccurred())
+				Expect(mutual).To(BeFalse())
 				Expect(cert).ShouldNot(BeNil())
 
 				Expect(cert.Bits).To(Equal(1024))
@@ -100,8 +101,9 @@ var _ = Describe("TLS", func() {
 			It("should show TLS certificate details", func() {
 				host, port := hostport(server.URL)
 
-				cert, err := scanner.FetchTLSInformation(host, port)
+				cert, mutual, err := scanner.FetchTLSInformation(host, port)
 				Expect(err).ShouldNot(HaveOccurred())
+				Expect(mutual).To(BeTrue())
 				Expect(cert).ShouldNot(BeNil())
 
 				Expect(cert.Bits).To(Equal(1024))

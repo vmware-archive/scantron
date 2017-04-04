@@ -187,8 +187,9 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 							 cert_locality,
 							 cert_organization,
 							 cert_common_name,
-							 cipher_suites
-						 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+							 cipher_suites,
+							 mutual
+						 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 							portID,
 							cert.Expiration,
 							cert.Bits,
@@ -198,6 +199,7 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 							cert.Subject.Organization,
 							cert.Subject.CommonName,
 							string(ciJson),
+							port.TLSInformation.Mutual,
 						)
 						if err != nil {
 							return err
