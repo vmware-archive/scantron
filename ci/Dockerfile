@@ -1,4 +1,4 @@
-FROM golang:1.7
+FROM golang:1
 
 ENV GLIDE_VERSION v0.12.0
 ENV GLIDE_DOWNLOAD_URL https://github.com/Masterminds/glide/releases/download/$GLIDE_VERSION/glide-$GLIDE_VERSION-linux-amd64.tar.gz
