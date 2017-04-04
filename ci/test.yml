@@ -4,8 +4,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: pcfsecurity/go-glide
-    tag: latest
+    repository: golang
 
 inputs:
 - name: scantron
