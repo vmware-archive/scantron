@@ -276,7 +276,9 @@ func getDirector(
 		return nil, err
 	}
 
-	dirConfig.CACert = string(certBytes)
+	caCertContents := string(certBytes)
+
+	dirConfig.CACert = caCertContents
 
 	anonymousDirector, err := boshdir.NewFactory(logger).New(dirConfig, nil, nil)
 	if err != nil {
@@ -292,7 +294,7 @@ func getDirector(
 		dirConfig.Client = creds.Client
 		dirConfig.ClientSecret = creds.ClientSecret
 	} else if creds.IsUAA() {
-		uaa, err := getUAA(dirConfig, creds, caCert, logger)
+		uaa, err := getUAA(dirConfig, creds, caCertContents, logger)
 		if err != nil {
 			return nil, err
 		}
