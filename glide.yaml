@@ -24,3 +24,7 @@ import:
 - package: github.com/jteeuwen/go-bindata
   version: ^3.0.7
 - package: github.com/keybase/go-ps
+- package: github.com/pivotal-cf/paraphernalia
+  subpackages:
+  - test/certtest
+  - secure/tlsconfig

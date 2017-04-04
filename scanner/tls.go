@@ -4,27 +4,42 @@ import (
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/tls"
+	"crypto/x509"
+	"errors"
 	"fmt"
 
 	"github.com/pivotal-cf/scantron"
 )
 
+var ErrExpectedAbort = errors.New("tls: aborting handshake")
+
 func FetchTLSInformation(hostport string) (*scantron.Certificate, error) {
+	certs := []x509.Certificate{}
+
 	config := &tls.Config{
 		// We never send secret information over this TLS connection. We're just
 		// probing it.
 		InsecureSkipVerify: true,
+		VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+			for _, rawCert := range rawCerts {
+				cert, err := x509.ParseCertificate(rawCert)
+				if err != nil {
+					return errors.New("tls: failed to parse certificate from server: " + err.Error())
+				}
+
+				certs = append(certs, *cert)
+			}
+
+			return ErrExpectedAbort
+		},
 	}
 
-	conn, err := tls.Dial("tcp", hostport, config)
-	if err != nil {
+	_, err := tls.Dial("tcp", hostport, config)
+	if err != nil && err != ErrExpectedAbort {
 		return nil, err
 	}
-	defer conn.Close()
 
-	state := conn.ConnectionState()
-	cert := state.PeerCertificates[0]
-
+	cert := certs[0]
 	var bits int
 
 	switch key := cert.PublicKey.(type) {

@@ -1,38 +1,40 @@
-hash: b7694041fbdd73791a0a16950ea7a2a4e79ce08723b40687b30b1f40b8b26cfe
-updated: 2016-10-03T15:41:03.353020024-07:00
+hash: 2850ee63f5de4b65ad49f5b896edb460d064fbb2c0564524215d251a0bf6c103
+updated: 2017-04-03T16:44:46.444256015-07:00
 imports:
 - name: code.cloudfoundry.org/lager
   version: 62951a8009ab331bb21dc418074fa54e66eb9b6a
+  subpackages:
+  - lagertest
 - name: github.com/aws/aws-sdk-go
   version: f34b74c96bfd27df35643adeb14d8431ca047df5
   subpackages:
   - aws
-  - aws/corehandlers
-  - aws/credentials
-  - aws/request
-  - aws/session
-  - service/s3
-  - service/s3/s3manager
   - aws/awserr
   - aws/awsutil
-  - aws/client/metadata
   - aws/client
-  - aws/credentials/stscreds
-  - aws/defaults
-  - private/endpoints
-  - aws/signer/v4
-  - private/protocol
-  - private/protocol/restxml
-  - private/waiter
-  - service/s3/s3iface
-  - service/sts
+  - aws/client/metadata
+  - aws/corehandlers
+  - aws/credentials
   - aws/credentials/ec2rolecreds
   - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
+  - aws/defaults
   - aws/ec2metadata
-  - private/protocol/rest
+  - aws/request
+  - aws/session
+  - aws/signer/v4
+  - private/endpoints
+  - private/protocol
   - private/protocol/query
-  - private/protocol/xml/xmlutil
   - private/protocol/query/queryutil
+  - private/protocol/rest
+  - private/protocol/restxml
+  - private/protocol/xml/xmlutil
+  - private/waiter
+  - service/s3
+  - service/s3/s3iface
+  - service/s3/s3manager
+  - service/sts
 - name: github.com/bmatcuk/doublestar
   version: ec3b4af762f792cb93bf2518ff9ac408dbdc2b4e
 - name: github.com/charlievieth/fs
@@ -44,12 +46,12 @@ imports:
 - name: github.com/cloudfoundry/bosh-agent
   version: e6f5eca36ac0013befa94e83b7215da570364efc
   subpackages:
-  - agentclient/http
   - agentclient
   - agentclient/applyspec
-  - settings
-  - platform/disk
+  - agentclient/http
   - platform/deviceutil
+  - platform/disk
+  - settings
 - name: github.com/cloudfoundry/bosh-davcli
   version: 337ec17549dddba0367df7a195d9668adfd1aab1
   subpackages:
@@ -59,14 +61,12 @@ imports:
   version: 372563083b260b6328d20c40f42ab0fe01e1633d
   repo: https://github.com/krishicks/bosh-init.git
   subpackages:
-  - cmd/config
-  - cmd
-  - director
-  - ssh
-  - uaa
-  - ui
   - blobstore
   - cloud
+  - cmd
+  - cmd/config
+  - common/net
+  - common/util
   - config
   - cpi/release
   - crypto
@@ -79,48 +79,50 @@ imports:
   - deployment/sshtunnel
   - deployment/template
   - deployment/vm
+  - director
   - director/template
   - index
   - installation
+  - installation/blobextract
   - installation/manifest
+  - installation/pkg
   - installation/tarball
   - registry
   - release
+  - release/job
+  - release/job/manifest
+  - release/license
+  - release/manifest
   - release/pkg
+  - release/pkg/manifest
+  - release/resource
   - release/set/manifest
   - releasedir
+  - releasedir/index
+  - ssh
+  - state/job
   - state/pkg
   - stemcell
   - templatescompiler
   - templatescompiler/erbrenderer
+  - uaa
+  - ui
+  - ui/fmt
   - ui/table
   - ui/task
-  - ui/fmt
-  - release/job
-  - state/job
-  - common/net
-  - common/util
-  - installation/blobextract
-  - installation/pkg
-  - release/manifest
-  - release/license
-  - release/resource
-  - release/pkg/manifest
-  - releasedir/index
-  - release/job/manifest
 - name: github.com/cloudfoundry/bosh-utils
   version: e8fa5b9023522d58de0db477db1acbc3894e1a5f
   subpackages:
-  - logger
-  - errors
-  - system
-  - fileutil
-  - httpclient
-  - uuid
-  - retrystrategy
-  - property
   - blobstore
+  - errors
+  - fileutil
   - http
+  - httpclient
+  - logger
+  - property
+  - retrystrategy
+  - system
+  - uuid
 - name: github.com/cloudfoundry/gofileutils
   version: 511ba4f8a696af09fe7637d0f303675a246232ee
   subpackages:
@@ -153,6 +155,8 @@ imports:
   version: bbd0c6e271208dce66d8fda4bc536453cd27fc4a
 - name: github.com/keybase/go-ps
   version: 9c11ca40a47944f49e0784b77a66636cb098445a
+  subpackages:
+  - darwincgo
 - name: github.com/kr/fs
   version: 2788f0dbd16903de03cb8186e5c7d97b69ad387b
 - name: github.com/lair-framework/go-nmap
@@ -162,7 +166,7 @@ imports:
 - name: github.com/mattn/go-isatty
   version: 66b8e73f3f5cda9f96b69efd03dd3d7fc4a5cdb8
 - name: github.com/mattn/go-sqlite3
-  version: 3b3f1d01b2696af5501697c35629048c227586ab
+  version: ca5e3819723d8eeaf170ad510e7da1d6d2e94a08
 - name: github.com/mitchellh/go-ps
   version: e2d21980687ce16e58469d98dcee92d27fbbd7fb
 - name: github.com/nu7hatch/gouuid
@@ -170,9 +174,42 @@ imports:
 - name: github.com/onsi/ginkgo
   version: 43e2af1f01ace55adbb6d7d0f30416476db1baae
   subpackages:
+  - config
   - ginkgo
+  - internal/codelocation
+  - internal/containernode
+  - internal/failer
+  - internal/leafnodes
+  - internal/remote
+  - internal/spec
+  - internal/specrunner
+  - internal/suite
+  - internal/testingtproxy
+  - internal/writer
+  - reporters
+  - reporters/stenographer
+  - types
 - name: github.com/onsi/gomega
   version: b48c9a8b2644326d0a44eaaacc8d83e35174a05d
+  subpackages:
+  - format
+  - gbytes
+  - gexec
+  - internal/assertion
+  - internal/asyncassertion
+  - internal/oraclematcher
+  - internal/testingtsupport
+  - matchers
+  - matchers/support/goraph/bipartitegraph
+  - matchers/support/goraph/edge
+  - matchers/support/goraph/node
+  - matchers/support/goraph/util
+  - types
+- name: github.com/pivotal-cf/paraphernalia
+  version: f173d8f717bd5f6d550bfcb54a03d9c13d2101b2
+  subpackages:
+  - secure/tlsconfig
+  - test/certtest
 - name: github.com/pivotal-golang/clock
   version: e0835a7d46f9ea781e764f0dc9325110e32a97dd
 - name: github.com/pivotal-golang/lager
@@ -191,15 +228,23 @@ imports:
 - name: golang.org/x/crypto
   version: 9fbab14f903f89e23047b5971369b86380230e56
   subpackages:
-  - ssh
   - curve25519
   - ed25519
   - ed25519/internal/edwards25519
+  - ssh
   - ssh/terminal
+- name: golang.org/x/net
+  version: ffcf1bedda3b04ebb15a168a59800a73d6dc0f4d
+  subpackages:
+  - context
 - name: golang.org/x/sys
   version: a646d33e2ee3172a661fc09bca23bb4889a41bc8
   subpackages:
   - unix
 - name: gopkg.in/yaml.v2
   version: e4d366fc3c7938e2958e662b4258c7a89e1f0e3e
-testImports: []
+testImports:
+- name: github.com/square/certstrap
+  version: 0e00d5cdccc15ac51ff04e35767d69534f3666a3
+  subpackages:
+  - pkix
