@@ -26,9 +26,6 @@ func (w *MemWriter) ForInstance(jobName, indexOrID string) boshssh.InstanceWrite
 	defer w.lock.Unlock()
 
 	instance := &memWriterInstance{
-		jobName:   jobName,
-		indexOrID: indexOrID,
-
 		stdout: bytes.NewBufferString(""),
 		stderr: bytes.NewBufferString(""),
 	}
@@ -52,9 +49,6 @@ func (w *MemWriter) ResultsForInstance(jobName, indexOrID string) *memWriterInst
 }
 
 type memWriterInstance struct {
-	jobName   string
-	indexOrID string
-
 	stdout *bytes.Buffer
 	stderr *bytes.Buffer
 
@@ -69,11 +63,5 @@ func (w *memWriterInstance) End(exitStatus int, err error) {
 	w.err = err
 }
 
-func (w *memWriterInstance) JobName() string         { return w.jobName }
-func (w *memWriterInstance) IndexOrID() string       { return w.indexOrID }
 func (w *memWriterInstance) StdoutReader() io.Reader { return w.stdout }
 func (w *memWriterInstance) StdoutString() string    { return w.stdout.String() }
-func (w *memWriterInstance) StderrReader() io.Reader { return w.stderr }
-func (w *memWriterInstance) StderrString() string    { return w.stderr.String() }
-func (w *memWriterInstance) ExitStatus() int         { return w.exitStatus }
-func (w *memWriterInstance) Error() error            { return w.err }

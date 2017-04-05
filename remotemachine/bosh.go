@@ -11,16 +11,12 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/pivotal-golang/clock"
 
 	boshconfig "github.com/cloudfoundry/bosh-cli/cmd/config"
-	bicrypto "github.com/cloudfoundry/bosh-cli/crypto"
 	boshdir "github.com/cloudfoundry/bosh-cli/director"
 	boshssh "github.com/cloudfoundry/bosh-cli/ssh"
 	boshuaa "github.com/cloudfoundry/bosh-cli/uaa"
 	boshui "github.com/cloudfoundry/bosh-cli/ui"
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
-	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
@@ -65,7 +61,7 @@ func NewBoshDirector(
 	}
 
 	ui := boshui.NewConfUI(boshLogger)
-	deps := NewBasicDeps(ui, boshLogger)
+	deps := NewBasicDeps(boshLogger)
 
 	tmpDir, err := ioutil.TempDir("", "scantron")
 	if err != nil {
@@ -263,7 +259,7 @@ func (b *boshMachine) Close() error {
 func getDirector(
 	boshURL string,
 	creds boshconfig.Creds,
-    caCert string,
+	caCert string,
 	logger boshlog.Logger,
 ) (boshdir.Director, error) {
 	dirConfig, err := boshdir.NewConfigFromURL(boshURL)
@@ -363,39 +359,21 @@ func BestAddress(addresses []string) string {
 }
 
 type BasicDeps struct {
-	FS     boshsys.FileSystem
-	UI     *boshui.ConfUI
-	Logger boshlog.Logger
-
-	UUIDGen                  boshuuid.Generator
-	CmdRunner                boshsys.CmdRunner
-	Compressor               boshfileutil.Compressor
-	DigestCalculator         bicrypto.DigestCalculator
-	DigestCreationAlgorithms []boshcrypto.Algorithm
-
-	Time clock.Clock
+	FS        boshsys.FileSystem
+	UUIDGen   boshuuid.Generator
+	CmdRunner boshsys.CmdRunner
 }
 
-func NewBasicDeps(ui *boshui.ConfUI, logger boshlog.Logger) BasicDeps {
-	return NewBasicDepsWithFS(ui, boshsys.NewOsFileSystemWithStrictTempRoot(logger), logger)
+func NewBasicDeps(logger boshlog.Logger) BasicDeps {
+	return NewBasicDepsWithFS(boshsys.NewOsFileSystemWithStrictTempRoot(logger), logger)
 }
 
-func NewBasicDepsWithFS(ui *boshui.ConfUI, fs boshsys.FileSystem, logger boshlog.Logger) BasicDeps {
+func NewBasicDepsWithFS(fs boshsys.FileSystem, logger boshlog.Logger) BasicDeps {
 	cmdRunner := boshsys.NewExecCmdRunner(logger)
 
-	digestCreationAlgorithms := []boshcrypto.Algorithm{boshcrypto.DigestAlgorithmSHA1}
-	digestCalculator := bicrypto.NewDigestCalculator(fs, digestCreationAlgorithms)
-
 	return BasicDeps{
-		FS:     fs,
-		UI:     ui,
-		Logger: logger,
-
-		UUIDGen:                  boshuuid.NewGenerator(),
-		CmdRunner:                cmdRunner,
-		Compressor:               boshfileutil.NewTarballCompressor(cmdRunner, fs),
-		DigestCalculator:         digestCalculator,
-		DigestCreationAlgorithms: digestCreationAlgorithms,
-		Time: clock.NewClock(),
+		FS:        fs,
+		UUIDGen:   boshuuid.NewGenerator(),
+		CmdRunner: cmdRunner,
 	}
 }
