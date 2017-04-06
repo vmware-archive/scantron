@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+set -eu
+
+my_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+root_dir="$( cd "${my_dir}/.." && pwd )"
+
+pushd "${root_dir}" > /dev/null
+  ./scripts/build
+
+  brew_openssl_binpath=/usr/local/opt/openssl/bin/
+  if [[ -d "${brew_openssl_binpath}" ]]; then
+    export PATH="${brew_openssl_binpath}:$PATH"
+  fi
+
+  ginkgo \
+    -r \
+    -p \
+    -race \
+    -failOnPending \
+    -randomizeAllSpecs \
+    -randomizeSuites \
+    "$@"
+
+popd > /dev/null

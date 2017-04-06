@@ -9,14 +9,12 @@ export PATH=$GOPATH/bin:$PATH
 
 go get -u github.com/golang/dep/...
 
-pushd $GOPATH/src/github.com/pivotal-cf/scantron
+pushd "${GOPATH}/src/github.com/pivotal-cf/scantron" > /dev/null
   dep ensure
 
   go install ./vendor/github.com/onsi/ginkgo/ginkgo
 
-  ./build.sh
+  ./scripts/test
+popd > /dev/null
 
-  ginkgo -r -p -race "$@"
-popd
-
-mv $GOPATH/src/github.com/pivotal-cf/scantron/scantron $OUTPUT
+mv "${GOPATH}/src/github.com/pivotal-cf/scantron/scantron" "${OUTPUT}"
