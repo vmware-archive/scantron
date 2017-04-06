@@ -101,7 +101,7 @@ func Scan(host string, port string) (Results, error) {
 }
 
 func scan(host, port, version, suite string) (bool, bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "openssl", "s_client",
