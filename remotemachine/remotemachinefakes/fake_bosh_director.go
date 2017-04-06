@@ -16,6 +16,9 @@ type FakeBoshDirector struct {
 	vMsReturns     struct {
 		result1 []boshdir.VMInfo
 	}
+	vMsReturnsOnCall map[int]struct {
+		result1 []boshdir.VMInfo
+	}
 	ConnectToStub        func(lager.Logger, boshdir.VMInfo) remotemachine.RemoteMachine
 	connectToMutex       sync.RWMutex
 	connectToArgsForCall []struct {
@@ -25,10 +28,25 @@ type FakeBoshDirector struct {
 	connectToReturns struct {
 		result1 remotemachine.RemoteMachine
 	}
+	connectToReturnsOnCall map[int]struct {
+		result1 remotemachine.RemoteMachine
+	}
+	SetupStub        func() error
+	setupMutex       sync.RWMutex
+	setupArgsForCall []struct{}
+	setupReturns     struct {
+		result1 error
+	}
+	setupReturnsOnCall map[int]struct {
+		result1 error
+	}
 	CleanupStub        func() error
 	cleanupMutex       sync.RWMutex
 	cleanupArgsForCall []struct{}
 	cleanupReturns     struct {
+		result1 error
+	}
+	cleanupReturnsOnCall map[int]struct {
 		result1 error
 	}
 	invocations      map[string][][]interface{}
@@ -37,11 +55,15 @@ type FakeBoshDirector struct {
 
 func (fake *FakeBoshDirector) VMs() []boshdir.VMInfo {
 	fake.vMsMutex.Lock()
+	ret, specificReturn := fake.vMsReturnsOnCall[len(fake.vMsArgsForCall)]
 	fake.vMsArgsForCall = append(fake.vMsArgsForCall, struct{}{})
 	fake.recordInvocation("VMs", []interface{}{})
 	fake.vMsMutex.Unlock()
 	if fake.VMsStub != nil {
 		return fake.VMsStub()
+	}
+	if specificReturn {
+		return ret.result1
 	}
 	return fake.vMsReturns.result1
 }
@@ -59,8 +81,21 @@ func (fake *FakeBoshDirector) VMsReturns(result1 []boshdir.VMInfo) {
 	}{result1}
 }
 
+func (fake *FakeBoshDirector) VMsReturnsOnCall(i int, result1 []boshdir.VMInfo) {
+	fake.VMsStub = nil
+	if fake.vMsReturnsOnCall == nil {
+		fake.vMsReturnsOnCall = make(map[int]struct {
+			result1 []boshdir.VMInfo
+		})
+	}
+	fake.vMsReturnsOnCall[i] = struct {
+		result1 []boshdir.VMInfo
+	}{result1}
+}
+
 func (fake *FakeBoshDirector) ConnectTo(arg1 lager.Logger, arg2 boshdir.VMInfo) remotemachine.RemoteMachine {
 	fake.connectToMutex.Lock()
+	ret, specificReturn := fake.connectToReturnsOnCall[len(fake.connectToArgsForCall)]
 	fake.connectToArgsForCall = append(fake.connectToArgsForCall, struct {
 		arg1 lager.Logger
 		arg2 boshdir.VMInfo
@@ -69,6 +104,9 @@ func (fake *FakeBoshDirector) ConnectTo(arg1 lager.Logger, arg2 boshdir.VMInfo) 
 	fake.connectToMutex.Unlock()
 	if fake.ConnectToStub != nil {
 		return fake.ConnectToStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
 	}
 	return fake.connectToReturns.result1
 }
@@ -92,13 +130,69 @@ func (fake *FakeBoshDirector) ConnectToReturns(result1 remotemachine.RemoteMachi
 	}{result1}
 }
 
+func (fake *FakeBoshDirector) ConnectToReturnsOnCall(i int, result1 remotemachine.RemoteMachine) {
+	fake.ConnectToStub = nil
+	if fake.connectToReturnsOnCall == nil {
+		fake.connectToReturnsOnCall = make(map[int]struct {
+			result1 remotemachine.RemoteMachine
+		})
+	}
+	fake.connectToReturnsOnCall[i] = struct {
+		result1 remotemachine.RemoteMachine
+	}{result1}
+}
+
+func (fake *FakeBoshDirector) Setup() error {
+	fake.setupMutex.Lock()
+	ret, specificReturn := fake.setupReturnsOnCall[len(fake.setupArgsForCall)]
+	fake.setupArgsForCall = append(fake.setupArgsForCall, struct{}{})
+	fake.recordInvocation("Setup", []interface{}{})
+	fake.setupMutex.Unlock()
+	if fake.SetupStub != nil {
+		return fake.SetupStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.setupReturns.result1
+}
+
+func (fake *FakeBoshDirector) SetupCallCount() int {
+	fake.setupMutex.RLock()
+	defer fake.setupMutex.RUnlock()
+	return len(fake.setupArgsForCall)
+}
+
+func (fake *FakeBoshDirector) SetupReturns(result1 error) {
+	fake.SetupStub = nil
+	fake.setupReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeBoshDirector) SetupReturnsOnCall(i int, result1 error) {
+	fake.SetupStub = nil
+	if fake.setupReturnsOnCall == nil {
+		fake.setupReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeBoshDirector) Cleanup() error {
 	fake.cleanupMutex.Lock()
+	ret, specificReturn := fake.cleanupReturnsOnCall[len(fake.cleanupArgsForCall)]
 	fake.cleanupArgsForCall = append(fake.cleanupArgsForCall, struct{}{})
 	fake.recordInvocation("Cleanup", []interface{}{})
 	fake.cleanupMutex.Unlock()
 	if fake.CleanupStub != nil {
 		return fake.CleanupStub()
+	}
+	if specificReturn {
+		return ret.result1
 	}
 	return fake.cleanupReturns.result1
 }
@@ -116,6 +210,18 @@ func (fake *FakeBoshDirector) CleanupReturns(result1 error) {
 	}{result1}
 }
 
+func (fake *FakeBoshDirector) CleanupReturnsOnCall(i int, result1 error) {
+	fake.CleanupStub = nil
+	if fake.cleanupReturnsOnCall == nil {
+		fake.cleanupReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.cleanupReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeBoshDirector) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -123,6 +229,8 @@ func (fake *FakeBoshDirector) Invocations() map[string][][]interface{} {
 	defer fake.vMsMutex.RUnlock()
 	fake.connectToMutex.RLock()
 	defer fake.connectToMutex.RUnlock()
+	fake.setupMutex.RLock()
+	defer fake.setupMutex.RUnlock()
 	fake.cleanupMutex.RLock()
 	defer fake.cleanupMutex.RUnlock()
 	return fake.invocations

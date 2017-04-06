@@ -109,8 +109,9 @@ func (r *remoteMachine) sshConn() (*ssh.Client, error) {
 	}
 
 	config := &ssh.ClientConfig{
-		User: r.machine.Username,
-		Auth: r.auth(),
+		User:            r.machine.Username,
+		Auth:            r.auth(),
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
 	conn, err := ssh.Dial("tcp", r.Address(), config)

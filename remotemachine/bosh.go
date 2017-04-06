@@ -1,24 +1,17 @@
 package remotemachine
 
 import (
-	"fmt"
-	"io"
 	"io/ioutil"
 	"net"
-	"os"
-	"os/signal"
-	"strconv"
-	"strings"
 
 	"code.cloudfoundry.org/lager"
+	"github.com/pivotal-cf/scantron"
+	"golang.org/x/crypto/ssh"
 
 	boshconfig "github.com/cloudfoundry/bosh-cli/cmd/config"
 	boshdir "github.com/cloudfoundry/bosh-cli/director"
-	boshssh "github.com/cloudfoundry/bosh-cli/ssh"
 	boshuaa "github.com/cloudfoundry/bosh-cli/uaa"
-	boshui "github.com/cloudfoundry/bosh-cli/ui"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
@@ -28,20 +21,25 @@ type BoshDirector interface {
 	VMs() []boshdir.VMInfo
 	ConnectTo(lager.Logger, boshdir.VMInfo) RemoteMachine
 
+	Setup() error
 	Cleanup() error
 }
 
 func NewBoshDirector(
 	logger lager.Logger,
 	creds boshconfig.Creds,
-	caCert string,
+	caCertPath string,
 	deploymentName string,
 	boshURL string,
 	boshLogger boshlog.Logger,
-	gatewayUsername string,
-	gatewayHost string,
-	gatewayPrivateKeyPath string,
 ) (BoshDirector, error) {
+	caCertBytes, err := ioutil.ReadFile(caCertPath)
+	if err != nil {
+		return nil, err
+	}
+
+	caCert := string(caCertBytes)
+
 	director, err := getDirector(boshURL, creds, caCert, boshLogger)
 	if err != nil {
 		logger.Error("failed-to-get-director", err)
@@ -60,99 +58,38 @@ func NewBoshDirector(
 		return nil, err
 	}
 
-	ui := boshui.NewConfUI(boshLogger)
-	deps := NewBasicDeps(boshLogger)
+	uuidgen := boshuuid.NewGenerator()
 
-	tmpDir, err := ioutil.TempDir("", "scantron")
-	if err != nil {
-		logger.Error("failed-to-create-temp-dir", err)
-		return nil, err
-	}
-
-	tmpDirPath, err := deps.FS.ExpandPath(tmpDir)
-	if err != nil {
-		logger.Error("failed-to-expand-temp-dir-path", err)
-		return nil, err
-	}
-
-	err = deps.FS.ChangeTempRoot(tmpDirPath)
-	if err != nil {
-		logger.Error("failed-to-change-temp-root", err)
-		return nil, err
-	}
-
-	sshSessionFactory := func(o boshssh.ConnectionOpts, r boshdir.SSHResult) boshssh.Session {
-		return boshssh.NewSessionImpl(o, boshssh.SessionImplOpts{ForceTTY: true}, r, deps.FS)
-	}
-
-	sshWriter := NewMemWriter()
-
-	comboRunner := boshssh.NewComboRunner(
-		deps.CmdRunner,
-		sshSessionFactory,
-		signal.Notify,
-		sshWriter,
-		deps.FS,
-		ui,
-		boshLogger,
-	)
-
-	sshRunner := boshssh.NewNonInteractiveRunner(comboRunner)
-
-	scpSessionFactory := func(o boshssh.ConnectionOpts, r boshdir.SSHResult) boshssh.Session {
-		return boshssh.NewSessionImpl(o, boshssh.SessionImplOpts{ForceTTY: false}, r, deps.FS)
-	}
-
-	scpWriter := NewMemWriter()
-
-	scpComboRunner := boshssh.NewComboRunner(
-		deps.CmdRunner,
-		scpSessionFactory,
-		signal.Notify,
-		scpWriter,
-		deps.FS,
-		ui,
-		boshLogger,
-	)
-
-	scpRunner := boshssh.NewSCPRunner(scpComboRunner)
-
-	sshOpts, privKey, err := boshdir.NewSSHOpts(deps.UUIDGen)
+	sshOpts, privKey, err := boshdir.NewSSHOpts(uuidgen)
 	if err != nil {
 		logger.Error("failed-to-create-ssh-opts", err)
 		return nil, err
 	}
 
+	signer, err := ssh.ParsePrivateKey([]byte(privKey))
+	if err != nil {
+		logger.Error("failed-to-parse-ssh-key", err)
+		return nil, err
+	}
+
 	return &boshDirector{
-		vms:                   vmInfos,
-		sshRunner:             sshRunner,
-		sshWriter:             sshWriter,
-		scpRunner:             scpRunner,
-		sshOpts:               sshOpts,
-		privKey:               privKey,
-		deployment:            deployment,
-		gatewayUsername:       gatewayUsername,
-		gatewayHost:           gatewayHost,
-		gatewayPrivateKeyPath: gatewayPrivateKeyPath,
-		tmpdir:                tmpDirPath,
+		vms:        vmInfos,
+		sshOpts:    sshOpts,
+		deployment: deployment,
+		signer:     signer,
+		logger:     logger,
 	}, nil
 }
 
 type boshDirector struct {
-	vms       []boshdir.VMInfo
-	sshRunner boshssh.NonInteractiveRunner
-	sshWriter *MemWriter
-	scpRunner boshssh.SCPRunnerImpl
-	sshOpts   boshdir.SSHOpts
-	privKey   string
+	vms     []boshdir.VMInfo
+	sshOpts boshdir.SSHOpts
+
+	signer ssh.Signer
 
 	deployment boshdir.Deployment
 
-	gatewayUsername       string
-	gatewayHost           string
-	gatewayPrivateKeyPath string
-
-	tmpdir string
+	logger lager.Logger
 }
 
 func (d *boshDirector) VMs() []boshdir.VMInfo {
@@ -160,100 +97,33 @@ func (d *boshDirector) VMs() []boshdir.VMInfo {
 }
 
 func (d *boshDirector) Cleanup() error {
-	return os.RemoveAll(d.tmpdir)
+	slug := boshdir.NewAllOrInstanceGroupOrInstanceSlug("", "")
+	err := d.deployment.CleanUpSSH(slug, d.sshOpts)
+	if err != nil {
+		d.logger.Error("failed-to-clean-up-ssh", err)
+	}
+
+	return err
+}
+
+func (d *boshDirector) Setup() error {
+	slug := boshdir.NewAllOrInstanceGroupOrInstanceSlug("", "")
+
+	_, err := d.deployment.SetUpSSH(slug, d.sshOpts)
+	if err != nil {
+		d.logger.Error("failed-to-set-up-ssh", err)
+		return err
+	}
+
+	return nil
 }
 
 func (d *boshDirector) ConnectTo(logger lager.Logger, vm boshdir.VMInfo) RemoteMachine {
-	slug := boshdir.NewAllOrInstanceGroupOrInstanceSlug(vm.JobName, vm.ID)
-
-	sshResult, err := d.deployment.SetUpSSH(slug, d.sshOpts)
-
-	if err != nil {
-		logger.Error("failed-to-set-up-ssh", err)
-		return nil
-	}
-
-	connOpts := boshssh.ConnectionOpts{
-		PrivateKey: d.privKey,
-
-		GatewayUsername:       d.gatewayUsername,
-		GatewayHost:           d.gatewayHost,
-		GatewayPrivateKeyPath: d.gatewayPrivateKeyPath,
-	}
-
-	return &boshMachine{
-		vmInfo:     vm,
-		connOpts:   connOpts,
-		sshResult:  sshResult,
-		sshRunner:  d.sshRunner,
-		scpRunner:  d.scpRunner,
-		sshWriter:  d.sshWriter,
-		deployment: d.deployment,
-	}
-}
-
-type boshMachine struct {
-	vmInfo     boshdir.VMInfo
-	connOpts   boshssh.ConnectionOpts
-	sshResult  boshdir.SSHResult
-	sshRunner  boshssh.NonInteractiveRunner
-	scpRunner  boshssh.SCPRunnerImpl
-	sshWriter  *MemWriter
-	deployment boshdir.Deployment
-
-	sshOpts boshdir.SSHOpts
-	slug    boshdir.AllOrInstanceGroupOrInstanceSlug
-}
-
-func (b *boshMachine) Address() string {
-	return BestAddress(b.vmInfo.IPs)
-}
-
-func (b *boshMachine) Job() string {
-	return b.vmInfo.JobName
-}
-
-func (b *boshMachine) IndexOrId() string {
-	if len(b.vmInfo.ID) > 0 {
-		return b.vmInfo.ID
-	}
-
-	if b.vmInfo.Index != nil {
-		return strconv.Itoa(*b.vmInfo.Index)
-	}
-
-	return ""
-}
-
-func (b *boshMachine) UploadFile(localPath string, remotePath string) error {
-	scpArgs := boshssh.NewSCPArgs(
-		[]string{localPath, fmt.Sprintf("%s/%d:%s", b.vmInfo.JobName, *b.vmInfo.Index, remotePath)}, false)
-
-	return b.scpRunner.Run(b.connOpts, b.sshResult, scpArgs)
-}
-
-func (b *boshMachine) DeleteFile(remotePath string) error {
-	return b.sshRunner.Run(b.connOpts, b.sshResult, []string{"sudo", "rm", remotePath, "-f"})
-}
-
-func (b *boshMachine) RunCommand(cmd string) (io.Reader, error) {
-	err := b.sshRunner.Run(b.connOpts, b.sshResult, append([]string{"sudo"}, strings.Split(cmd, " ")...))
-	if err != nil {
-		result := b.sshWriter.ResultsForInstance(b.Job(), b.IndexOrId())
-		fmt.Println(result.StdoutString())
-		return nil, err
-	}
-
-	result := b.sshWriter.ResultsForInstance(b.Job(), b.IndexOrId())
-	if result == nil {
-		return strings.NewReader(""), nil
-	}
-
-	return result.StdoutReader(), nil
-}
-
-func (b *boshMachine) Close() error {
-	return b.deployment.CleanUpSSH(b.slug, b.sshOpts)
+	return NewSimple(scantron.Machine{
+		Address:  BestAddress(vm.IPs),
+		Username: d.sshOpts.Username,
+		Key:      d.signer,
+	})
 }
 
 func getDirector(
@@ -267,21 +137,9 @@ func getDirector(
 		return nil, err
 	}
 
-	certBytes, err := ioutil.ReadFile(caCert)
-	if err != nil {
-		return nil, err
-	}
+	dirConfig.CACert = caCert
 
-	caCertContents := string(certBytes)
-
-	dirConfig.CACert = caCertContents
-
-	anonymousDirector, err := boshdir.NewFactory(logger).New(dirConfig, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	directorInfo, err := anonymousDirector.Info()
+	directorInfo, err := getDirectorInfo(logger, dirConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +148,7 @@ func getDirector(
 		dirConfig.Client = creds.Client
 		dirConfig.ClientSecret = creds.ClientSecret
 	} else if creds.IsUAA() {
-		uaa, err := getUAA(dirConfig, creds, caCertContents, logger)
+		uaa, err := getUAA(dirConfig, creds, caCert, logger)
 		if err != nil {
 			return nil, err
 		}
@@ -342,6 +200,20 @@ func getUAA(dirConfig boshdir.Config, creds boshconfig.Creds, caCert string, log
 	return boshuaa.NewFactory(logger).New(uaaConfig)
 }
 
+func getDirectorInfo(logger boshlog.Logger, dirConfig boshdir.Config) (boshdir.Info, error) {
+	anonymousDirector, err := boshdir.NewFactory(logger).New(dirConfig, nil, nil)
+	if err != nil {
+		return boshdir.Info{}, err
+	}
+
+	directorInfo, err := anonymousDirector.Info()
+	if err != nil {
+		return boshdir.Info{}, err
+	}
+
+	return directorInfo, nil
+}
+
 func BestAddress(addresses []string) string {
 	if len(addresses) == 0 {
 		panic("BestAddress: candidate list is empty")
@@ -356,24 +228,4 @@ func BestAddress(addresses []string) string {
 	}
 
 	return addresses[0]
-}
-
-type BasicDeps struct {
-	FS        boshsys.FileSystem
-	UUIDGen   boshuuid.Generator
-	CmdRunner boshsys.CmdRunner
-}
-
-func NewBasicDeps(logger boshlog.Logger) BasicDeps {
-	return NewBasicDepsWithFS(boshsys.NewOsFileSystemWithStrictTempRoot(logger), logger)
-}
-
-func NewBasicDepsWithFS(fs boshsys.FileSystem, logger boshlog.Logger) BasicDeps {
-	cmdRunner := boshsys.NewExecCmdRunner(logger)
-
-	return BasicDeps{
-		FS:        fs,
-		UUIDGen:   boshuuid.NewGenerator(),
-		CmdRunner: cmdRunner,
-	}
 }

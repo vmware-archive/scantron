@@ -77,7 +77,7 @@ var _ = Describe("Bosh Scanning", func() {
 		Expect(machine.DeleteFileCallCount()).To(Equal(1))
 
 		remotePath := machine.DeleteFileArgsForCall(0)
-		Expect(remotePath).To(Equal("~/proc_scan"))
+		Expect(remotePath).To(Equal("./proc_scan"))
 	})
 
 	It("returns a report from the deployment", func() {

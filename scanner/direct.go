@@ -1,16 +1,11 @@
 package scanner
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net"
-	"os"
 
 	"code.cloudfoundry.org/lager"
 
-	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/remotemachine"
 )
 
@@ -32,63 +27,20 @@ func (d *direct) Scan(logger lager.Logger) ([]ScanResult, error) {
 		"endpoint": endpoint,
 	})
 
-	binary, err := scantron.Asset("data/proc_scan")
+	systemInfo, err := scanMachine(endpointLogger, d.machine)
 	if err != nil {
-		endpointLogger.Error("failed-to-locate-proc-scan", err)
+		endpointLogger.Error("failed-to-scan-machine", err)
 		return nil, err
 	}
+	defer d.machine.Close()
 
-	tmpFile, err := ioutil.TempFile("", "proc_scan")
-	if err != nil {
-		endpointLogger.Error("failed-to-create-file", err)
-		return nil, err
-	}
-	srcFilePath := tmpFile.Name()
-	defer os.Remove(srcFilePath)
-
-	if err := convertBinaryToFile(binary, srcFilePath); err != nil {
-		endpointLogger.Error("failed-to-convert-proc-scan-binary", err)
-		return nil, err
-	}
-	dstFilePath := "./proc_scan"
-	defer d.machine.DeleteFile(dstFilePath)
-
-	if err := d.machine.UploadFile(srcFilePath, dstFilePath); err != nil {
-		endpointLogger.Error("failed-to-upload-file", err)
-		return nil, err
-	}
-
-	output, err := d.machine.RunCommand(dstFilePath)
-	if err != nil {
-		endpointLogger.Error("failed-to-run-command", err, lager.Data{
-			"command": dstFilePath,
-		})
-		return nil, err
-	}
-
-	scannedHost, err := d.decodeScannedHost(output)
+	hostname, _, err := net.SplitHostPort(d.machine.Address())
 	if err != nil {
 		endpointLogger.Error("failed-to-unmarshal-output", err)
 		return nil, err
 	}
 
-	scannedHosts := []ScanResult{scannedHost}
+	scannedHost := buildScanResult(systemInfo, hostname, hostname)
 
-	return scannedHosts, nil
-}
-
-func (d *direct) decodeScannedHost(reader io.Reader) (ScanResult, error) {
-	var host scantron.SystemInfo
-
-	err := json.NewDecoder(reader).Decode(&host)
-	if err != nil {
-		return ScanResult{}, err
-	}
-
-	hostname, _, err := net.SplitHostPort(d.machine.Address())
-	if err != nil {
-		return ScanResult{}, err
-	}
-
-	return buildScanResult(host, hostname, hostname), nil
+	return []ScanResult{scannedHost}, nil
 }

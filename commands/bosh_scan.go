@@ -30,12 +30,6 @@ type BoshScanCommand struct {
 		ClientSecret string `long:"client-secret" description:"Password or UAA client secret" value-name:"CLIENT_SECRET"`
 	} `group:"Director & Deployment"`
 
-	Gateway struct {
-		Username       string `long:"gateway-username" description:"BOSH VM gateway username" value-name:"USERNAME"`
-		Host           string `long:"gateway-host" description:"BOSH VM gateway host" value-name:"URL"`
-		PrivateKeyPath string `long:"gateway-private-key" description:"BOSH VM gateway private key" value-name:"PATH"`
-	} `group:"Gateway"`
-
 	Database string `long:"database" description:"location of database where scan output will be stored" value-name:"PATH" default:"./database.db"`
 }
 
@@ -67,9 +61,6 @@ func (command *BoshScanCommand) Execute(args []string) error {
 		command.Director.Deployment,
 		command.Director.URL,
 		boshLogger,
-		command.Gateway.Username,
-		command.Gateway.Host,
-		command.Gateway.PrivateKeyPath,
 	)
 	if err != nil {
 		log.Fatalf("failed to set up director: %s", err.Error())

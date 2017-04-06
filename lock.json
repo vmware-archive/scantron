@@ -1,5 +1,5 @@
 {
-    "memo": "69d53421cc783ea896b92466c7783d5ed46c2a08eeaa96ae857e93c13a2fdd5a",
+    "memo": "ddd521594524dc5cf0b2b90c37d9974d569519ac7c8ad7ea556cc413591d0713",
     "projects": [
         {
             "name": "code.cloudfoundry.org/lager",
@@ -40,7 +40,6 @@
             "revision": "f73c244bf9d137d3e06e409e4417958be3a42c66",
             "packages": [
                 "cmd/config",
-                "crypto",
                 "director",
                 "ssh",
                 "uaa",
@@ -54,9 +53,7 @@
             "branch": "master",
             "revision": "0d36faac740305072f50b237368b8ae4c8fa097c",
             "packages": [
-                "crypto",
                 "errors",
-                "fileutil",
                 "http",
                 "httpclient",
                 "logger",
