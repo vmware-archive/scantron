@@ -19,6 +19,16 @@
 
     scantron <bosh-scan|direct-scan|generate-manifest|audit> [command options]
 
+### OPENSSL REQUIREMENT
+
+Scantron requires a minimum OpenSSL version of `1.0.2k`. The version of OpenSSL
+shipped with OS X by default is very old and will not work with Scantron. You
+can get this version from Homebrew by running
+
+    brew install openssl
+
+This will not be used by default though. Make sure to add
+`/usr/local/opt/openssl/bin` to your `PATH` before running Scantron.
 
 ### COMMAND OPTIONS
 

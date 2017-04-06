@@ -1,5 +1,5 @@
 {
-    "memo": "26a60ad8383525c720597fc5970617b29512c32618beca3eb4784d711ecea238",
+    "memo": "69d53421cc783ea896b92466c7783d5ed46c2a08eeaa96ae857e93c13a2fdd5a",
     "projects": [
         {
             "name": "code.cloudfoundry.org/lager",
@@ -301,6 +301,14 @@
             "packages": [
                 "context",
                 "proxy"
+            ]
+        },
+        {
+            "name": "golang.org/x/sync",
+            "branch": "master",
+            "revision": "5a06fca2c336a4b2b2fcb45702e8c47621b2aa2c",
+            "packages": [
+                "semaphore"
             ]
         },
         {
