@@ -38,6 +38,7 @@ func init() {
 type result struct {
 	version string
 	suite   string
+	mutual  bool
 }
 
 func Scan(host string, port string) (Results, error) {
@@ -71,12 +72,11 @@ func Scan(host string, port string) (Results, error) {
 					return
 				}
 
-				mutual = mutual || mut
-
 				if found {
 					resultChan <- result{
 						version: version,
 						suite:   suite,
+						mutual:  mut,
 					}
 				}
 			}(version, suite)
@@ -90,6 +90,7 @@ func Scan(host string, port string) (Results, error) {
 
 	for res := range resultChan {
 		results[res.version] = append(results[res.version], res.suite)
+		mutual = mutual || res.mutual
 	}
 
 	return Results{
