@@ -40,10 +40,6 @@ This will not be used by default though. Make sure to add
     --director-password=PASSWORD               BOSH Director password
     --bosh-deployment=DEPLOYMENT_NAME          BOSH Deployment
 
-    --gateway-username=USERNAME                BOSH VM gateway username
-    --gateway-host=URL                         BOSH VM gateway host
-    --gateway-private-key=PATH                 BOSH VM gateway private key
-
     --uaa-client=OAUTH_CLIENT                  UAA Client
     --uaa-client-secret=OAUTH_CLIENT_SECRET    UAA Client Secret
     --database=PATH                            Location to store report (default: ./database.db)
@@ -66,7 +62,6 @@ This will not be used by default though. Make sure to add
     --database=PATH                            Path to report database (default: ./database.db)
     --manifest=PATH                            Path to manifest
 
-
 ### GENERATING NMAP RESULTS
 
 Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML.
@@ -75,7 +70,6 @@ These XML results are used to extract host information internally in
 [here](http://www.explainshell.com/explain?cmd=nmap+-oX+results.xml+-v+--script+ssl-enum-ciphers+-sV+-p+-+10.0.0.1-6):
 
     nmap -oX results.xml -v --script ssl-enum-ciphers -sV -p - 10.0.0.1-6
-
 
 ### EXAMPLES
 
@@ -140,9 +134,12 @@ with exit code 0.
 
 ### DATABASE SCHEMA
 
-Scantron produces a SQLite database for scan reports with the following schema:
+Scantron produces a SQLite database for scan reports. The database schema can
+be found in [schema.go](https://github.com/pivotal-cf/scantron/blob/master/db/schema.go).
 
-![Database Schema](images/schema.png)
+Scantron does not currently support database migrations. You will be prompted
+to create a new database when there are backwards-incompatible changes to the
+schema.
 
 Each scan creates a report with many hosts in it. Hosts represent scanned VMs
 which contain the list of world writable files and processes running on that
