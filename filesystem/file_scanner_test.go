@@ -67,7 +67,10 @@ var _ = Describe("FileScanner", func() {
 		files, err := filesystem.ScanFilesystem(root, []string{})
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(files).To(ConsistOf(scantron.File{Path: filePath}))
+		Expect(files).To(ConsistOf(scantron.File{
+			Path:        filePath,
+			Permissions: 0004,
+		}))
 	})
 
 	It("detects world writable files", func() {
@@ -76,7 +79,10 @@ var _ = Describe("FileScanner", func() {
 		files, err := filesystem.ScanFilesystem(root, []string{})
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(files).To(ConsistOf(scantron.File{Path: filePath}))
+		Expect(files).To(ConsistOf(scantron.File{
+			Path:        filePath,
+			Permissions: 0002,
+		}))
 	})
 
 	It("detects world executable files", func() {
@@ -85,7 +91,10 @@ var _ = Describe("FileScanner", func() {
 		files, err := filesystem.ScanFilesystem(root, []string{})
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(files).To(ConsistOf(scantron.File{Path: filePath}))
+		Expect(files).To(ConsistOf(scantron.File{
+			Path:        filePath,
+			Permissions: 0001,
+		}))
 	})
 
 	It("excludes directories", func() {

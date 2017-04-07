@@ -184,8 +184,8 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 
 			for _, file := range scan.Files {
 				_, err = tx.Exec(
-					"INSERT INTO files(host_id, path) VALUES (?, ?)",
-					hostID, file.Path,
+					"INSERT INTO files(host_id, path, permissions) VALUES (?, ?, ?)",
+					hostID, file.Path, file.Permissions,
 				)
 				if err != nil {
 					return err
@@ -264,6 +264,7 @@ CREATE TABLE files (
 	id integer PRIMARY KEY AUTOINCREMENT,
 	host_id integer,
 	path text,
+	permissions integer,
 	FOREIGN KEY(host_id) REFERENCES hosts(id)
 );
 `

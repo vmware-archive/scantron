@@ -33,7 +33,8 @@ func ScanFilesystem(rootPath string, excludedPaths []string) ([]scantron.File, e
 		// File has world read, write or execute permission
 		if info.Mode()&07 > 0 {
 			files = append(files, scantron.File{
-				Path: path,
+				Path:        path,
+				Permissions: info.Mode(),
 			})
 		}
 

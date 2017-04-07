@@ -2,11 +2,13 @@ package scantron
 
 import (
 	"fmt"
+	"os"
 	"time"
 )
 
 type File struct {
-	Path string `json:"path"`
+	Path        string      `json:"path"`
+	Permissions os.FileMode `json:"permissions"`
 }
 
 type Port struct {

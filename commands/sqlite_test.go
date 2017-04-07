@@ -151,7 +151,10 @@ var _ = Describe("Sqlite", func() {
 						},
 					}},
 					Files: []scantron.File{
-						{Path: "some-file-path"},
+						{
+							Path:        "some-file-path",
+							Permissions: 0644,
+						},
 					},
 				}
 
@@ -177,7 +180,8 @@ var _ = Describe("Sqlite", func() {
 							 tls_informations.cert_common_name,
 							 tls_scan_errors.cert_scan_error,
 							 env_vars.var,
-							 files.path
+							 files.path,
+							 files.permissions
 				FROM   hosts,
 							 processes,
 							 ports,
@@ -206,16 +210,17 @@ var _ = Describe("Sqlite", func() {
 					tlsCertLocality,
 					tlsCertOrganization,
 					tlsCertCommonName string
-					tlsCertBits   int
-					tlsCertExp    time.Time
-					certScanError string
-					filePath      string
+					tlsCertBits     int
+					tlsCertExp      time.Time
+					certScanError   string
+					filePath        string
+					filePermissions os.FileMode
 				)
 
 				err = rows.Scan(&name, &ip, &pid, &user, &cmdline, &portProtocol,
 					&portAddress, &portNumber, &tlsCertExp, &tlsCertBits,
 					&tlsCertCountry, &tlsCertProvince, &tlsCertLocality,
-					&tlsCertOrganization, &tlsCertCommonName, &certScanError, &env, &filePath)
+					&tlsCertOrganization, &tlsCertCommonName, &certScanError, &env, &filePath, &filePermissions)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(name).To(Equal("custom_name/0"))
@@ -235,6 +240,8 @@ var _ = Describe("Sqlite", func() {
 				Expect(cmdline).To(Equal("this is a cmd"))
 				Expect(env).To(Equal("PATH=this OTHER=that"))
 				Expect(filePath).To(Equal("some-file-path"))
+				Expect(filePermissions).To(Equal(os.FileMode(0644)))
+
 			})
 
 			Context("when the service does not have a certificate", func() {
