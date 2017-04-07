@@ -40,12 +40,10 @@ func init() {
 type result struct {
 	version string
 	suite   string
-	mutual  bool
 }
 
 func Scan(host string, port string) (Results, error) {
-	results := CipherSuiteResults{}
-	mutual := false
+	results := Results{}
 
 	for _, version := range tlsVersions {
 		results[version] = []string{}
@@ -68,7 +66,7 @@ func Scan(host string, port string) (Results, error) {
 				}
 				defer sem.Release(1)
 
-				found, mut, err := scan(host, port, version, suite)
+				found, err := scan(host, port, version, suite)
 				if err != nil {
 					log.Printf("could not scan (%s, %s): %s\n", version, suite, err)
 					return
@@ -78,7 +76,6 @@ func Scan(host string, port string) (Results, error) {
 					resultChan <- result{
 						version: version,
 						suite:   suite,
-						mutual:  mut,
 					}
 				}
 			}(version, suite)
@@ -92,17 +89,12 @@ func Scan(host string, port string) (Results, error) {
 
 	for res := range resultChan {
 		results[res.version] = append(results[res.version], res.suite)
-		mutual = mutual || res.mutual
 	}
 
-	return Results{
-		CipherSuiteResults: results,
-
-		mutual: mutual,
-	}, nil
+	return results, nil
 }
 
-func scan(host, port, version, suite string) (bool, bool, error) {
+func scan(host, port, version, suite string) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), opensslTimeout)
 	defer cancel()
 
@@ -114,16 +106,14 @@ func scan(host, port, version, suite string) (bool, bool, error) {
 
 	bs, err := cmd.CombinedOutput()
 	if err != nil {
-		if bytes.Contains(bs, []byte("unable to verify the first certificate")) {
-			return true, true, nil
-		} else if bytes.Contains(bs, []byte(":error:")) || bytes.Contains(bs, []byte("errno=54")) {
-			return false, false, nil
+		if bytes.Contains(bs, []byte(":error:")) || bytes.Contains(bs, []byte("errno=54")) {
+			return false, nil
 		} else {
-			return false, false, err
+			return false, err
 		}
 	}
 
-	return true, false, nil
+	return true, nil
 }
 
 var opensslArg = map[string]string{
@@ -133,24 +123,14 @@ var opensslArg = map[string]string{
 	"tls1.2": "-tls1_2",
 }
 
-type CipherSuiteResults map[string][]string
-
-type Results struct {
-	CipherSuiteResults CipherSuiteResults
-
-	mutual bool
-}
+type Results map[string][]string
 
 func (r Results) HasTLS() bool {
-	for _, suites := range r.CipherSuiteResults {
+	for _, suites := range r {
 		if len(suites) != 0 {
 			return true
 		}
 	}
 
 	return false
-}
-
-func (r Results) HasMutual() bool {
-	return r.mutual
 }

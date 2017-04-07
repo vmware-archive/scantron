@@ -177,7 +177,7 @@ var _ = Describe("Sqlite", func() {
 								Number:   123,
 								TLSInformation: scantron.TLSInformation{
 									ScanError: errors.New("this was a terrible error"),
-									CipherInformation: tlsscan.CipherSuiteResults{
+									CipherInformation: tlsscan.Results{
 										"tls1.0": []string{
 											"ECDHE-NOT-REALLY-SECURE",
 										},
