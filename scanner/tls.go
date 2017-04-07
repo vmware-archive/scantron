@@ -41,6 +41,7 @@ func FetchTLSInformation(host, port string) (*scantron.Certificate, error) {
 		return nil, err
 	}
 
+	// XXX: We only get the first certificate given to us.
 	cert := certs[0]
 	var bits int
 
