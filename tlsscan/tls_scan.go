@@ -23,7 +23,10 @@ var (
 	ciphersuites []string
 )
 
-const maxInFlight = 20
+const (
+	maxInFlight    = 20
+	opensslTimeout = 3 * time.Second
+)
 
 func init() {
 	bs, err := exec.Command("openssl", "ciphers").Output()
@@ -100,7 +103,7 @@ func Scan(host string, port string) (Results, error) {
 }
 
 func scan(host, port, version, suite string) (bool, bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), opensslTimeout)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "openssl", "s_client",
