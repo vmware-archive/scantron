@@ -35,7 +35,7 @@ var _ = Describe("TLS Scan", func() {
 	Context("scanning a server that supports TLS", func() {
 		BeforeEach(func() {
 			config := &tls.Config{
-				MinVersion: tls.VersionSSL30,
+				MinVersion: tls.VersionTLS10,
 				MaxVersion: tls.VersionTLS11, // no tls 1.2
 				CipherSuites: []uint16{
 					// Note: this is an old cipher that should not be used but
@@ -57,7 +57,6 @@ var _ = Describe("TLS Scan", func() {
 			Expect(result.HasTLS()).To(BeTrue())
 			Expect(result.HasMutual()).To(BeFalse())
 
-			Expect(result.CipherSuiteResults).To(HaveKeyWithValue("ssl3.0", []string{"AES128-SHA"}))
 			Expect(result.CipherSuiteResults).To(HaveKeyWithValue("tls1.0", []string{"AES128-SHA"}))
 			Expect(result.CipherSuiteResults).To(HaveKeyWithValue("tls1.1", []string{"AES128-SHA"}))
 			Expect(result.CipherSuiteResults).To(HaveKeyWithValue("tls1.2", []string{}))
@@ -77,7 +76,6 @@ var _ = Describe("TLS Scan", func() {
 			Expect(result.HasTLS()).To(BeFalse())
 			Expect(result.HasMutual()).To(BeFalse())
 
-			Expect(result.CipherSuiteResults).To(HaveKeyWithValue("ssl3.0", []string{}))
 			Expect(result.CipherSuiteResults).To(HaveKeyWithValue("tls1.0", []string{}))
 			Expect(result.CipherSuiteResults).To(HaveKeyWithValue("tls1.1", []string{}))
 			Expect(result.CipherSuiteResults).To(HaveKeyWithValue("tls1.2", []string{}))
@@ -140,7 +138,6 @@ var _ = Describe("TLS Scan", func() {
 			Expect(result.HasTLS()).To(BeTrue())
 			Expect(result.HasMutual()).To(BeTrue())
 
-			Expect(result.CipherSuiteResults).To(HaveKeyWithValue("ssl3.0", []string{}))
 			Expect(result.CipherSuiteResults).To(HaveKeyWithValue("tls1.0", []string{}))
 			Expect(result.CipherSuiteResults).To(HaveKeyWithValue("tls1.1", []string{}))
 			Expect(result.CipherSuiteResults).To(HaveKeyWithValue("tls1.2", []string{

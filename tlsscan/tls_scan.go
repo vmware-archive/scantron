@@ -15,7 +15,6 @@ import (
 
 var (
 	tlsVersions = []string{
-		"ssl3.0",
 		"tls1.0",
 		"tls1.1",
 		"tls1.2",
