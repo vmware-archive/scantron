@@ -68,7 +68,6 @@ func Scan(host string, port string) (Results, error) {
 
 				found, err := scan(host, port, version, suite)
 				if err != nil {
-					log.Printf("could not scan (%s, %s): %s\n", version, suite, err)
 					return
 				}
 
