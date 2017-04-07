@@ -7,13 +7,14 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"net"
 
 	"github.com/pivotal-cf/scantron"
 )
 
 var ErrExpectedAbort = errors.New("tls: aborting handshake")
 
-func FetchTLSInformation(hostport string) (*scantron.Certificate, error) {
+func FetchTLSInformation(host, port string) (*scantron.Certificate, error) {
 	certs := []x509.Certificate{}
 
 	config := &tls.Config{
@@ -34,6 +35,7 @@ func FetchTLSInformation(hostport string) (*scantron.Certificate, error) {
 		},
 	}
 
+	hostport := net.JoinHostPort(host, port)
 	_, err := tls.Dial("tcp", hostport, config)
 	if err != nil && err != ErrExpectedAbort {
 		return nil, err

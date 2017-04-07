@@ -1,7 +1,6 @@
 package scanner
 
 import (
-	"net"
 	"strconv"
 
 	"code.cloudfoundry.org/lager"
@@ -33,7 +32,10 @@ func AnnotateWithTLSInformation(scanner Scanner) Scanner {
 						continue
 					}
 
-					results, err := tlsscan.Scan(scannedHost.IP, strconv.Itoa(port.Number))
+					host := scannedHost.IP
+					portNum := strconv.Itoa(port.Number)
+
+					results, err := tlsscan.Scan(host, portNum)
 					if err != nil {
 						port.TLSInformation.ScanError = err
 						continue
@@ -45,8 +47,7 @@ func AnnotateWithTLSInformation(scanner Scanner) Scanner {
 
 					port.TLSInformation.CipherInformation = results.CipherSuiteResults
 
-					hostport := net.JoinHostPort(scannedHost.IP, strconv.Itoa(port.Number))
-					cert, err := FetchTLSInformation(hostport)
+					cert, err := FetchTLSInformation(host, portNum)
 					if err != nil {
 						port.TLSInformation.ScanError = err
 					} else {

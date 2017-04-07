@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -57,10 +58,9 @@ var _ = Describe("TLS", func() {
 			})
 
 			It("should show TLS certificate details", func() {
-				url, err := url.Parse(server.URL)
-				Expect(err).NotTo(HaveOccurred())
+				host, port := hostport(server.URL)
 
-				cert, err := scanner.FetchTLSInformation(url.Host)
+				cert, err := scanner.FetchTLSInformation(host, port)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(cert).ShouldNot(BeNil())
 
@@ -98,10 +98,9 @@ var _ = Describe("TLS", func() {
 			})
 
 			It("should show TLS certificate details", func() {
-				url, err := url.Parse(server.URL)
-				Expect(err).NotTo(HaveOccurred())
+				host, port := hostport(server.URL)
 
-				cert, err := scanner.FetchTLSInformation(url.Host)
+				cert, err := scanner.FetchTLSInformation(host, port)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(cert).ShouldNot(BeNil())
 
@@ -133,3 +132,13 @@ var _ = Describe("TLS", func() {
 		})
 	})
 })
+
+func hostport(uri string) (string, string) {
+	pu, err := url.Parse(uri)
+	Expect(err).ShouldNot(HaveOccurred())
+
+	host, port, err := net.SplitHostPort(pu.Host)
+	Expect(err).ShouldNot(HaveOccurred())
+
+	return host, port
+}
