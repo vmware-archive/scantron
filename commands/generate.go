@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/pivotal-cf/scantron/audit"
+	"github.com/pivotal-cf/scantron/db"
 )
 
 type GenerateManifestCommand struct {
@@ -11,7 +12,7 @@ type GenerateManifestCommand struct {
 }
 
 func (command *GenerateManifestCommand) Execute(args []string) error {
-	db, err := OpenDatabase(command.Database)
+	db, err := db.OpenDatabase(command.Database)
 	if err != nil {
 		return err
 	}

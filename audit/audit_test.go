@@ -7,7 +7,7 @@ import (
 
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/audit"
-	"github.com/pivotal-cf/scantron/commands"
+	"github.com/pivotal-cf/scantron/db"
 	"github.com/pivotal-cf/scantron/manifest"
 	"github.com/pivotal-cf/scantron/scanner"
 
@@ -17,7 +17,7 @@ import (
 
 var _ = Describe("Audit", func() {
 	var (
-		db     *commands.Database
+		database     *db.Database
 		tmpdir string
 
 		hosts []scanner.ScanResult
@@ -29,17 +29,17 @@ var _ = Describe("Audit", func() {
 		tmpdir, err = ioutil.TempDir("", "audit")
 		Expect(err).NotTo(HaveOccurred())
 
-		db, err = commands.CreateDatabase(filepath.Join(tmpdir, "database.db"))
+		database, err = db.CreateDatabase(filepath.Join(tmpdir, "database.db"))
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	JustBeforeEach(func() {
-		err := db.SaveReport(hosts)
+		err := database.SaveReport(hosts)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
-		db.Close()
+		database.Close()
 		os.RemoveAll(tmpdir)
 	})
 
@@ -110,7 +110,7 @@ var _ = Describe("Audit", func() {
 			})
 
 			It("returns a results that says everything is ok", func() {
-				result, err := audit.Audit(db.DB(), mani)
+				result, err := audit.Audit(database.DB(), mani)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(result.OK()).To(BeTrue())
@@ -179,7 +179,7 @@ var _ = Describe("Audit", func() {
 			})
 
 			It("returns a result showing the extra or missing host", func() {
-				result, err := audit.Audit(db.DB(), mani)
+				result, err := audit.Audit(database.DB(), mani)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(result.OK()).To(BeFalse())
@@ -230,7 +230,7 @@ var _ = Describe("Audit", func() {
 			})
 
 			It("returns a result showing the missing process", func() {
-				result, err := audit.Audit(db.DB(), mani)
+				result, err := audit.Audit(database.DB(), mani)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(result.OK()).To(BeFalse())
@@ -304,7 +304,7 @@ var _ = Describe("Audit", func() {
 			})
 
 			It("returns a result showing the unexpected port", func() {
-				result, err := audit.Audit(db.DB(), mani)
+				result, err := audit.Audit(database.DB(), mani)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(result.OK()).To(BeFalse())
@@ -313,7 +313,7 @@ var _ = Describe("Audit", func() {
 			})
 
 			It("returns a result showing the missing port", func() {
-				result, err := audit.Audit(db.DB(), mani)
+				result, err := audit.Audit(database.DB(), mani)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(result.OK()).To(BeFalse())
@@ -359,7 +359,7 @@ var _ = Describe("Audit", func() {
 			})
 
 			It("returns a result showing incorrect values", func() {
-				result, err := audit.Audit(db.DB(), mani)
+				result, err := audit.Audit(database.DB(), mani)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(result.OK()).To(BeFalse())
@@ -374,13 +374,13 @@ var _ = Describe("Audit", func() {
 		})
 	})
 
-	Context("when there are multiple reports in the db", func() {
+	Context("when there are multiple reports in the database", func() {
 		var (
 			latestHosts []scanner.ScanResult
 		)
 
 		JustBeforeEach(func() {
-			err := db.SaveReport(latestHosts)
+			err := database.SaveReport(latestHosts)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -462,7 +462,7 @@ var _ = Describe("Audit", func() {
 		})
 
 		It("audits the latest report against the given manifest", func() {
-			result, err := audit.Audit(db.DB(), mani)
+			result, err := audit.Audit(database.DB(), mani)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(result.OK()).To(BeTrue())

@@ -12,15 +12,15 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/audit"
-	"github.com/pivotal-cf/scantron/commands"
+	"github.com/pivotal-cf/scantron/db"
 	"github.com/pivotal-cf/scantron/manifest"
 	"github.com/pivotal-cf/scantron/scanner"
 )
 
 var _ = Describe("Generate", func() {
 	var (
-		db     *commands.Database
-		tmpdir string
+		database *db.Database
+		tmpdir   string
 
 		writer *bytes.Buffer
 		hosts  []scanner.ScanResult
@@ -32,20 +32,20 @@ var _ = Describe("Generate", func() {
 		tmpdir, err = ioutil.TempDir("", "audit")
 		Expect(err).NotTo(HaveOccurred())
 
-		db, err = commands.CreateDatabase(filepath.Join(tmpdir, "database.db"))
+		database, err = db.CreateDatabase(filepath.Join(tmpdir, "database.db"))
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
-		db.Close()
+		database.Close()
 		os.RemoveAll(tmpdir)
 	})
 
 	Context("when there is only one report in the database", func() {
 		JustBeforeEach(func() {
-			err := db.SaveReport(hosts)
+			err := database.SaveReport(hosts)
 			Expect(err).NotTo(HaveOccurred())
-			err = audit.GenerateManifest(writer, db.DB())
+			err = audit.GenerateManifest(writer, database.DB())
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -208,13 +208,13 @@ var _ = Describe("Generate", func() {
 		)
 
 		JustBeforeEach(func() {
-			err := db.SaveReport(hosts)
+			err := database.SaveReport(hosts)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = db.SaveReport(latestHosts)
+			err = database.SaveReport(latestHosts)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = audit.GenerateManifest(writer, db.DB())
+			err = audit.GenerateManifest(writer, database.DB())
 			Expect(err).NotTo(HaveOccurred())
 		})
 

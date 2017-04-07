@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	"github.com/pivotal-cf/scantron/commands"
+	"github.com/pivotal-cf/scantron/db"
 	"github.com/pivotal-cf/scantron/manifest"
 	"github.com/pivotal-cf/scantron/scanner"
 )
@@ -59,11 +59,11 @@ var _ = Describe("Main", func() {
 			err = ioutil.WriteFile(manifestPath, manifestBytes, 0600)
 			Expect(err).NotTo(HaveOccurred())
 
-			db, err := commands.CreateDatabase(databasePath)
+			database, err := db.CreateDatabase(databasePath)
 			Expect(err).NotTo(HaveOccurred())
-			defer db.Close()
+			defer database.Close()
 
-			err = db.SaveReport(hosts)
+			err = database.SaveReport(hosts)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

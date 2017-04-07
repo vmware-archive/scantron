@@ -1,4 +1,4 @@
-package commands_test
+package db_test
 
 import (
 	"database/sql"
@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/pivotal-cf/scantron"
-	"github.com/pivotal-cf/scantron/commands"
+	"github.com/pivotal-cf/scantron/db"
 	"github.com/pivotal-cf/scantron/scanner"
 )
 
@@ -33,7 +33,7 @@ var _ = Describe("Sqlite", func() {
 		It("creates a new database file", func() {
 			dbPath := filepath.Join(tmpdir, "database.db")
 
-			db, err := commands.CreateDatabase(dbPath)
+			db, err := db.CreateDatabase(dbPath)
 			Expect(err).NotTo(HaveOccurred())
 			defer db.Close()
 
@@ -43,7 +43,7 @@ var _ = Describe("Sqlite", func() {
 		It("creates the required tables", func() {
 			dbPath := filepath.Join(tmpdir, "database.db")
 
-			db, err := commands.CreateDatabase(dbPath)
+			db, err := db.CreateDatabase(dbPath)
 			Expect(err).NotTo(HaveOccurred())
 			defer db.Close()
 
@@ -85,7 +85,7 @@ var _ = Describe("Sqlite", func() {
 
 	Describe("SaveReport", func() {
 		var (
-			db             *commands.Database
+			database       *db.Database
 			hosts          []scanner.ScanResult
 			host           scanner.ScanResult
 			dbPath         string
@@ -97,10 +97,10 @@ var _ = Describe("Sqlite", func() {
 			dbPath = filepath.Join(tmpdir, "database.db")
 
 			var err error
-			db, err = commands.CreateDatabase(dbPath)
+			database, err = db.CreateDatabase(dbPath)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = db.SaveReport(hosts)
+			err = database.SaveReport(hosts)
 			Expect(err).NotTo(HaveOccurred())
 
 			sqliteDB, err = sql.Open("sqlite3", dbPath)
@@ -108,7 +108,7 @@ var _ = Describe("Sqlite", func() {
 		})
 
 		AfterEach(func() {
-			db.Close()
+			database.Close()
 			sqliteDB.Close()
 		})
 

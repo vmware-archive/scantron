@@ -13,6 +13,7 @@ import (
 	nmap "github.com/lair-framework/go-nmap"
 
 	"github.com/pivotal-cf/scantron"
+	"github.com/pivotal-cf/scantron/db"
 	"github.com/pivotal-cf/scantron/remotemachine"
 	"github.com/pivotal-cf/scantron/scanner"
 )
@@ -72,7 +73,7 @@ func (command *BoshScanCommand) Execute(args []string) error {
 		nmapResults,
 	)
 
-	db, err := OpenOrCreateDatabase(command.Database)
+	db, err := db.OpenOrCreateDatabase(command.Database)
 
 	if err != nil {
 		log.Fatalf("failed to create database: %s", err.Error())

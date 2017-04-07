@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/pivotal-cf/scantron/audit"
+	"github.com/pivotal-cf/scantron/db"
 	"github.com/pivotal-cf/scantron/manifest"
 )
 
@@ -22,7 +23,7 @@ func (command *AuditCommand) Execute(args []string) error {
 		return err
 	}
 
-	db, err := OpenDatabase(command.Database)
+	db, err := db.OpenDatabase(command.Database)
 	if err != nil {
 		return err
 	}
