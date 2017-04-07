@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -21,30 +22,27 @@ func (d *Database) DB() *sql.DB {
 }
 
 func OpenOrCreateDatabase(path string) (*Database, error) {
-	var db *Database
 	_, err := os.Stat(path)
 
-	if !os.IsNotExist(err) {
-		db, err = OpenDatabase(path)
+	if os.IsNotExist(err) {
+		return CreateDatabase(path)
 	} else {
-		db, err = CreateDatabase(path)
+		return OpenDatabase(path)
 	}
-
-	return db, err
 }
 
 func CreateDatabase(path string) (*Database, error) {
-	db, err := OpenDatabase(path)
+	database, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = db.db.Exec(createDDL)
+	_, err = database.Exec(createDDL, SchemaVersion)
 	if err != nil {
 		return nil, err
 	}
 
-	return db, nil
+	return &Database{db: database}, nil
 }
 
 func OpenDatabase(path string) (*Database, error) {
@@ -53,13 +51,38 @@ func OpenDatabase(path string) (*Database, error) {
 		return nil, err
 	}
 
-	return &Database{
-		db: db,
-	}, nil
+	database := &Database{db: db}
+
+	version := database.Version()
+
+	if version != SchemaVersion {
+		return nil, fmt.Errorf("The database version (%d) does not match latest version (%d). Please create a new database.", version, SchemaVersion)
+	}
+
+	return database, nil
 }
 
 func (db *Database) Close() error {
 	return db.db.Close()
+}
+
+func (db *Database) Version() int {
+	rows, err := db.db.Query("SELECT version FROM version")
+	if err != nil {
+		return 0
+	}
+
+	defer rows.Close()
+
+	hasRow := rows.Next()
+	if !hasRow {
+		return 0
+	}
+
+	var version int
+	rows.Scan(&version)
+
+	return version
 }
 
 func (db *Database) SaveReport(scans []scanner.ScanResult) error {
@@ -197,7 +220,10 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 	return tx.Commit()
 }
 
-var createDDL = `
+// Update the schema version when the DDL changes
+const SchemaVersion = 1
+
+const createDDL = `
 CREATE TABLE reports (
 	id integer PRIMARY KEY AUTOINCREMENT,
 	timestamp datetime,
@@ -267,4 +293,10 @@ CREATE TABLE files (
 	permissions integer,
 	FOREIGN KEY(host_id) REFERENCES hosts(id)
 );
+
+CREATE TABLE version (
+	version integer
+);
+
+INSERT INTO version(version) VALUES(?);
 `

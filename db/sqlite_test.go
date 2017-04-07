@@ -17,35 +17,37 @@ import (
 )
 
 var _ = Describe("Sqlite", func() {
-	var tmpdir string
+	var (
+		tmpdir string
+		dbPath string
+	)
 
 	BeforeEach(func() {
 		var err error
+
 		tmpdir, err = ioutil.TempDir("", "scantron_db")
 		Expect(err).NotTo(HaveOccurred())
+
+		dbPath = filepath.Join(tmpdir, "database.db")
 	})
 
 	AfterEach(func() {
 		os.RemoveAll(tmpdir)
 	})
 
-	Describe("NewDatabase", func() {
+	Describe("OpenOrCreateDatabase", func() {
 		It("creates a new database file", func() {
-			dbPath := filepath.Join(tmpdir, "database.db")
-
-			db, err := db.CreateDatabase(dbPath)
+			database, err := db.OpenOrCreateDatabase(dbPath)
 			Expect(err).NotTo(HaveOccurred())
-			defer db.Close()
+			defer database.Close()
 
 			Expect(dbPath).To(BeAnExistingFile())
 		})
 
 		It("creates the required tables", func() {
-			dbPath := filepath.Join(tmpdir, "database.db")
-
-			db, err := db.CreateDatabase(dbPath)
+			database, err := db.OpenOrCreateDatabase(dbPath)
 			Expect(err).NotTo(HaveOccurred())
-			defer db.Close()
+			defer database.Close()
 
 			sqliteDB, err := sql.Open("sqlite3", dbPath)
 			Expect(err).NotTo(HaveOccurred())
@@ -79,7 +81,50 @@ var _ = Describe("Sqlite", func() {
 				"tls_informations",
 				"tls_scan_errors",
 				"env_vars",
+				"version",
 			))
+		})
+
+		It("sets the schema version", func() {
+			database, err := db.OpenOrCreateDatabase(dbPath)
+			Expect(err).NotTo(HaveOccurred())
+			defer database.Close()
+
+			Expect(database.Version()).To(Equal(db.SchemaVersion))
+		})
+
+		It("returns an error when the database version is unknown", func() {
+			database, err := db.OpenOrCreateDatabase(dbPath)
+			Expect(err).NotTo(HaveOccurred())
+			database.Close()
+
+			sqliteDB, err := sql.Open("sqlite3", dbPath)
+			Expect(err).NotTo(HaveOccurred())
+			defer sqliteDB.Close()
+
+			_, err = sqliteDB.Exec("DROP TABLE version")
+			Expect(err).NotTo(HaveOccurred())
+
+			database, err = db.OpenOrCreateDatabase(dbPath)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("The database version (0) does not match latest version"))
+		})
+
+		It("returns an error when the database version is old", func() {
+			database, err := db.OpenOrCreateDatabase(dbPath)
+			Expect(err).NotTo(HaveOccurred())
+			database.Close()
+
+			sqliteDB, err := sql.Open("sqlite3", dbPath)
+			Expect(err).NotTo(HaveOccurred())
+			defer sqliteDB.Close()
+
+			_, err = sqliteDB.Exec("UPDATE version SET version = -42")
+			Expect(err).NotTo(HaveOccurred())
+
+			database, err = db.OpenOrCreateDatabase(dbPath)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("The database version (-42) does not match latest version"))
 		})
 	})
 
@@ -88,14 +133,11 @@ var _ = Describe("Sqlite", func() {
 			database       *db.Database
 			hosts          []scanner.ScanResult
 			host           scanner.ScanResult
-			dbPath         string
 			sqliteDB       *sql.DB
 			certExpiration time.Time
 		)
 
 		JustBeforeEach(func() {
-			dbPath = filepath.Join(tmpdir, "database.db")
-
 			var err error
 			database, err = db.CreateDatabase(dbPath)
 			Expect(err).NotTo(HaveOccurred())
