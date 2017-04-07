@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -171,6 +172,11 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 					if port.TLSInformation.Certificate != nil {
 						cert := port.TLSInformation.Certificate
 
+						ciJson, err := json.Marshal(port.TLSInformation.CipherInformation)
+						if err != nil {
+							return err
+						}
+
 						_, err = tx.Exec(`
 						INSERT INTO tls_informations (
 							 port_id,
@@ -180,8 +186,9 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 							 cert_province,
 							 cert_locality,
 							 cert_organization,
-							 cert_common_name
-						 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+							 cert_common_name,
+							 cipher_suites
+						 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 							portID,
 							cert.Expiration,
 							cert.Bits,
@@ -190,6 +197,7 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 							cert.Subject.Locality,
 							cert.Subject.Organization,
 							cert.Subject.CommonName,
+							string(ciJson),
 						)
 						if err != nil {
 							return err

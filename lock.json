@@ -1,5 +1,5 @@
 {
-    "memo": "ddd521594524dc5cf0b2b90c37d9974d569519ac7c8ad7ea556cc413591d0713",
+    "memo": "9fe19bda2a5429114ad6e571df754863f9e14c777319a49ea380f0d7c0b89af4",
     "projects": [
         {
             "name": "code.cloudfoundry.org/lager",
@@ -131,14 +131,6 @@
             "name": "github.com/kr/fs",
             "branch": "master",
             "revision": "2788f0dbd16903de03cb8186e5c7d97b69ad387b",
-            "packages": [
-                "."
-            ]
-        },
-        {
-            "name": "github.com/lair-framework/go-nmap",
-            "branch": "master",
-            "revision": "5b53e4727b6b269bb22734852b4365dfa7db6c6c",
             "packages": [
                 "."
             ]

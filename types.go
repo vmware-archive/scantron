@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/pivotal-cf/scantron/tlsscan"
 )
 
 type File struct {
@@ -21,9 +23,8 @@ type Port struct {
 }
 
 type TLSInformation struct {
-	Presence          bool
 	Certificate       *Certificate
-	CipherInformation CipherInformation
+	CipherInformation tlsscan.CipherSuiteResults
 
 	ScanError error
 }

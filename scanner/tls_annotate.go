@@ -5,8 +5,7 @@ import (
 	"strconv"
 
 	"code.cloudfoundry.org/lager"
-
-	"github.com/pivotal-cf/scantron"
+	"github.com/pivotal-cf/scantron/tlsscan"
 )
 
 type scannerFunc func(logger lager.Logger) ([]ScanResult, error)
@@ -15,7 +14,7 @@ func (s scannerFunc) Scan(logger lager.Logger) ([]ScanResult, error) {
 	return s(logger)
 }
 
-func AnnotateWithTLSInformation(scanner Scanner, nmapResults scantron.NmapResults) Scanner {
+func AnnotateWithTLSInformation(scanner Scanner) Scanner {
 	return scannerFunc(func(logger lager.Logger) ([]ScanResult, error) {
 		scannedHosts, err := scanner.Scan(logger)
 		if err != nil {
@@ -23,40 +22,38 @@ func AnnotateWithTLSInformation(scanner Scanner, nmapResults scantron.NmapResult
 		}
 
 		for j, scannedHost := range scannedHosts {
-
 			services := scannedHost.Services
 
 			for _, hostService := range services {
-				nmapResult := nmapResults[scannedHost.IP]
+				ports := hostService.Ports
 
-				for _, nmapService := range nmapResult {
-					ports := hostService.Ports
-
-					for n, port := range ports {
-						if port.Number != nmapService.Port {
-							continue
-						}
-
-						if port.State != "LISTEN" {
-							continue
-						}
-
-						if nmapService.SSL {
-							port := ports[n]
-							port.TLSInformation.Presence = true
-
-							hostport := net.JoinHostPort(scannedHost.IP, strconv.Itoa(port.Number))
-							cert, err := FetchTLSInformation(hostport)
-							if err != nil {
-								port.TLSInformation.ScanError = err
-							} else {
-								port.TLSInformation.Certificate = cert
-							}
-
-							port.TLSInformation.CipherInformation = nmapService.CipherInformation
-							ports[n] = port
-						}
+				for n := range ports {
+					port := ports[n]
+					if port.State != "LISTEN" {
+						continue
 					}
+
+					results, err := tlsscan.Scan(scannedHost.IP, strconv.Itoa(port.Number))
+					if err != nil {
+						port.TLSInformation.ScanError = err
+						continue
+					}
+
+					if !results.HasTLS() {
+						continue
+					}
+
+					port.TLSInformation.CipherInformation = results.CipherSuiteResults
+
+					hostport := net.JoinHostPort(scannedHost.IP, strconv.Itoa(port.Number))
+					cert, err := FetchTLSInformation(hostport)
+					if err != nil {
+						port.TLSInformation.ScanError = err
+					} else {
+						port.TLSInformation.Certificate = cert
+					}
+
+					ports[n] = port
 				}
 			}
 

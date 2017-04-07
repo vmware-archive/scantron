@@ -14,6 +14,7 @@ import (
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/db"
 	"github.com/pivotal-cf/scantron/scanner"
+	"github.com/pivotal-cf/scantron/tlsscan"
 )
 
 var _ = Describe("Sqlite", func() {
@@ -175,8 +176,15 @@ var _ = Describe("Sqlite", func() {
 								Address:  "123.0.0.1",
 								Number:   123,
 								TLSInformation: scantron.TLSInformation{
-									Presence:  true,
 									ScanError: errors.New("this was a terrible error"),
+									CipherInformation: tlsscan.CipherSuiteResults{
+										"tls1.0": []string{
+											"ECDHE-NOT-REALLY-SECURE",
+										},
+										"tls1.1": []string{
+											"ECDHE-REALLY-SECURE",
+										},
+									},
 									Certificate: &scantron.Certificate{
 										Expiration: certExpiration,
 										Bits:       234,
@@ -220,6 +228,7 @@ var _ = Describe("Sqlite", func() {
 							 tls_informations.cert_locality,
 							 tls_informations.cert_organization,
 							 tls_informations.cert_common_name,
+							 tls_informations.cipher_suites,
 							 tls_scan_errors.cert_scan_error,
 							 env_vars.var,
 							 files.path,
@@ -256,13 +265,14 @@ var _ = Describe("Sqlite", func() {
 					tlsCertExp      time.Time
 					certScanError   string
 					filePath        string
+					cipherSuites    string
 					filePermissions os.FileMode
 				)
 
 				err = rows.Scan(&name, &ip, &pid, &user, &cmdline, &portProtocol,
 					&portAddress, &portNumber, &tlsCertExp, &tlsCertBits,
 					&tlsCertCountry, &tlsCertProvince, &tlsCertLocality,
-					&tlsCertOrganization, &tlsCertCommonName, &certScanError, &env, &filePath, &filePermissions)
+					&tlsCertOrganization, &tlsCertCommonName, &cipherSuites, &certScanError, &env, &filePath, &filePermissions)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(name).To(Equal("custom_name/0"))
@@ -278,20 +288,18 @@ var _ = Describe("Sqlite", func() {
 				Expect(tlsCertLocality).To(Equal("some-locality"))
 				Expect(tlsCertOrganization).To(Equal("some-organization"))
 				Expect(tlsCertCommonName).To(Equal("some-common-name"))
+				Expect(cipherSuites).To(MatchJSON(`{"tls1.0": ["ECDHE-NOT-REALLY-SECURE"], "tls1.1": ["ECDHE-REALLY-SECURE"]}`))
 				Expect(certScanError).To(Equal("this was a terrible error"))
 				Expect(cmdline).To(Equal("this is a cmd"))
 				Expect(env).To(Equal("PATH=this OTHER=that"))
 				Expect(filePath).To(Equal("some-file-path"))
 				Expect(filePermissions).To(Equal(os.FileMode(0644)))
-
 			})
 
 			Context("when the service does not have a certificate", func() {
 				BeforeEach(func() {
 					service := host.Services[0]
-
 					service.Ports[0].TLSInformation.Certificate = nil
-					service.Ports[0].TLSInformation.Presence = false
 
 					host.Services[0] = service
 				})

@@ -3,24 +3,19 @@ package commands
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
 	"code.cloudfoundry.org/lager"
 	boshconfig "github.com/cloudfoundry/bosh-cli/cmd/config"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	nmap "github.com/lair-framework/go-nmap"
 
-	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/db"
 	"github.com/pivotal-cf/scantron/remotemachine"
 	"github.com/pivotal-cf/scantron/scanner"
 )
 
 type BoshScanCommand struct {
-	NmapResults string `long:"nmap-results" description:"Path to nmap results XML" value-name:"PATH" required:"true"`
-
 	Director struct {
 		URL        string `long:"director-url" description:"BOSH Director URL" value-name:"URL" required:"true"`
 		Deployment string `long:"bosh-deployment" description:"BOSH Deployment" value-name:"DEPLOYMENT_NAME" required:"true"`
@@ -41,17 +36,6 @@ func (command *BoshScanCommand) Execute(args []string) error {
 	out := bufio.NewWriter(os.Stdout)
 	boshLogger := boshlog.NewWriterLogger(boshlog.LevelNone, out, nil)
 
-	bs, err := ioutil.ReadFile(command.NmapResults)
-	if err != nil {
-		log.Fatalf("failed to open nmap results: %s", err.Error())
-	}
-
-	nmapRun, err := nmap.Parse(bs)
-	if err != nil {
-		log.Fatalf("failed to parse nmap results: %s", err.Error())
-	}
-	nmapResults := scantron.BuildNmapResults(nmapRun)
-
 	director, err := remotemachine.NewBoshDirector(
 		logger,
 		boshconfig.Creds{
@@ -68,13 +52,9 @@ func (command *BoshScanCommand) Execute(args []string) error {
 	}
 	defer director.Cleanup()
 
-	s := scanner.AnnotateWithTLSInformation(
-		scanner.Bosh(director),
-		nmapResults,
-	)
+	s := scanner.AnnotateWithTLSInformation(scanner.Bosh(director))
 
 	db, err := db.OpenOrCreateDatabase(command.Database)
-
 	if err != nil {
 		log.Fatalf("failed to create database: %s", err.Error())
 	}
