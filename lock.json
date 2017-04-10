@@ -177,8 +177,8 @@
         },
         {
             "name": "github.com/onsi/ginkgo",
-            "version": "v1.3.1",
-            "revision": "77a8c1e5c40d6bb6c5eb4dd4bdce9763564f6298",
+            "branch": "master",
+            "revision": "f40a49d81e5c12e90400620b6242fb29a8e7c9d9",
             "packages": [
                 ".",
                 "config",
@@ -202,8 +202,8 @@
         },
         {
             "name": "github.com/onsi/gomega",
-            "version": "v1.1.0",
-            "revision": "334b8f472b3af5d541c5642701c1e29e2126f486",
+            "branch": "master",
+            "revision": "9b8c753e8dfb382618ba8fa19b4197b5dcb0434c",
             "packages": [
                 ".",
                 "format",

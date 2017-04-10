@@ -105,7 +105,9 @@ func scan(host, port, version, suite string) (bool, error) {
 
 	bs, err := cmd.CombinedOutput()
 	if err != nil {
-		if bytes.Contains(bs, []byte(":error:")) || bytes.Contains(bs, []byte("errno=54")) {
+		if bytes.Contains(bs, []byte("Acceptable client certificate CA names")) {
+			return true, nil
+		} else if bytes.Contains(bs, []byte(":error:")) || bytes.Contains(bs, []byte("errno=54")) {
 			return false, nil
 		} else {
 			return false, err
