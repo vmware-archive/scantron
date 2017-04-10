@@ -59,9 +59,15 @@ type Process struct {
 	Ports []Port `json:"ports"`
 }
 
+type SSHKey struct {
+	Type string `json:"type"`
+	Key  string `json:"key"`
+}
+
 type SystemInfo struct {
 	Processes []Process `json:"processes"`
 	Files     []File    `json:"files"`
+	SSHKeys   []SSHKey  `json:"ssh_keys"`
 }
 
 func (p Process) HasFileWithPort(number int) bool {

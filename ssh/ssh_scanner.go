@@ -1,11 +1,11 @@
-package commands
+package ssh
 
 import (
 	"encoding/base64"
-	"fmt"
 	"net"
 	"strings"
 
+	"github.com/pivotal-cf/scantron"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -18,20 +18,15 @@ var keyAlgos = []string{
 	ssh.KeyAlgoED25519,
 }
 
-type SshKeyscanCommand struct {
-}
-
-func (s *SshKeyscanCommand) Execute(args []string) error {
-	host := args[0]
-
-	addr := host
-	if !strings.Contains(addr, ":") {
-		addr += ":22"
-	}
+func ScanSSH(host string) ([]scantron.SSHKey, error) {
+	sshKeys := []scantron.SSHKey{}
 
 	hostKeyCallback := func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 		encodedKey := base64.StdEncoding.EncodeToString(key.Marshal())
-		fmt.Println(host, key.Type(), encodedKey)
+		sshKeys = append(sshKeys, scantron.SSHKey{
+			Type: key.Type(),
+			Key:  encodedKey,
+		})
 		return nil
 	}
 
@@ -41,16 +36,16 @@ func (s *SshKeyscanCommand) Execute(args []string) error {
 			HostKeyAlgorithms: []string{keyAlgo},
 		}
 
-		client, err := ssh.Dial("tcp", addr, config)
+		client, err := ssh.Dial("tcp", host, config)
 
 		if err != nil {
 			if !strings.HasPrefix(err.Error(), "ssh:") {
-				return fmt.Errorf("error: %s", err)
+				return nil, err
 			}
 		} else {
 			client.Close()
 		}
 	}
 
-	return nil
+	return sshKeys, nil
 }

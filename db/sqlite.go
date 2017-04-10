@@ -224,6 +224,16 @@ func (db *Database) SaveReport(scans []scanner.ScanResult) error {
 					return err
 				}
 			}
+
+			for _, sshKey := range scan.SSHKeys {
+				_, err = tx.Exec(
+					"INSERT INTO ssh_keys(host_id, type, key) VALUES (?, ?, ?)",
+					hostID, sshKey.Type, sshKey.Key,
+				)
+				if err != nil {
+					return err
+				}
+			}
 		}
 	}
 

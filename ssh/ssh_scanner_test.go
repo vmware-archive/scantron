@@ -1,4 +1,4 @@
-package main_test
+package ssh_test
 
 import (
 	"crypto/dsa"
@@ -12,13 +12,14 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/onsi/gomega/gbytes"
-	"github.com/onsi/gomega/gexec"
+	scantronssh "github.com/pivotal-cf/scantron/ssh"
+
+	"github.com/onsi/gomega/gstruct"
 	"golang.org/x/crypto/ed25519"
 	"golang.org/x/crypto/ssh"
 )
 
-var _ = Describe("ssh-keyscan", func() {
+var _ = Describe("SshScanner", func() {
 	Context("with an SSH server", func() {
 		var listener net.Listener
 
@@ -38,23 +39,25 @@ var _ = Describe("ssh-keyscan", func() {
 		It("prints the key type for rsa keys", func() {
 			address := listener.Addr().String()
 
-			session := runCommand("ssh-keyscan", address)
-			Eventually(session).Should(gexec.Exit(0))
+			sshKeys, err := scantronssh.ScanSSH(address)
+			Expect(err).NotTo(HaveOccurred())
 
-			Expect(session.Out).To(gbytes.Say("%s ssh-rsa AAAA", address))
-			Expect(session.Out).To(gbytes.Say("%s ssh-dss AAAA", address))
-			Expect(session.Out).To(gbytes.Say("%s ecdsa-sha2-nistp256 AAAA", address))
-			Expect(session.Out).To(gbytes.Say("%s ecdsa-sha2-nistp384 AAAA", address))
-			Expect(session.Out).To(gbytes.Say("%s ecdsa-sha2-nistp521 AAAA", address))
-			Expect(session.Out).To(gbytes.Say("%s ssh-ed25519 AAAA", address))
+			expectedKeyTypes := []string{
+				"ssh-rsa",
+				"ssh-dss",
+				"ecdsa-sha2-nistp256",
+				"ecdsa-sha2-nistp384",
+				"ecdsa-sha2-nistp521",
+				"ssh-ed25519",
+			}
+
+			for _, key := range expectedKeyTypes {
+				Expect(sshKeys).To(ContainElement(gstruct.MatchAllFields(gstruct.Fields{
+					"Type": Equal(key),
+					"Key":  HavePrefix("AAAA"),
+				})))
+			}
 		})
-	})
-
-	It("defaults to port 22 and prints an error when there's a connection failure", func() {
-		session := runCommand("ssh-keyscan", "999.999.999.999")
-		Eventually(session).Should(gexec.Exit(1))
-
-		Expect(session.Err).To(gbytes.Say("error: dial tcp: lookup 999.999.999.999"))
 	})
 })
 

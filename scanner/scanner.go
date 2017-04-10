@@ -20,6 +20,7 @@ type ScanResult struct {
 
 	Services []scantron.Process
 	Files    []scantron.File
+	SSHKeys  []scantron.SSHKey
 }
 
 func buildScanResult(host scantron.SystemInfo, jobName, address string) ScanResult {
@@ -28,6 +29,7 @@ func buildScanResult(host scantron.SystemInfo, jobName, address string) ScanResu
 		IP:       address,
 		Services: host.Processes,
 		Files:    host.Files,
+		SSHKeys:  host.SSHKeys,
 	}
 }
 

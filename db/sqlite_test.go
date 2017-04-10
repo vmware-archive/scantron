@@ -82,6 +82,7 @@ var _ = Describe("Sqlite", func() {
 				"tls_informations",
 				"tls_scan_errors",
 				"env_vars",
+				"ssh_keys",
 				"version",
 			))
 		})
@@ -207,6 +208,16 @@ var _ = Describe("Sqlite", func() {
 							Permissions: 0644,
 						},
 					},
+					SSHKeys: []scantron.SSHKey{
+						{
+							Type: "ssh-rsa",
+							Key:  "My Special RSA Key",
+						},
+						{
+							Type: "ssh-dss",
+							Key:  "My Special DSA Key",
+						},
+					},
 				}
 
 				hosts = []scanner.ScanResult{host}
@@ -234,20 +245,24 @@ var _ = Describe("Sqlite", func() {
 							 tls_scan_errors.cert_scan_error,
 							 env_vars.var,
 							 files.path,
-							 files.permissions
+							 files.permissions,
+							 ssh_keys.type,
+							 ssh_keys.key
 				FROM   hosts,
 							 processes,
 							 ports,
 							 tls_informations,
 							 tls_scan_errors,
 							 env_vars,
-							 files
+							 files,
+							 ssh_keys
 				WHERE  hosts.id = processes.host_id
 							 AND ports.process_id = processes.id
 							 AND ports.id = tls_informations.port_id
 							 AND ports.id = tls_scan_errors.port_id
 							 AND files.host_id = hosts.id
-						   AND env_vars.process_id=processes.id`)
+							 AND ssh_keys.host_id = hosts.id
+						   AND env_vars.process_id = processes.id`)
 				Expect(err).NotTo(HaveOccurred())
 				defer rows.Close()
 
@@ -270,13 +285,16 @@ var _ = Describe("Sqlite", func() {
 					cipherSuites    string
 					mutual          bool
 					filePermissions os.FileMode
+
+					sshKeyType string
+					sshKey     string
 				)
 
 				err = rows.Scan(&name, &ip, &pid, &user, &cmdline, &portProtocol,
 					&portAddress, &portNumber, &tlsCertExp, &tlsCertBits, &tlsCertCountry,
 					&tlsCertProvince, &tlsCertLocality, &tlsCertOrganization,
 					&tlsCertCommonName, &cipherSuites, &mutual, &certScanError, &env,
-					&filePath, &filePermissions)
+					&filePath, &filePermissions, &sshKeyType, &sshKey)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(name).To(Equal("custom_name/0"))
@@ -299,6 +317,8 @@ var _ = Describe("Sqlite", func() {
 				Expect(env).To(Equal("PATH=this OTHER=that"))
 				Expect(filePath).To(Equal("some-file-path"))
 				Expect(filePermissions).To(Equal(os.FileMode(0644)))
+				Expect(sshKeyType).To(Equal("ssh-dss"))
+				Expect(sshKey).To(Equal("My Special DSA Key"))
 			})
 
 			Context("when the service does not have a certificate", func() {
