@@ -223,100 +223,172 @@ var _ = Describe("Sqlite", func() {
 				hosts = []scanner.ScanResult{host}
 			})
 
-			It("records a process", func() {
-				rows, err := sqliteDB.Query(`
-				SELECT hosts.name,
-							 hosts.ip,
-							 processes.pid,
-							 processes.user,
-							 processes.cmdline,
-							 ports.protocol,
-							 ports.address,
-							 ports.number,
-							 tls_informations.cert_expiration,
-							 tls_informations.cert_bits,
-							 tls_informations.cert_country,
-							 tls_informations.cert_province,
-							 tls_informations.cert_locality,
-							 tls_informations.cert_organization,
-							 tls_informations.cert_common_name,
-							 tls_informations.cipher_suites,
-							 tls_informations.mutual,
-							 tls_scan_errors.cert_scan_error,
-							 env_vars.var,
-							 files.path,
-							 files.permissions,
-							 ssh_keys.type,
-							 ssh_keys.key
-				FROM   hosts,
-							 processes,
-							 ports,
-							 tls_informations,
-							 tls_scan_errors,
-							 env_vars,
-							 files,
-							 ssh_keys
-				WHERE  hosts.id = processes.host_id
-							 AND ports.process_id = processes.id
-							 AND ports.id = tls_informations.port_id
-							 AND ports.id = tls_scan_errors.port_id
-							 AND files.host_id = hosts.id
-							 AND ssh_keys.host_id = hosts.id
-						   AND env_vars.process_id = processes.id`)
+			It("records host information", func() {
+				rows, err := sqliteDB.Query(` SELECT name, ip FROM	hosts `)
 				Expect(err).NotTo(HaveOccurred())
-				defer rows.Close()
 
+				defer rows.Close()
 				hasRows := rows.Next()
 				Expect(hasRows).To(BeTrue())
 
 				var (
-					name, ip, user, cmdline, env, portProtocol, portAddress string
-					pid, portNumber                                         int
-
-					tlsCertCountry,
-					tlsCertProvince,
-					tlsCertLocality,
-					tlsCertOrganization,
-					tlsCertCommonName string
-					tlsCertBits     int
-					tlsCertExp      time.Time
-					certScanError   string
-					filePath        string
-					cipherSuites    string
-					mutual          bool
-					filePermissions os.FileMode
-
-					sshKeyType string
-					sshKey     string
+					name, ip string
 				)
 
-				err = rows.Scan(&name, &ip, &pid, &user, &cmdline, &portProtocol,
-					&portAddress, &portNumber, &tlsCertExp, &tlsCertBits, &tlsCertCountry,
-					&tlsCertProvince, &tlsCertLocality, &tlsCertOrganization,
-					&tlsCertCommonName, &cipherSuites, &mutual, &certScanError, &env,
-					&filePath, &filePermissions, &sshKeyType, &sshKey)
+				err = rows.Scan(&name, &ip)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(name).To(Equal("custom_name/0"))
 				Expect(ip).To(Equal("10.0.0.1"))
+			})
+
+			It("records process information", func() {
+				rows, err := sqliteDB.Query(` SELECT pid, user, cmdline FROM processes `)
+				Expect(err).NotTo(HaveOccurred())
+				defer rows.Close()
+				hasRows := rows.Next()
+				Expect(hasRows).To(BeTrue())
+
+				var (
+					pid           int
+					user, cmdline string
+				)
+				err = rows.Scan(&pid, &user, &cmdline)
+				Expect(err).NotTo(HaveOccurred())
+
 				Expect(pid).To(Equal(213))
 				Expect(user).To(Equal("root"))
-				Expect(portAddress).To(Equal("123.0.0.1"))
-				Expect(portNumber).To(Equal(123))
-				Expect(tlsCertExp.Equal(certExpiration)).To(BeTrue())
-				Expect(tlsCertBits).To(Equal(234))
-				Expect(tlsCertCountry).To(Equal("some-country"))
-				Expect(tlsCertProvince).To(Equal("some-province"))
-				Expect(tlsCertLocality).To(Equal("some-locality"))
-				Expect(tlsCertOrganization).To(Equal("some-organization"))
-				Expect(tlsCertCommonName).To(Equal("some-common-name"))
-				Expect(cipherSuites).To(MatchJSON(`{"tls1.0": ["ECDHE-NOT-REALLY-SECURE"], "tls1.1": ["ECDHE-REALLY-SECURE"]}`))
-				Expect(mutual).To(BeTrue())
-				Expect(certScanError).To(Equal("this was a terrible error"))
 				Expect(cmdline).To(Equal("this is a cmd"))
-				Expect(env).To(Equal("PATH=this OTHER=that"))
-				Expect(filePath).To(Equal("some-file-path"))
-				Expect(filePermissions).To(Equal(os.FileMode(0644)))
+			})
+
+			It("records port information", func() {
+				rows, err := sqliteDB.Query(`SELECT protocol, address, number FROM ports`)
+				Expect(err).NotTo(HaveOccurred())
+				defer rows.Close()
+				hasRows := rows.Next()
+				Expect(hasRows).To(BeTrue())
+
+				var (
+					protocol, address string
+					number            int
+				)
+
+				err = rows.Scan(&protocol, &address, &number)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(protocol).To(Equal("TCP"))
+				Expect(address).To(Equal("123.0.0.1"))
+				Expect(number).To(Equal(123))
+			})
+
+			It("records tls informations", func() {
+				rows, err := sqliteDB.Query(`
+				SELECT
+					cert_expiration,
+					cert_bits,
+					cert_country,
+					cert_province,
+					cert_locality,
+					cert_organization,
+					cert_common_name,
+					cipher_suites,
+					mutual
+				FROM
+				  tls_informations`)
+				Expect(err).NotTo(HaveOccurred())
+				defer rows.Close()
+				hasRows := rows.Next()
+				Expect(hasRows).To(BeTrue())
+
+				var (
+					cert_expiration                                                                                time.Time
+					cert_bits                                                                                      int
+					cert_country, cert_province, cert_locality, cert_organization, cert_common_name, cipher_suites string
+					mutual                                                                                         bool
+				)
+
+				err = rows.Scan(&cert_expiration, &cert_bits, &cert_country, &cert_province, &cert_locality, &cert_organization, &cert_common_name, &cipher_suites, &mutual)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cert_expiration.Equal(certExpiration)).To(BeTrue())
+				Expect(cert_bits).To(Equal(234))
+				Expect(cert_country).To(Equal("some-country"))
+				Expect(cert_province).To(Equal("some-province"))
+				Expect(cert_locality).To(Equal("some-locality"))
+				Expect(cert_organization).To(Equal("some-organization"))
+				Expect(cert_common_name).To(Equal("some-common-name"))
+				Expect(cipher_suites).To(MatchJSON(`{"tls1.0": ["ECDHE-NOT-REALLY-SECURE"], "tls1.1": ["ECDHE-REALLY-SECURE"]}`))
+				Expect(mutual).To(BeTrue())
+			})
+
+			It("records tls errors", func() {
+				rows, err := sqliteDB.Query(`SELECT cert_scan_error FROM tls_scan_errors`)
+				Expect(err).NotTo(HaveOccurred())
+				defer rows.Close()
+				hasRows := rows.Next()
+				Expect(hasRows).To(BeTrue())
+
+				var (
+					cert_scan_error string
+				)
+
+				err = rows.Scan(&cert_scan_error)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cert_scan_error).To(Equal("this was a terrible error"))
+			})
+
+			It("records env_vars info", func() {
+				rows, err := sqliteDB.Query(`SELECT env_vars.var FROM env_vars`)
+				Expect(err).NotTo(HaveOccurred())
+				defer rows.Close()
+				hasRows := rows.Next()
+				Expect(hasRows).To(BeTrue())
+
+				var env_vars string
+
+				err = rows.Scan(&env_vars)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(env_vars).To(Equal("PATH=this OTHER=that"))
+			})
+
+			It("records file information", func() {
+				rows, err := sqliteDB.Query(`SELECT path, permissions FROM files`)
+				Expect(err).NotTo(HaveOccurred())
+				defer rows.Close()
+				hasRows := rows.Next()
+				Expect(hasRows).To(BeTrue())
+
+				var (
+					path        string
+					permissions os.FileMode
+				)
+
+				err = rows.Scan(&path, &permissions)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(path).To(Equal("some-file-path"))
+				Expect(permissions).To(Equal(os.FileMode(0644)))
+			})
+
+			It("records sshkey information", func() {
+				rows, err := sqliteDB.Query(`SELECT ssh_keys.type, ssh_keys.key FROM ssh_keys`)
+				Expect(err).NotTo(HaveOccurred())
+				defer rows.Close()
+				hasRows := rows.Next()
+				Expect(hasRows).To(BeTrue())
+
+				var (
+					sshKeyType, sshKey string
+				)
+
+				err = rows.Scan(&sshKeyType, &sshKey)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(sshKeyType).To(Equal("ssh-rsa"))
+				Expect(sshKey).To(Equal("My Special RSA Key"))
+
+				hasRows = rows.Next()
+				Expect(hasRows).To(BeTrue())
+				err = rows.Scan(&sshKeyType, &sshKey)
+				Expect(err).NotTo(HaveOccurred())
 				Expect(sshKeyType).To(Equal("ssh-dss"))
 				Expect(sshKey).To(Equal("My Special DSA Key"))
 			})
@@ -331,10 +403,10 @@ var _ = Describe("Sqlite", func() {
 
 				It("records a process", func() {
 					rows, err := sqliteDB.Query(`
-						SELECT hosts.NAME,
+						SELECT hosts.name,
 									 hosts.ip,
 									 processes.pid,
-									 processes.USER,
+									 processes.user,
 									 ports.protocol,
 									 ports.address,
 									 ports.number
