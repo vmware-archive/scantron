@@ -1,11 +1,11 @@
-// +build !linux
+// +build linux
 
-package main
+package process
 
 import (
 	ps "github.com/keybase/go-ps"
 )
 
 func refreshProcess(process ps.Process) error {
-	return nil
+	return process.(*ps.UnixProcess).Refresh()
 }
