@@ -1,0 +1,199 @@
+memo = "f46dcdd5cbea451471402019ed8e16c07cb4b0995fd6c996c4e9c3c720e2c5a2"
+
+[[projects]]
+  branch = "master"
+  name = "code.cloudfoundry.org/lager"
+  packages = [".","lagertest"]
+  revision = "de8e9c6c6e474e5e3668aea1a9817bdb4ceeceb0"
+
+[[projects]]
+  name = "github.com/bmatcuk/doublestar"
+  packages = ["."]
+  revision = "f2f6f9c328d1be8b6e16b7c6857c47349c6d99f2"
+  version = "v1.0.9"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/charlievieth/fs"
+  packages = ["."]
+  revision = "7bfe628b7c9751909dba95fffb55acd8ca725ae7"
+
+[[projects]]
+  name = "github.com/cheggaaa/pb"
+  packages = ["."]
+  revision = "b6229822fa186496fcbf34111237e7a9693c6971"
+  version = "v1.0.13"
+
+[[projects]]
+  name = "github.com/cloudfoundry/bosh-cli"
+  packages = ["cmd/config","director","ssh","uaa","ui","ui/fmt","ui/table"]
+  revision = "f73c244bf9d137d3e06e409e4417958be3a42c66"
+  version = "v2.0.13"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/cloudfoundry/bosh-utils"
+  packages = ["errors","http","httpclient","logger","retrystrategy","system","uuid"]
+  revision = "0d36faac740305072f50b237368b8ae4c8fa097c"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/cppforlife/go-semi-semantic"
+  packages = ["version"]
+  revision = "576b6af77ae4f3ccef356902fb3b9a9ae22e0b11"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/dustin/go-humanize"
+  packages = ["."]
+  revision = "259d2a102b871d17f30e3cd9881a642961a1e486"
+
+[[projects]]
+  name = "github.com/fatih/color"
+  packages = ["."]
+  revision = "9131ab34cf20d2f6d83fdc67168a5430d1c7dc23"
+  version = "v1.4.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/errwrap"
+  packages = ["."]
+  revision = "7554cd9344cec97297fa6649b055a8c98c2a1e55"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-multierror"
+  packages = ["."]
+  revision = "ed905158d87462226a13fe39ddf685ea65f1c11f"
+
+[[projects]]
+  name = "github.com/jessevdk/go-flags"
+  packages = ["."]
+  revision = "faf1fa927ab38db5777a8b86ba2ba96fc6f08cbc"
+  version = "v1.2.0"
+
+[[projects]]
+  name = "github.com/jteeuwen/go-bindata"
+  packages = ["."]
+  revision = "bbd0c6e271208dce66d8fda4bc536453cd27fc4a"
+  version = "v3.0.7"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/keybase/go-ps"
+  packages = [".","darwincgo"]
+  revision = "668c8856d9992f97248b3177d45743d2cc1068db"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/kr/fs"
+  packages = ["."]
+  revision = "2788f0dbd16903de03cb8186e5c7d97b69ad387b"
+
+[[projects]]
+  name = "github.com/mattn/go-colorable"
+  packages = ["."]
+  revision = "d228849504861217f796da67fae4f6e347643f15"
+  version = "v0.0.7"
+
+[[projects]]
+  name = "github.com/mattn/go-isatty"
+  packages = ["."]
+  revision = "fc9e8d8ef48496124e79ae0df75490096eccf6fe"
+  version = "v0.0.2"
+
+[[projects]]
+  name = "github.com/mattn/go-runewidth"
+  packages = ["."]
+  revision = "9e777a8366cce605130a531d2cd6363d07ad7317"
+  version = "v0.0.2"
+
+[[projects]]
+  name = "github.com/mattn/go-sqlite3"
+  packages = ["."]
+  revision = "ca5e3819723d8eeaf170ad510e7da1d6d2e94a08"
+  version = "v1.2.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/nu7hatch/gouuid"
+  packages = ["."]
+  revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/onsi/ginkgo"
+  packages = [".","config","internal/codelocation","internal/containernode","internal/failer","internal/leafnodes","internal/remote","internal/spec","internal/spec_iterator","internal/specrunner","internal/suite","internal/testingtproxy","internal/writer","reporters","reporters/stenographer","reporters/stenographer/support/go-colorable","reporters/stenographer/support/go-isatty","types"]
+  revision = "f40a49d81e5c12e90400620b6242fb29a8e7c9d9"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/onsi/gomega"
+  packages = [".","format","gbytes","gexec","gstruct","gstruct/errors","internal/assertion","internal/asyncassertion","internal/oraclematcher","internal/testingtsupport","matchers","matchers/support/goraph/bipartitegraph","matchers/support/goraph/edge","matchers/support/goraph/node","matchers/support/goraph/util","types"]
+  revision = "9b8c753e8dfb382618ba8fa19b4197b5dcb0434c"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/pivotal-cf/paraphernalia"
+  packages = ["secure/tlsconfig","test/certtest"]
+  revision = "f173d8f717bd5f6d550bfcb54a03d9c13d2101b2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/pivotal-golang/clock"
+  packages = ["."]
+  revision = "2269160ae1757f96bbb8c6475e6fa36c805e73e0"
+
+[[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "3866ebc348c54054262feae422da428fe6cf147d"
+  version = "v0.8.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/pkg/sftp"
+  packages = ["."]
+  revision = "cb456b384cd3aae0ca1838cd59af8b6bb3363d67"
+
+[[projects]]
+  name = "github.com/square/certstrap"
+  packages = ["pkix"]
+  revision = "37707c7fc86217d91da4b60e8874879e8f7e0789"
+  version = "v1.0.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/vito/go-interact"
+  packages = ["interact","interact/terminal"]
+  revision = "e3c86ac934ea9d6f1c6ad6e42e316a6e8fe6a807"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+  packages = ["curve25519","ed25519","ed25519/internal/edwards25519","ssh","ssh/terminal"]
+  revision = "cbc3d0884eac986df6e78a039b8792e869bff863"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = ["context","proxy"]
+  revision = "5602c733f70afc6dcec6766be0d5034d4c4f14de"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sync"
+  packages = ["semaphore"]
+  revision = "5a06fca2c336a4b2b2fcb45702e8c47621b2aa2c"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "f3918c30c5c2cb527c0b071a27c35120a6c0719a"
+
+[[projects]]
+  branch = "v2"
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  revision = "cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b"

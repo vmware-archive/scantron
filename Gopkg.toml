@@ -1,0 +1,21 @@
+required = ["github.com/jteeuwen/go-bindata"]
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/onsi/ginkgo"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/onsi/gomega"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/pivotal-cf/paraphernalia"
+
+[[dependencies]]
+  branch = "master"
+  name = "golang.org/x/sync"
+
+[[dependencies]]
+  branch = "v2"
+  name = "gopkg.in/yaml.v2"
