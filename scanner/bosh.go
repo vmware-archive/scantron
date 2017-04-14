@@ -39,11 +39,14 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScanResult, error) {
 
 		go func() {
 			defer wg.Done()
+
+			ip := remotemachine.BestAddress(vm.IPs)
+
 			machineLogger := logger.Session("scanning-machine", lager.Data{
 				"job":     vm.JobName,
 				"id":      vm.ID,
 				"index":   index(vm.Index),
-				"address": fmt.Sprintf("%s", vm.IPs[0]),
+				"address": fmt.Sprintf("%s", ip),
 			})
 
 			remoteMachine := s.director.ConnectTo(machineLogger, vm)
@@ -56,7 +59,7 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScanResult, error) {
 			}
 
 			boshName := fmt.Sprintf("%s/%s", vm.JobName, vm.ID)
-			hosts <- buildScanResult(systemInfo, boshName, vm.IPs[0])
+			hosts <- buildScanResult(systemInfo, boshName, ip)
 		}()
 	}
 
