@@ -33,12 +33,17 @@ func NewBoshDirector(
 	boshURL string,
 	boshLogger boshlog.Logger,
 ) (BoshDirector, error) {
-	caCertBytes, err := ioutil.ReadFile(caCertPath)
-	if err != nil {
-		return nil, err
-	}
+	var caCert string
 
-	caCert := string(caCertBytes)
+	if caCertPath != "" {
+		caCertBytes, err := ioutil.ReadFile(caCertPath)
+		if err != nil {
+			logger.Error("failed-to-load-ca-certificate", err)
+			return nil, err
+		}
+
+		caCert = string(caCertBytes)
+	}
 
 	director, err := getDirector(boshURL, creds, caCert, boshLogger)
 	if err != nil {
