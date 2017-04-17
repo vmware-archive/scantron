@@ -10,7 +10,11 @@ required = ["github.com/jteeuwen/go-bindata"]
 
 [[dependencies]]
   branch = "master"
-  name = "github.com/pivotal-cf/paraphernalia"
+  name = "go.uber.org/zap"
+
+[[dependencies]]
+  branch = "master"
+  name = "golang.org/x/crypto"
 
 [[dependencies]]
   branch = "master"

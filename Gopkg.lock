@@ -1,4 +1,4 @@
-memo = "c771184ea008e46b02f4b52bf60fa099f137958c2eeda5d4b403a15a5b57c985"
+memo = "aedef5ade81020de3f8677b0c92cf0ab5a0d5066c0371d784fc0e14c99510ba2"
 
 [[projects]]
   name = "github.com/bmatcuk/doublestar"
@@ -28,7 +28,7 @@ memo = "c771184ea008e46b02f4b52bf60fa099f137958c2eeda5d4b403a15a5b57c985"
   branch = "master"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = ["errors","http","httpclient","logger","retrystrategy","system","uuid"]
-  revision = "4f2c6b5fa8dc8b7b5589d23abb06bf54a8c3b86b"
+  revision = "169881eddf0d6c5be8f73da2eee13a1dbf5160e3"
 
 [[projects]]
   branch = "master"
