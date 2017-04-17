@@ -53,7 +53,7 @@ func (s *boshScanner) Scan(logger scanlog.Logger) ([]ScanResult, error) {
 
 			systemInfo, err := scanMachine(machineLogger, remoteMachine)
 			if err != nil {
-				machineLogger.Errorf("failed-to-scan-machine", err)
+				machineLogger.Errorf("Failed to scan machine: %s", err)
 				return
 			}
 

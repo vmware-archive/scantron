@@ -19,21 +19,21 @@ func Direct(machine remotemachine.RemoteMachine) Scanner {
 }
 
 func (d *direct) Scan(logger scanlog.Logger) ([]ScanResult, error) {
-	endpoint := fmt.Sprintf("%s", d.machine.Address())
-	endpointLogger := logger.With(
-		"endpoint", endpoint,
+	host := fmt.Sprintf("%s", d.machine.Address())
+	hostLogger := logger.With(
+		"host", host,
 	)
 
-	systemInfo, err := scanMachine(endpointLogger, d.machine)
+	systemInfo, err := scanMachine(hostLogger, d.machine)
 	if err != nil {
-		endpointLogger.Errorf("failed-to-scan-machine", err)
+		hostLogger.Errorf("Failed to scan machine: %s", err)
 		return nil, err
 	}
 	defer d.machine.Close()
 
 	hostname, _, err := net.SplitHostPort(d.machine.Address())
 	if err != nil {
-		endpointLogger.Errorf("failed-to-unmarshal-output", err)
+		hostLogger.Errorf("Machine address was malformed: %s", err)
 		return nil, err
 	}
 

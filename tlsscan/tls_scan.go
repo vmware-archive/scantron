@@ -61,15 +61,22 @@ func Scan(logger scanlog.Logger, host string, port string) (Results, error) {
 			go func(version, suite string) {
 				defer wg.Done()
 
+				scanLogger := logger.With(
+					"host", host,
+					"port", port,
+					"version", version,
+					"suite", suite,
+				)
+
 				if err := sem.Acquire(context.Background(), 1); err != nil {
-					logger.Errorf(err.Error())
+					scanLogger.Errorf("Failed to acquire lock:", err)
 					return
 				}
 				defer sem.Release(1)
 
 				found, err := scan(host, port, version, suite)
 				if err != nil {
-					logger.Warnf(err.Error())
+					scanLogger.Warnf("Remote server did not respond affirmitavely to request: %s", err)
 					return
 				}
 

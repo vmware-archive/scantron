@@ -65,7 +65,7 @@ func scanMachine(logger scanlog.Logger, remoteMachine remotemachine.RemoteMachin
 
 	err = remoteMachine.UploadFile(srcFilePath, dstFilePath)
 	if err != nil {
-		logger.Errorf("failed-to-scp-proc-scan", err)
+		logger.Errorf("Failed to upload scanner to remote machine: %s", err)
 		return systemInfo, err
 	}
 
@@ -73,13 +73,13 @@ func scanMachine(logger scanlog.Logger, remoteMachine remotemachine.RemoteMachin
 
 	output, err := remoteMachine.RunCommand(dstFilePath)
 	if err != nil {
-		logger.Errorf("failed-to-run-proc-scan", err)
+		logger.Errorf("Failed to run scanner on remote machine: %s", err)
 		return systemInfo, err
 	}
 
 	err = json.NewDecoder(output).Decode(&systemInfo)
 	if err != nil {
-		logger.Errorf("failed-to-decode-result", err)
+		logger.Errorf("Scanner results were malformed: %s", err)
 		return systemInfo, err
 	}
 

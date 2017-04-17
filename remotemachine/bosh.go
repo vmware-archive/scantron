@@ -39,7 +39,7 @@ func NewBoshDirector(
 	if caCertPath != "" {
 		caCertBytes, err := ioutil.ReadFile(caCertPath)
 		if err != nil {
-			logger.Errorf("failed-to-load-ca-certificate", err)
+			logger.Errorf("Failed to load CA certificate (%s): %s", caCertPath, err)
 			return nil, err
 		}
 
@@ -48,19 +48,19 @@ func NewBoshDirector(
 
 	director, err := getDirector(boshURL, creds, caCert, boshLogger)
 	if err != nil {
-		logger.Errorf("failed-to-get-director", err)
+		logger.Errorf("Could not reach BOSH Director (%s): %s", boshURL, err)
 		return nil, err
 	}
 
 	deployment, err := director.FindDeployment(deploymentName)
 	if err != nil {
-		logger.Errorf("failed-to-find-deployment", err)
+		logger.Errorf("Failed to find deployment (%s): %s", deploymentName, err)
 		return nil, err
 	}
 
 	vmInfos, err := deployment.VMInfos()
 	if err != nil {
-		logger.Errorf("failed-to-get-vm-infos", err)
+		logger.Errorf("Failed to list instances: %s", err)
 		return nil, err
 	}
 
@@ -68,13 +68,13 @@ func NewBoshDirector(
 
 	sshOpts, privKey, err := boshdir.NewSSHOpts(uuidgen)
 	if err != nil {
-		logger.Errorf("failed-to-create-ssh-opts", err)
+		logger.Errorf("Could not create SSH options: %s", err)
 		return nil, err
 	}
 
 	signer, err := ssh.ParsePrivateKey([]byte(privKey))
 	if err != nil {
-		logger.Errorf("failed-to-parse-ssh-key", err)
+		logger.Errorf("Failed to parse SSH key: %s", err)
 		return nil, err
 	}
 
@@ -106,7 +106,7 @@ func (d *boshDirector) Cleanup() error {
 	slug := boshdir.NewAllOrInstanceGroupOrInstanceSlug("", "")
 	err := d.deployment.CleanUpSSH(slug, d.sshOpts)
 	if err != nil {
-		d.logger.Errorf("failed-to-clean-up-ssh", err)
+		d.logger.Errorf("Failed to cleanup SSH session: %s", err)
 	}
 
 	return err
@@ -117,7 +117,7 @@ func (d *boshDirector) Setup() error {
 
 	_, err := d.deployment.SetUpSSH(slug, d.sshOpts)
 	if err != nil {
-		d.logger.Errorf("failed-to-set-up-ssh", err)
+		d.logger.Errorf("Failed to set up SSH session: %s", err)
 		return err
 	}
 
