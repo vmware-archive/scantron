@@ -18,10 +18,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	files, err := filesystem.ScanFilesystem("/", []string{
-		"/dev", "/proc", "/sys",
-	})
+	excludedPaths := []string{
+		"/dev", "/proc", "/sys", "/run",
+	}
 
+	files, err := filesystem.ScanFilesystem("/", excludedPaths)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error: failed to scan filesystem:", err)
 		os.Exit(1)
