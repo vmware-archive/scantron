@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"net"
 
-	"code.cloudfoundry.org/lager"
-
 	"github.com/pivotal-cf/scantron/remotemachine"
+	"github.com/pivotal-cf/scantron/scanlog"
 )
 
 type direct struct {
@@ -19,24 +18,22 @@ func Direct(machine remotemachine.RemoteMachine) Scanner {
 	}
 }
 
-func (d *direct) Scan(logger lager.Logger) ([]ScanResult, error) {
-	l := logger.Session("scan")
-
+func (d *direct) Scan(logger scanlog.Logger) ([]ScanResult, error) {
 	endpoint := fmt.Sprintf("%s", d.machine.Address())
-	endpointLogger := l.Session("dial", lager.Data{
-		"endpoint": endpoint,
-	})
+	endpointLogger := logger.With(
+		"endpoint", endpoint,
+	)
 
 	systemInfo, err := scanMachine(endpointLogger, d.machine)
 	if err != nil {
-		endpointLogger.Error("failed-to-scan-machine", err)
+		endpointLogger.Errorf("failed-to-scan-machine", err)
 		return nil, err
 	}
 	defer d.machine.Close()
 
 	hostname, _, err := net.SplitHostPort(d.machine.Address())
 	if err != nil {
-		endpointLogger.Error("failed-to-unmarshal-output", err)
+		endpointLogger.Errorf("failed-to-unmarshal-output", err)
 		return nil, err
 	}
 

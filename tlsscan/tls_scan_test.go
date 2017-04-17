@@ -1,6 +1,7 @@
 package tlsscan_test
 
 import (
+	"log"
 	"net"
 	"net/http/httptest"
 
@@ -9,20 +10,25 @@ import (
 
 	"crypto/tls"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 
 	"github.com/pivotal-cf/paraphernalia/test/certtest"
+	"github.com/pivotal-cf/scantron/scanlog"
 	"github.com/pivotal-cf/scantron/tlsscan"
 )
 
 var _ = Describe("TLS Scan", func() {
-	var server *httptest.Server
+	var (
+		server *httptest.Server
+		logger scanlog.Logger
+	)
 
 	BeforeEach(func() {
+		// crypto/tls uses the stdlib log package
 		log.SetOutput(GinkgoWriter)
 
+		logger = scanlog.NewNopLogger()
 		server = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, "hello?")
 		}))
@@ -51,7 +57,7 @@ var _ = Describe("TLS Scan", func() {
 		It("performs a scan", func() {
 			host, port := hostport(server.URL)
 
-			result, err := tlsscan.Scan(host, port)
+			result, err := tlsscan.Scan(logger, host, port)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(result.HasTLS()).To(BeTrue())
@@ -69,7 +75,7 @@ var _ = Describe("TLS Scan", func() {
 
 		It("performs a scan", func() {
 			host, port := hostport(server.URL)
-			result, err := tlsscan.Scan(host, port)
+			result, err := tlsscan.Scan(logger, host, port)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(result.HasTLS()).To(BeFalse())
@@ -130,7 +136,7 @@ var _ = Describe("TLS Scan", func() {
 			host, port, err := net.SplitHostPort(listener.Addr().String())
 			Expect(err).NotTo(HaveOccurred())
 
-			result, err := tlsscan.Scan(host, port)
+			result, err := tlsscan.Scan(logger, host, port)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(result.HasTLS()).To(BeTrue())

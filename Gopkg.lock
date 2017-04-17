@@ -1,15 +1,9 @@
-memo = "f46dcdd5cbea451471402019ed8e16c07cb4b0995fd6c996c4e9c3c720e2c5a2"
-
-[[projects]]
-  branch = "master"
-  name = "code.cloudfoundry.org/lager"
-  packages = [".","lagertest"]
-  revision = "de8e9c6c6e474e5e3668aea1a9817bdb4ceeceb0"
+memo = "c771184ea008e46b02f4b52bf60fa099f137958c2eeda5d4b403a15a5b57c985"
 
 [[projects]]
   name = "github.com/bmatcuk/doublestar"
   packages = ["."]
-  revision = "f2f6f9c328d1be8b6e16b7c6857c47349c6d99f2"
+  revision = "b3608229437ba4dc33dae64d56a79a2a73f1f6b2"
   version = "v1.0.9"
 
 [[projects]]
@@ -34,7 +28,7 @@ memo = "f46dcdd5cbea451471402019ed8e16c07cb4b0995fd6c996c4e9c3c720e2c5a2"
   branch = "master"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = ["errors","http","httpclient","logger","retrystrategy","system","uuid"]
-  revision = "0d36faac740305072f50b237368b8ae4c8fa097c"
+  revision = "4f2c6b5fa8dc8b7b5589d23abb06bf54a8c3b86b"
 
 [[projects]]
   branch = "master"
@@ -69,7 +63,7 @@ memo = "f46dcdd5cbea451471402019ed8e16c07cb4b0995fd6c996c4e9c3c720e2c5a2"
 [[projects]]
   name = "github.com/jessevdk/go-flags"
   packages = ["."]
-  revision = "faf1fa927ab38db5777a8b86ba2ba96fc6f08cbc"
+  revision = "48cf8722c3375517aba351d1f7577c40663a4407"
   version = "v1.2.0"
 
 [[projects]]
@@ -147,7 +141,7 @@ memo = "f46dcdd5cbea451471402019ed8e16c07cb4b0995fd6c996c4e9c3c720e2c5a2"
 [[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
-  revision = "3866ebc348c54054262feae422da428fe6cf147d"
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
 
 [[projects]]
@@ -159,7 +153,7 @@ memo = "f46dcdd5cbea451471402019ed8e16c07cb4b0995fd6c996c4e9c3c720e2c5a2"
 [[projects]]
   name = "github.com/square/certstrap"
   packages = ["pkix"]
-  revision = "37707c7fc86217d91da4b60e8874879e8f7e0789"
+  revision = "c66ef6751a6e5a900c6d96cbdd0e3ee9b18792d8"
   version = "v1.0.1"
 
 [[projects]]
@@ -167,6 +161,18 @@ memo = "f46dcdd5cbea451471402019ed8e16c07cb4b0995fd6c996c4e9c3c720e2c5a2"
   name = "github.com/vito/go-interact"
   packages = ["interact","interact/terminal"]
   revision = "e3c86ac934ea9d6f1c6ad6e42e316a6e8fe6a807"
+
+[[projects]]
+  name = "go.uber.org/atomic"
+  packages = ["."]
+  revision = "4e336646b2ef9fc6e47be8e21594178f98e5ebcf"
+  version = "v1.2.0"
+
+[[projects]]
+  name = "go.uber.org/zap"
+  packages = [".","buffer","internal/bufferpool","internal/color","internal/exit","internal/multierror","zapcore"]
+  revision = "1550bc05539134bbf8612a35f34a79ab8bf34ee3"
+  version = "v1.2.0"
 
 [[projects]]
   branch = "master"

@@ -3,18 +3,18 @@ package scanner
 import (
 	"strconv"
 
-	"code.cloudfoundry.org/lager"
+	"github.com/pivotal-cf/scantron/scanlog"
 	"github.com/pivotal-cf/scantron/tlsscan"
 )
 
-type scannerFunc func(logger lager.Logger) ([]ScanResult, error)
+type scannerFunc func(logger scanlog.Logger) ([]ScanResult, error)
 
-func (s scannerFunc) Scan(logger lager.Logger) ([]ScanResult, error) {
+func (s scannerFunc) Scan(logger scanlog.Logger) ([]ScanResult, error) {
 	return s(logger)
 }
 
 func AnnotateWithTLSInformation(scanner Scanner) Scanner {
-	return scannerFunc(func(logger lager.Logger) ([]ScanResult, error) {
+	return scannerFunc(func(logger scanlog.Logger) ([]ScanResult, error) {
 		scannedHosts, err := scanner.Scan(logger)
 		if err != nil {
 			return nil, err
@@ -35,7 +35,7 @@ func AnnotateWithTLSInformation(scanner Scanner) Scanner {
 					host := scannedHost.IP
 					portNum := strconv.Itoa(port.Number)
 
-					results, err := tlsscan.Scan(host, portNum)
+					results, err := tlsscan.Scan(logger, host, portNum)
 					if err != nil {
 						port.TLSInformation.ScanError = err
 						continue

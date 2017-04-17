@@ -4,8 +4,6 @@ import (
 	"io/ioutil"
 	"net"
 
-	"code.cloudfoundry.org/lager"
-	"github.com/pivotal-cf/scantron"
 	"golang.org/x/crypto/ssh"
 
 	boshconfig "github.com/cloudfoundry/bosh-cli/cmd/config"
@@ -13,20 +11,23 @@ import (
 	boshuaa "github.com/cloudfoundry/bosh-cli/uaa"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+
+	"github.com/pivotal-cf/scantron"
+	"github.com/pivotal-cf/scantron/scanlog"
 )
 
 //go:generate counterfeiter . BoshDirector
 
 type BoshDirector interface {
 	VMs() []boshdir.VMInfo
-	ConnectTo(lager.Logger, boshdir.VMInfo) RemoteMachine
+	ConnectTo(scanlog.Logger, boshdir.VMInfo) RemoteMachine
 
 	Setup() error
 	Cleanup() error
 }
 
 func NewBoshDirector(
-	logger lager.Logger,
+	logger scanlog.Logger,
 	creds boshconfig.Creds,
 	caCertPath string,
 	deploymentName string,
@@ -38,7 +39,7 @@ func NewBoshDirector(
 	if caCertPath != "" {
 		caCertBytes, err := ioutil.ReadFile(caCertPath)
 		if err != nil {
-			logger.Error("failed-to-load-ca-certificate", err)
+			logger.Errorf("failed-to-load-ca-certificate", err)
 			return nil, err
 		}
 
@@ -47,19 +48,19 @@ func NewBoshDirector(
 
 	director, err := getDirector(boshURL, creds, caCert, boshLogger)
 	if err != nil {
-		logger.Error("failed-to-get-director", err)
+		logger.Errorf("failed-to-get-director", err)
 		return nil, err
 	}
 
 	deployment, err := director.FindDeployment(deploymentName)
 	if err != nil {
-		logger.Error("failed-to-find-deployment", err)
+		logger.Errorf("failed-to-find-deployment", err)
 		return nil, err
 	}
 
 	vmInfos, err := deployment.VMInfos()
 	if err != nil {
-		logger.Error("failed-to-get-vm-infos", err)
+		logger.Errorf("failed-to-get-vm-infos", err)
 		return nil, err
 	}
 
@@ -67,13 +68,13 @@ func NewBoshDirector(
 
 	sshOpts, privKey, err := boshdir.NewSSHOpts(uuidgen)
 	if err != nil {
-		logger.Error("failed-to-create-ssh-opts", err)
+		logger.Errorf("failed-to-create-ssh-opts", err)
 		return nil, err
 	}
 
 	signer, err := ssh.ParsePrivateKey([]byte(privKey))
 	if err != nil {
-		logger.Error("failed-to-parse-ssh-key", err)
+		logger.Errorf("failed-to-parse-ssh-key", err)
 		return nil, err
 	}
 
@@ -94,7 +95,7 @@ type boshDirector struct {
 
 	deployment boshdir.Deployment
 
-	logger lager.Logger
+	logger scanlog.Logger
 }
 
 func (d *boshDirector) VMs() []boshdir.VMInfo {
@@ -105,7 +106,7 @@ func (d *boshDirector) Cleanup() error {
 	slug := boshdir.NewAllOrInstanceGroupOrInstanceSlug("", "")
 	err := d.deployment.CleanUpSSH(slug, d.sshOpts)
 	if err != nil {
-		d.logger.Error("failed-to-clean-up-ssh", err)
+		d.logger.Errorf("failed-to-clean-up-ssh", err)
 	}
 
 	return err
@@ -116,14 +117,14 @@ func (d *boshDirector) Setup() error {
 
 	_, err := d.deployment.SetUpSSH(slug, d.sshOpts)
 	if err != nil {
-		d.logger.Error("failed-to-set-up-ssh", err)
+		d.logger.Errorf("failed-to-set-up-ssh", err)
 		return err
 	}
 
 	return nil
 }
 
-func (d *boshDirector) ConnectTo(logger lager.Logger, vm boshdir.VMInfo) RemoteMachine {
+func (d *boshDirector) ConnectTo(logger scanlog.Logger, vm boshdir.VMInfo) RemoteMachine {
 	return NewSimple(scantron.Machine{
 		Address:  BestAddress(vm.IPs),
 		Username: d.sshOpts.Username,

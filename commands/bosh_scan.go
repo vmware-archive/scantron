@@ -6,12 +6,12 @@ import (
 	"log"
 	"os"
 
-	"code.cloudfoundry.org/lager"
 	boshconfig "github.com/cloudfoundry/bosh-cli/cmd/config"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	"github.com/pivotal-cf/scantron/db"
 	"github.com/pivotal-cf/scantron/remotemachine"
+	"github.com/pivotal-cf/scantron/scanlog"
 	"github.com/pivotal-cf/scantron/scanner"
 )
 
@@ -30,8 +30,10 @@ type BoshScanCommand struct {
 }
 
 func (command *BoshScanCommand) Execute(args []string) error {
-	logger := lager.NewLogger("scantron")
-	logger.RegisterSink(lager.NewWriterSink(os.Stderr, lager.DEBUG))
+	logger, err := scanlog.NewLogger(Scantron.Debug)
+	if err != nil {
+		log.Fatalln("failed to set up logger:", err)
+	}
 
 	out := bufio.NewWriter(os.Stdout)
 	boshLogger := boshlog.NewWriterLogger(boshlog.LevelNone, out, nil)

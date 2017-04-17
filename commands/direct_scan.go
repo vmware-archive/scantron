@@ -4,15 +4,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 
 	"golang.org/x/crypto/ssh"
-
-	"code.cloudfoundry.org/lager"
 
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/db"
 	"github.com/pivotal-cf/scantron/remotemachine"
+	"github.com/pivotal-cf/scantron/scanlog"
 	"github.com/pivotal-cf/scantron/scanner"
 )
 
@@ -25,8 +23,10 @@ type DirectScanCommand struct {
 }
 
 func (command *DirectScanCommand) Execute(args []string) error {
-	logger := lager.NewLogger("scantron")
-	logger.RegisterSink(lager.NewWriterSink(os.Stderr, lager.DEBUG))
+	logger, err := scanlog.NewLogger(Scantron.Debug)
+	if err != nil {
+		log.Fatalln("failed to set up logger:", err)
+	}
 
 	var privateKey ssh.Signer
 

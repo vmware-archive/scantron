@@ -5,9 +5,8 @@ import (
 	"strconv"
 	"sync"
 
-	"code.cloudfoundry.org/lager"
-
 	"github.com/pivotal-cf/scantron/remotemachine"
+	"github.com/pivotal-cf/scantron/scanlog"
 )
 
 type boshScanner struct {
@@ -20,7 +19,7 @@ func Bosh(director remotemachine.BoshDirector) Scanner {
 	}
 }
 
-func (s *boshScanner) Scan(logger lager.Logger) ([]ScanResult, error) {
+func (s *boshScanner) Scan(logger scanlog.Logger) ([]ScanResult, error) {
 	vms := s.director.VMs()
 
 	wg := &sync.WaitGroup{}
@@ -42,19 +41,19 @@ func (s *boshScanner) Scan(logger lager.Logger) ([]ScanResult, error) {
 
 			ip := remotemachine.BestAddress(vm.IPs)
 
-			machineLogger := logger.Session("scanning-machine", lager.Data{
-				"job":     vm.JobName,
-				"id":      vm.ID,
-				"index":   index(vm.Index),
-				"address": fmt.Sprintf("%s", ip),
-			})
+			machineLogger := logger.With(
+				"job", vm.JobName,
+				"id", vm.ID,
+				"index", index(vm.Index),
+				"address", fmt.Sprintf("%s", ip),
+			)
 
 			remoteMachine := s.director.ConnectTo(machineLogger, vm)
 			defer remoteMachine.Close()
 
 			systemInfo, err := scanMachine(machineLogger, remoteMachine)
 			if err != nil {
-				machineLogger.Error("failed-to-scan-machine", err)
+				machineLogger.Errorf("failed-to-scan-machine", err)
 				return
 			}
 

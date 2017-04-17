@@ -4,9 +4,9 @@ package remotemachinefakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/lager"
 	boshdir "github.com/cloudfoundry/bosh-cli/director"
 	"github.com/pivotal-cf/scantron/remotemachine"
+	"github.com/pivotal-cf/scantron/scanlog"
 )
 
 type FakeBoshDirector struct {
@@ -19,10 +19,10 @@ type FakeBoshDirector struct {
 	vMsReturnsOnCall map[int]struct {
 		result1 []boshdir.VMInfo
 	}
-	ConnectToStub        func(lager.Logger, boshdir.VMInfo) remotemachine.RemoteMachine
+	ConnectToStub        func(scanlog.Logger, boshdir.VMInfo) remotemachine.RemoteMachine
 	connectToMutex       sync.RWMutex
 	connectToArgsForCall []struct {
-		arg1 lager.Logger
+		arg1 scanlog.Logger
 		arg2 boshdir.VMInfo
 	}
 	connectToReturns struct {
@@ -93,11 +93,11 @@ func (fake *FakeBoshDirector) VMsReturnsOnCall(i int, result1 []boshdir.VMInfo) 
 	}{result1}
 }
 
-func (fake *FakeBoshDirector) ConnectTo(arg1 lager.Logger, arg2 boshdir.VMInfo) remotemachine.RemoteMachine {
+func (fake *FakeBoshDirector) ConnectTo(arg1 scanlog.Logger, arg2 boshdir.VMInfo) remotemachine.RemoteMachine {
 	fake.connectToMutex.Lock()
 	ret, specificReturn := fake.connectToReturnsOnCall[len(fake.connectToArgsForCall)]
 	fake.connectToArgsForCall = append(fake.connectToArgsForCall, struct {
-		arg1 lager.Logger
+		arg1 scanlog.Logger
 		arg2 boshdir.VMInfo
 	}{arg1, arg2})
 	fake.recordInvocation("ConnectTo", []interface{}{arg1, arg2})
@@ -117,7 +117,7 @@ func (fake *FakeBoshDirector) ConnectToCallCount() int {
 	return len(fake.connectToArgsForCall)
 }
 
-func (fake *FakeBoshDirector) ConnectToArgsForCall(i int) (lager.Logger, boshdir.VMInfo) {
+func (fake *FakeBoshDirector) ConnectToArgsForCall(i int) (scanlog.Logger, boshdir.VMInfo) {
 	fake.connectToMutex.RLock()
 	defer fake.connectToMutex.RUnlock()
 	return fake.connectToArgsForCall[i].arg1, fake.connectToArgsForCall[i].arg2

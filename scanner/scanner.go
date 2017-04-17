@@ -5,13 +5,13 @@ import (
 	"io/ioutil"
 	"os"
 
-	"code.cloudfoundry.org/lager"
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/remotemachine"
+	"github.com/pivotal-cf/scantron/scanlog"
 )
 
 type Scanner interface {
-	Scan(lager.Logger) ([]ScanResult, error)
+	Scan(scanlog.Logger) ([]ScanResult, error)
 }
 
 type ScanResult struct {
@@ -52,7 +52,7 @@ func writeProcScanToTempFile() (string, error) {
 	return tmpFile.Name(), nil
 }
 
-func scanMachine(logger lager.Logger, remoteMachine remotemachine.RemoteMachine) (scantron.SystemInfo, error) {
+func scanMachine(logger scanlog.Logger, remoteMachine remotemachine.RemoteMachine) (scantron.SystemInfo, error) {
 	var systemInfo scantron.SystemInfo
 
 	srcFilePath, err := writeProcScanToTempFile()
@@ -65,7 +65,7 @@ func scanMachine(logger lager.Logger, remoteMachine remotemachine.RemoteMachine)
 
 	err = remoteMachine.UploadFile(srcFilePath, dstFilePath)
 	if err != nil {
-		logger.Error("failed-to-scp-proc-scan", err)
+		logger.Errorf("failed-to-scp-proc-scan", err)
 		return systemInfo, err
 	}
 
@@ -73,13 +73,13 @@ func scanMachine(logger lager.Logger, remoteMachine remotemachine.RemoteMachine)
 
 	output, err := remoteMachine.RunCommand(dstFilePath)
 	if err != nil {
-		logger.Error("failed-to-run-proc-scan", err)
+		logger.Errorf("failed-to-run-proc-scan", err)
 		return systemInfo, err
 	}
 
 	err = json.NewDecoder(output).Decode(&systemInfo)
 	if err != nil {
-		logger.Error("failed-to-decode-result", err)
+		logger.Errorf("failed-to-decode-result", err)
 		return systemInfo, err
 	}
 

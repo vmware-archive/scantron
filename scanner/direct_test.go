@@ -8,10 +8,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"code.cloudfoundry.org/lager/lagertest"
-
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/remotemachine/remotemachinefakes"
+	"github.com/pivotal-cf/scantron/scanlog"
 	"github.com/pivotal-cf/scantron/scanner"
 )
 
@@ -53,7 +52,7 @@ var _ = Describe("Direct Scanning", func() {
 	})
 
 	JustBeforeEach(func() {
-		logger := lagertest.NewTestLogger("direct")
+		logger := scanlog.NewNopLogger()
 		scanResults, scanErr = directScan.Scan(logger)
 	})
 

@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"os/exec"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pivotal-cf/scantron/scanlog"
 
 	"golang.org/x/sync/semaphore"
 )
@@ -42,7 +43,7 @@ type result struct {
 	suite   string
 }
 
-func Scan(host string, port string) (Results, error) {
+func Scan(logger scanlog.Logger, host string, port string) (Results, error) {
 	results := Results{}
 
 	for _, version := range tlsVersions {
@@ -61,13 +62,14 @@ func Scan(host string, port string) (Results, error) {
 				defer wg.Done()
 
 				if err := sem.Acquire(context.Background(), 1); err != nil {
-					log.Println(err)
+					logger.Errorf(err.Error())
 					return
 				}
 				defer sem.Release(1)
 
 				found, err := scan(host, port, version, suite)
 				if err != nil {
+					logger.Warnf(err.Error())
 					return
 				}
 
