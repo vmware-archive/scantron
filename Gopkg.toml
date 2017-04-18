@@ -2,6 +2,10 @@ required = ["github.com/jteeuwen/go-bindata"]
 
 [[dependencies]]
   branch = "master"
+  name = "github.com/cloudfoundry/bosh-utils"
+
+[[dependencies]]
+  branch = "master"
   name = "github.com/onsi/ginkgo"
 
 [[dependencies]]
