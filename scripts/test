@@ -8,11 +8,6 @@ root_dir="$( cd "${my_dir}/.." && pwd )"
 pushd "${root_dir}" > /dev/null
   ./scripts/build
 
-  brew_openssl_binpath=/usr/local/opt/openssl/bin/
-  if [[ -d "${brew_openssl_binpath}" ]]; then
-    export PATH="${brew_openssl_binpath}:$PATH"
-  fi
-
   ginkgo \
     -r \
     -p \

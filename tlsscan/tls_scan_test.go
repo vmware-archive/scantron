@@ -1,17 +1,16 @@
 package tlsscan_test
 
 import (
+	"crypto/tls"
+	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"net/http/httptest"
+	"net/url"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"crypto/tls"
-	"fmt"
-	"net/http"
-	"net/url"
 
 	"github.com/pivotal-cf/paraphernalia/test/certtest"
 	"github.com/pivotal-cf/scantron/scanlog"
@@ -62,9 +61,9 @@ var _ = Describe("TLS Scan", func() {
 
 			Expect(result.HasTLS()).To(BeTrue())
 
-			Expect(result).To(HaveKeyWithValue("tls1.0", []string{"AES128-SHA"}))
-			Expect(result).To(HaveKeyWithValue("tls1.1", []string{"AES128-SHA"}))
-			Expect(result).To(HaveKeyWithValue("tls1.2", []string{}))
+			Expect(result).To(HaveKeyWithValue("VersionTLS10", []string{"TLS_RSA_WITH_AES_128_CBC_SHA"}))
+			Expect(result).To(HaveKeyWithValue("VersionTLS11", []string{"TLS_RSA_WITH_AES_128_CBC_SHA"}))
+			Expect(result).To(HaveKeyWithValue("VersionTLS12", []string{}))
 		})
 	})
 
@@ -80,9 +79,9 @@ var _ = Describe("TLS Scan", func() {
 
 			Expect(result.HasTLS()).To(BeFalse())
 
-			Expect(result).To(HaveKeyWithValue("tls1.0", []string{}))
-			Expect(result).To(HaveKeyWithValue("tls1.1", []string{}))
-			Expect(result).To(HaveKeyWithValue("tls1.2", []string{}))
+			Expect(result).To(HaveKeyWithValue("VersionTLS10", []string{}))
+			Expect(result).To(HaveKeyWithValue("VersionTLS11", []string{}))
+			Expect(result).To(HaveKeyWithValue("VersionTLS12", []string{}))
 		})
 	})
 
@@ -141,10 +140,10 @@ var _ = Describe("TLS Scan", func() {
 
 			Expect(result.HasTLS()).To(BeTrue())
 
-			Expect(result).To(HaveKeyWithValue("tls1.0", []string{}))
-			Expect(result).To(HaveKeyWithValue("tls1.1", []string{}))
-			Expect(result).To(HaveKeyWithValue("tls1.2", []string{
-				"ECDHE-RSA-AES256-GCM-SHA384",
+			Expect(result).To(HaveKeyWithValue("VersionTLS10", []string{}))
+			Expect(result).To(HaveKeyWithValue("VersionTLS11", []string{}))
+			Expect(result).To(HaveKeyWithValue("VersionTLS12", []string{
+				"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
 			}))
 		})
 	})

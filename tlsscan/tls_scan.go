@@ -1,42 +1,18 @@
 package tlsscan
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"os/exec"
-	"strings"
 	"sync"
-	"time"
 
 	"github.com/pivotal-cf/scantron/scanlog"
-
+	"github.com/pivotal-cf/scantron/tls"
 	"golang.org/x/sync/semaphore"
 )
 
-var (
-	tlsVersions = []string{
-		"tls1.0",
-		"tls1.1",
-		"tls1.2",
-	}
-
-	ciphersuites []string
-)
-
 const (
-	maxInFlight    = 20
-	opensslTimeout = 3 * time.Second
+	maxInFlight = 20
 )
-
-func init() {
-	bs, err := exec.Command("openssl", "ciphers").Output()
-	if err != nil {
-		panic("openssl command not on path!")
-	}
-
-	ciphersuites = strings.Split(strings.TrimSpace(string(bs)), ":")
-}
 
 type result struct {
 	version string
@@ -46,26 +22,26 @@ type result struct {
 func Scan(logger scanlog.Logger, host string, port string) (Results, error) {
 	results := Results{}
 
-	for _, version := range tlsVersions {
-		results[version] = []string{}
+	for _, version := range tls.ProtocolVersions {
+		results[version.Name] = []string{}
 	}
 
 	sem := semaphore.NewWeighted(maxInFlight)
 	resultChan := make(chan result)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(len(tlsVersions) * len(ciphersuites))
+	wg.Add(len(tls.ProtocolVersions) * len(tls.CipherSuites))
 
-	for _, version := range tlsVersions {
-		for _, suite := range ciphersuites {
-			go func(version, suite string) {
+	for _, version := range tls.ProtocolVersions {
+		for _, cipherSuite := range tls.CipherSuites {
+			go func(version tls.ProtocolVersion, cipherSuite tls.CipherSuite) {
 				defer wg.Done()
 
 				scanLogger := logger.With(
 					"host", host,
 					"port", port,
-					"version", version,
-					"suite", suite,
+					"version", version.Name,
+					"suite", cipherSuite.Name,
 				)
 
 				if err := sem.Acquire(context.Background(), 1); err != nil {
@@ -74,7 +50,7 @@ func Scan(logger scanlog.Logger, host string, port string) (Results, error) {
 				}
 				defer sem.Release(1)
 
-				found, err := scan(host, port, version, suite)
+				found, err := scan(host, port, version, cipherSuite)
 				if err != nil {
 					scanLogger.Warnf("Remote server did not respond affirmitavely to request: %s", err)
 					return
@@ -82,11 +58,11 @@ func Scan(logger scanlog.Logger, host string, port string) (Results, error) {
 
 				if found {
 					resultChan <- result{
-						version: version,
-						suite:   suite,
+						version: version.Name,
+						suite:   cipherSuite.Name,
 					}
 				}
-			}(version, suite)
+			}(version, cipherSuite)
 		}
 	}
 
@@ -102,35 +78,21 @@ func Scan(logger scanlog.Logger, host string, port string) (Results, error) {
 	return results, nil
 }
 
-func scan(host, port, version, suite string) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), opensslTimeout)
-	defer cancel()
+func scan(host, port string, version tls.ProtocolVersion, cipherSuite tls.CipherSuite) (bool, error) {
+	address := fmt.Sprintf("%s:%s", host, port)
 
-	cmd := exec.CommandContext(ctx, "openssl", "s_client",
-		"-connect", fmt.Sprintf("%s:%s", host, port),
-		"-cipher", suite,
-		opensslArg[version],
-	)
-
-	bs, err := cmd.CombinedOutput()
-	if err != nil {
-		if bytes.Contains(bs, []byte("Acceptable client certificate CA names")) {
-			return true, nil
-		} else if bytes.Contains(bs, []byte(":error:")) || bytes.Contains(bs, []byte("errno=54")) {
-			return false, nil
-		} else {
-			return false, err
-		}
+	config := tls.Config{
+		Version:     version.ID,
+		CipherSuite: cipherSuite.ID,
 	}
 
-	return true, nil
-}
+	err := tls.Dial("tcp", address, &config)
 
-var opensslArg = map[string]string{
-	"ssl3.0": "-ssl3",
-	"tls1.0": "-tls1",
-	"tls1.1": "-tls1_1",
-	"tls1.2": "-tls1_2",
+	if err != nil {
+		// handle different errors differently
+		return false, err
+	}
+	return true, nil
 }
 
 type Results map[string][]string
