@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"sync"
 
+	"strings"
+
+	"time"
+
 	"github.com/pivotal-cf/scantron/scanlog"
 	"github.com/pivotal-cf/scantron/tls"
 	"golang.org/x/sync/semaphore"
@@ -79,6 +83,9 @@ func Scan(logger scanlog.Logger, host string, port string) (Results, error) {
 }
 
 func scan(host, port string, version tls.ProtocolVersion, cipherSuite tls.CipherSuite) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
 	address := fmt.Sprintf("%s:%s", host, port)
 
 	config := tls.Config{
@@ -86,12 +93,15 @@ func scan(host, port string, version tls.ProtocolVersion, cipherSuite tls.Cipher
 		CipherSuite: cipherSuite.ID,
 	}
 
-	err := tls.Dial("tcp", address, &config)
-
+	err := tls.Dial(ctx, "tcp", address, &config)
 	if err != nil {
-		// handle different errors differently
+		if strings.HasPrefix(err.Error(), "tls: remote error") {
+			return false, nil
+		}
+
 		return false, err
 	}
+
 	return true, nil
 }
 

@@ -1,14 +1,15 @@
 package tls
 
 import (
+	"context"
 	"net"
 	"strings"
 )
 
-func Dial(network, addr string, config *Config) error {
+func Dial(ctx context.Context, network, addr string, config *Config) error {
 	dialer := net.Dialer{}
 
-	rawConn, err := dialer.Dial(network, addr)
+	rawConn, err := dialer.DialContext(ctx, network, addr)
 	if err != nil {
 		return err
 	}
