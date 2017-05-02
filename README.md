@@ -1,127 +1,94 @@
-     .d8888b.   .d8888b.        d8888 888b    888 88888888888 8888888b.   .d88888b.  888b    888
-    d88P  Y88b d88P  Y88b      d88888 8888b   888     888     888   Y88b d88P" "Y88b 8888b   888
-    Y88b.      888    888     d88P888 88888b  888     888     888    888 888     888 88888b  888
-     "Y888b.   888           d88P 888 888Y88b 888     888     888   d88P 888     888 888Y88b 888
-        "Y88b. 888          d88P  888 888 Y88b888     888     8888888P"  888     888 888 Y88b888
-          "888 888    888  d88P   888 888  Y88888     888     888 T88b   888     888 888  Y88888
-    Y88b  d88P Y88b  d88P d8888888888 888   Y8888     888     888  T88b  Y88b. .d88P 888   Y8888
-     "Y8888P"   "Y8888P" d88P     888 888    Y888     888     888   T88b  "Y88888P"  888    Y888
+# scantron
 
+> scan BOSH deployments for security vulnerabilities
 
-### BUILDING
+## usage
 
-1. Install dep, the vendor package manager: https://github.com/golang/dep
-2. `go get github.com/pivotal-cf/scantron`
-3. `cd $GOPATH/src/github.com/pivotal-cf/scantron && dep ensure`
-4. `./build.sh`
+### scanning machines
 
-### SYNOPSIS
+#### single host scan
 
-    scantron <bosh-scan|direct-scan|generate-manifest|audit> [command options]
+You can perform a direct scan (a scan of a single host) by using the following
+command:
 
-### COMMAND OPTIONS
+    scantron direct-scan \
+      --address scanme.example.com
+      --username ubuntu \
+      --password hunter2 \
+      [--private-key ~/.ssh/id_rsa_scantron]
 
-#### BOSH-SCAN
+The password is always required because we use it to `sudo` on the machine for
+the scan. You may optionally pass a private key for authenticating SSH.
 
-    --nmap-results=PATH                        Path to nmap results XML (See GENERATING NMAP RESULTS)
-    --director-url=URL                         BOSH Director URL
-    --director-username=USERNAME               BOSH Director username
-    --director-password=PASSWORD               BOSH Director password
-    --bosh-deployment=DEPLOYMENT_NAME          BOSH Deployment
+#### bosh deployment scan
 
-    --uaa-client=OAUTH_CLIENT                  UAA Client
-    --uaa-client-secret=OAUTH_CLIENT_SECRET    UAA Client Secret
-    --database=PATH                            Location to store report (default: ./database.db)
+Scantron is typically used in CI jobs and by other machines and so only
+supports authenticating with client credentials with a BOSH director at the
+moment. You can create a client for use with Scantron like so:
 
-#### DIRECT-SCAN
+1. `uaac target <bosh uaa host>:<bosh uaa port>`
+2. `uaac token client get admin -s <bosh uaa admin password>`
+3. `uaac client add scantron -s <scantron secret> --authorized_grant_types client_credentials --scope bosh.admin --authorities bosh.admin --access_token_validity 600 --refresh_token_validity 86400`
 
-    --nmap-results=PATH                        Path to nmap results XML (See GENERATING NMAP RESULTS)
-    --address=ADDRESS                          Address to scan
-    --username=USERNAME                        Username to scan with
-    --password=PASSWORD                        Password to scan with
-    --private-key=PATH                         Private key to scan with (optional)
-    --database=PATH                            Location to store report (default: ./database.db)
+You can then scan a BOSH deployment with the following command:
 
-#### GENERATE-MANIFEST
+    scantron bosh-scan \
+      --director-url <bosh address> \
+      --bosh-deployment <bosh deployment name> \
+      --client scantron \
+      --client-secret <scantron secret> \
+      [--ca-cert bosh.pem]
 
-    --database=PATH                            Path to report database (default: ./database.db)
+**Note:** The scan expects to be able to reach the BOSH machines directly at
+the moment so that it can scan the endpoints for their TLS configuration. A
+jumpbox is normally a good machine to run this from.
 
-#### AUDIT
+### checking reports
 
-    --database=PATH                            Path to report database (default: ./database.db)
-    --manifest=PATH                            Path to manifest
+After you have generated the report you can check it for compliance (no
+unexpected hosts or ports) against a known good manifest. These manifests can
+be quite lengthy! There is a `scantron` subcommand you can run in order to
+initially generate one.
 
-### GENERATING NMAP RESULTS
-
-Use nmap to scan 10.0.0.1 through 10.0.0.6, outputting the results as XML.
-These XML results are used to extract host information internally in
-`direct-scan` and `bosh-scan`. For more on nmap see
-[here](http://www.explainshell.com/explain?cmd=nmap+-oX+results.xml+-v+--script+ssl-enum-ciphers+-sV+-p+-+10.0.0.1-6):
-
-    nmap -oX results.xml -v --script ssl-enum-ciphers -sV -p - 10.0.0.1-6
-
-### EXAMPLES
-
-    # Direct scanning
-    scantron direct-scan --nmap-results results.xml \
-      --address scanme.example.com --username ubuntu \
-      --password hunter2
-
-    # BOSH
-    scantron bosh-scan --nmap-results results.xml \
-      --director-url=URL \
-      --director-username=USERNAME \
-      --director-password=PASSWORD \
-      --bosh-deployment=DEPLOYMENT_NAME
-
-    # BOSH with gateway
-    scantron bosh-scan --nmap-results results.xml \
-      --director-url=URL \
-      --director-username=USERNAME \
-      --director-password=PASSWORD \
-      --bosh-deployment=DEPLOYMENT_NAME \
-      --gateway-username=USERNAME \
-      --gateway-host=URL \
-      --gateway-private-key=PATH
-
-    # BOSH with UAA
-    scantron bosh-scan --nmap-results results.xml \
-      --director-url=URL \
-      --bosh-deployment=DEPLOYMENT_NAME \
-      --gateway-username=USERNAME \
-      --gateway-host=URL \
-      --gateway-private-key=PATH \
-      --uaa-client=OAUTH_CLIENT \
-      --uaa-client-secret=OAUTH_CLIENT_SECRET
-
-     # GENERATE-MANIFEST
      scantron generate-manifest > bosh.yml
 
-     # AUDIT
+Some hand-tweaking may be necessary to handle non-deterministic ports in the
+generated manifest file. The resulting manifest file can be checked against a
+report.
+
      scantron audit --manifest bosh.yml
-
-### SCAN FILTER
-
-Scantron only scans regular files and skips the following directories:
-
-  * /proc
-  * /sys
-  * /dev
-
-### AUDIT
-
-Prior to running audit, run `bosh-scan` or `direct-scan` to create a report
-(see Database Schema). Then `generate-manifest` (see Manifest Format) to create
-a starting point with a known-good configuration.  Some hand-tweaking may be
-necessary to handle non-deterministic ports in the generated manifest file. The
-resulting manifest file is compared against report.
 
 Audit outputs the audited hosts along with either `err` or `ok`. When there's
 any error, audit highlights the mismatched processes, ports, and/or permissions
 and returns with exit code 3. If audit does not have any errors, it will return
 with exit code 0.
 
-### DATABASE SCHEMA
+## development
+
+### building
+
+1. Install dep, the vendor package manager: https://github.com/golang/dep
+2. `go get github.com/pivotal-cf/scantron`
+3. `cd $GOPATH/src/github.com/pivotal-cf/scantron && dep ensure`
+4. `./scripts/build`
+
+### testing
+
+1. `./scripts/test`
+2. There is no step 2.
+
+## notes
+
+### scan filter
+
+Scantron only scans regular files and skips the following directories:
+
+  * `/proc`
+  * `/sys`
+  * `/dev`
+  * `/run`
+
+### database schema
 
 Scantron produces a SQLite database for scan reports. The database schema can
 be found in [schema.go](https://github.com/pivotal-cf/scantron/blob/master/db/schema.go).
@@ -136,7 +103,7 @@ machine. Each process is referenced by the port it is listening on and its
 environment variables. TLS information is provided for a port when the port is
 expecting TLS connections.
 
-### EXAMPLE QUERIES
+### example queries
 
 Finding all of the hosts which are listening on a particular port:
 
@@ -151,7 +118,7 @@ WHERE ports.number = 6061
   AND ports.state = "listen"
 ```
 
-### MANIFEST FORMAT
+### manifest format
 
 Scantron audits the hosts, processes, and ports in the database against the
 user-generated manifest file.
