@@ -11,6 +11,7 @@ import (
 	boshdirector "github.com/cloudfoundry/bosh-cli/director"
 
 	"github.com/pivotal-cf/scantron"
+	"github.com/pivotal-cf/scantron/bosh/boshfakes"
 	"github.com/pivotal-cf/scantron/remotemachine/remotemachinefakes"
 	"github.com/pivotal-cf/scantron/scanlog"
 	"github.com/pivotal-cf/scantron/scanner"
@@ -19,7 +20,7 @@ import (
 var _ = Describe("Bosh Scanning", func() {
 	var (
 		boshScan scanner.Scanner
-		director *remotemachinefakes.FakeBoshDirector
+		director *boshfakes.FakeBoshDirector
 		machine  *remotemachinefakes.FakeRemoteMachine
 
 		vmInfo     []boshdirector.VMInfo
@@ -52,7 +53,7 @@ var _ = Describe("Bosh Scanning", func() {
 		machine.AddressReturns("10.0.0.1")
 		machine.RunCommandReturns(buffer, nil)
 
-		director = &remotemachinefakes.FakeBoshDirector{}
+		director = &boshfakes.FakeBoshDirector{}
 		director.ConnectToReturns(machine)
 
 		vmInfo = []boshdirector.VMInfo{

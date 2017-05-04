@@ -11,13 +11,26 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+//go:generate counterfeiter . RemoteMachine
+
+type RemoteMachine interface {
+	Address() string
+
+	UploadFile(localPath, remotePath string) error
+	DeleteFile(remotePath string) error
+
+	RunCommand(string) (io.Reader, error)
+
+	Close() error
+}
+
 type remoteMachine struct {
 	machine scantron.Machine
 
 	conn *ssh.Client
 }
 
-func NewSimple(machine scantron.Machine) RemoteMachine {
+func NewRemoteMachine(machine scantron.Machine) RemoteMachine {
 	return &remoteMachine{
 		machine: machine,
 	}

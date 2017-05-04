@@ -9,8 +9,8 @@ import (
 	boshconfig "github.com/cloudfoundry/bosh-cli/cmd/config"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
+	"github.com/pivotal-cf/scantron/bosh"
 	"github.com/pivotal-cf/scantron/db"
-	"github.com/pivotal-cf/scantron/remotemachine"
 	"github.com/pivotal-cf/scantron/scanlog"
 	"github.com/pivotal-cf/scantron/scanner"
 )
@@ -38,7 +38,7 @@ func (command *BoshScanCommand) Execute(args []string) error {
 	out := bufio.NewWriter(os.Stdout)
 	boshLogger := boshlog.NewWriterLogger(boshlog.LevelNone, out, nil)
 
-	director, err := remotemachine.NewBoshDirector(
+	director, err := bosh.NewBoshDirector(
 		logger,
 		boshconfig.Creds{
 			Client:       command.Director.Client,

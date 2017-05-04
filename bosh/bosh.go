@@ -1,10 +1,8 @@
-package remotemachine
+package bosh
 
 import (
 	"io/ioutil"
 	"net"
-
-	"golang.org/x/crypto/ssh"
 
 	boshconfig "github.com/cloudfoundry/bosh-cli/cmd/config"
 	boshdir "github.com/cloudfoundry/bosh-cli/director"
@@ -13,14 +11,16 @@ import (
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 
 	"github.com/pivotal-cf/scantron"
+	"github.com/pivotal-cf/scantron/remotemachine"
 	"github.com/pivotal-cf/scantron/scanlog"
+	"golang.org/x/crypto/ssh"
 )
 
 //go:generate counterfeiter . BoshDirector
 
 type BoshDirector interface {
 	VMs() []boshdir.VMInfo
-	ConnectTo(scanlog.Logger, boshdir.VMInfo) RemoteMachine
+	ConnectTo(scanlog.Logger, boshdir.VMInfo) remotemachine.RemoteMachine
 
 	Setup() error
 	Cleanup() error
@@ -124,8 +124,8 @@ func (d *boshDirector) Setup() error {
 	return nil
 }
 
-func (d *boshDirector) ConnectTo(logger scanlog.Logger, vm boshdir.VMInfo) RemoteMachine {
-	return NewSimple(scantron.Machine{
+func (d *boshDirector) ConnectTo(logger scanlog.Logger, vm boshdir.VMInfo) remotemachine.RemoteMachine {
+	return remotemachine.NewRemoteMachine(scantron.Machine{
 		Address:  BestAddress(vm.IPs),
 		Username: d.sshOpts.Username,
 		Key:      d.signer,

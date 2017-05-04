@@ -49,7 +49,7 @@ func (command *DirectScanCommand) Execute(args []string) error {
 		Key:      privateKey,
 	}
 
-	remoteMachine := remotemachine.NewSimple(machine)
+	remoteMachine := remotemachine.NewRemoteMachine(machine)
 	defer remoteMachine.Close()
 
 	s := scanner.AnnotateWithTLSInformation(scanner.Direct(remoteMachine))

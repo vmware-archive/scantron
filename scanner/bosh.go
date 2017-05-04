@@ -5,15 +5,15 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/pivotal-cf/scantron/remotemachine"
+	"github.com/pivotal-cf/scantron/bosh"
 	"github.com/pivotal-cf/scantron/scanlog"
 )
 
 type boshScanner struct {
-	director remotemachine.BoshDirector
+	director bosh.BoshDirector
 }
 
-func Bosh(director remotemachine.BoshDirector) Scanner {
+func Bosh(director bosh.BoshDirector) Scanner {
 	return &boshScanner{
 		director: director,
 	}
@@ -39,7 +39,7 @@ func (s *boshScanner) Scan(logger scanlog.Logger) ([]ScanResult, error) {
 		go func() {
 			defer wg.Done()
 
-			ip := remotemachine.BestAddress(vm.IPs)
+			ip := bosh.BestAddress(vm.IPs)
 
 			machineLogger := logger.With(
 				"job", vm.JobName,
