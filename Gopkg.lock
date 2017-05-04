@@ -21,14 +21,14 @@ memo = "d01caf4ee6e35f70b99027bbde7ac4e07554fb8b33e25ec79d0e592b20464f20"
 [[projects]]
   name = "github.com/cloudfoundry/bosh-cli"
   packages = ["cmd/config","director","ssh","uaa","ui","ui/fmt","ui/table"]
-  revision = "f73c244bf9d137d3e06e409e4417958be3a42c66"
-  version = "v2.0.13"
+  revision = "88aa7909a381596c84b68a2bcdb3cafbfe2a60cf"
+  version = "v2.0.16"
 
 [[projects]]
   branch = "master"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = ["errors","http","httpclient","logger","retrystrategy","system","uuid"]
-  revision = "169881eddf0d6c5be8f73da2eee13a1dbf5160e3"
+  revision = "1cf51df588feb265a3fb764dd3342ca46bf44ade"
 
 [[projects]]
   branch = "master"
@@ -118,13 +118,13 @@ memo = "d01caf4ee6e35f70b99027bbde7ac4e07554fb8b33e25ec79d0e592b20464f20"
   branch = "master"
   name = "github.com/onsi/ginkgo"
   packages = [".","config","internal/codelocation","internal/containernode","internal/failer","internal/leafnodes","internal/remote","internal/spec","internal/spec_iterator","internal/specrunner","internal/suite","internal/testingtproxy","internal/writer","reporters","reporters/stenographer","reporters/stenographer/support/go-colorable","reporters/stenographer/support/go-isatty","types"]
-  revision = "f40a49d81e5c12e90400620b6242fb29a8e7c9d9"
+  revision = "83438ca4278f2f56757b9ab2cb15dd4f596d84e8"
 
 [[projects]]
   branch = "master"
   name = "github.com/onsi/gomega"
   packages = [".","format","gbytes","gexec","gstruct","gstruct/errors","internal/assertion","internal/asyncassertion","internal/oraclematcher","internal/testingtsupport","matchers","matchers/support/goraph/bipartitegraph","matchers/support/goraph/edge","matchers/support/goraph/node","matchers/support/goraph/util","types"]
-  revision = "9b8c753e8dfb382618ba8fa19b4197b5dcb0434c"
+  revision = "da367351331c75190afec7ed3a0c61e0016942ed"
 
 [[projects]]
   branch = "master"
@@ -148,7 +148,7 @@ memo = "d01caf4ee6e35f70b99027bbde7ac4e07554fb8b33e25ec79d0e592b20464f20"
   branch = "master"
   name = "github.com/pkg/sftp"
   packages = ["."]
-  revision = "cb456b384cd3aae0ca1838cd59af8b6bb3363d67"
+  revision = "dddd9cf3c7889aa0fefd2e8a529367a3e1f3b669"
 
 [[projects]]
   name = "github.com/square/certstrap"
@@ -160,7 +160,7 @@ memo = "d01caf4ee6e35f70b99027bbde7ac4e07554fb8b33e25ec79d0e592b20464f20"
   branch = "master"
   name = "github.com/vito/go-interact"
   packages = ["interact","interact/terminal"]
-  revision = "e3c86ac934ea9d6f1c6ad6e42e316a6e8fe6a807"
+  revision = "c5733929fb71999ab2f1cfd57fdab195965994de"
 
 [[projects]]
   name = "go.uber.org/atomic"
@@ -169,34 +169,34 @@ memo = "d01caf4ee6e35f70b99027bbde7ac4e07554fb8b33e25ec79d0e592b20464f20"
   version = "v1.2.0"
 
 [[projects]]
+  branch = "master"
   name = "go.uber.org/zap"
   packages = [".","buffer","internal/bufferpool","internal/color","internal/exit","internal/multierror","zapcore"]
-  revision = "1550bc05539134bbf8612a35f34a79ab8bf34ee3"
-  version = "v1.2.0"
+  revision = "7641ffe6315b3cb6274a020e6db8e87db4d46bc0"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["curve25519","ed25519","ed25519/internal/edwards25519","ssh","ssh/terminal"]
-  revision = "cbc3d0884eac986df6e78a039b8792e869bff863"
+  revision = "5a033cc77e57eca05bdb50522851d29e03569cbe"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context","proxy"]
-  revision = "5602c733f70afc6dcec6766be0d5034d4c4f14de"
+  revision = "feeb485667d1fdabe727840fe00adc22431bc86e"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sync"
   packages = ["semaphore"]
-  revision = "5a06fca2c336a4b2b2fcb45702e8c47621b2aa2c"
+  revision = "305c7b3edb4364a58141b30686a61a87bdb79a3a"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "f3918c30c5c2cb527c0b071a27c35120a6c0719a"
+  revision = "9ccfe848b9db8435a24c424abbc07a921adf1df5"
 
 [[projects]]
   branch = "v2"
