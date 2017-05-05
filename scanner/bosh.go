@@ -45,7 +45,7 @@ func (s *boshScanner) Scan(logger scanlog.Logger) ([]ScanResult, error) {
 				"job", vm.JobName,
 				"id", vm.ID,
 				"index", index(vm.Index),
-				"address", fmt.Sprintf("%s", ip),
+				"address", ip,
 			)
 
 			remoteMachine := s.director.ConnectTo(machineLogger, vm)

@@ -9,5 +9,5 @@ import (
 
 func TestSsh(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Ssh Suite")
+	RunSpecs(t, "SSH Suite")
 }
