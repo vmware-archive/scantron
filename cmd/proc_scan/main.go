@@ -5,14 +5,22 @@ import (
 	"fmt"
 	"os"
 
+	"log"
+
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/filesystem"
 	"github.com/pivotal-cf/scantron/process"
+	"github.com/pivotal-cf/scantron/scanlog"
 	"github.com/pivotal-cf/scantron/ssh"
 )
 
 func main() {
-	processes, err := process.ScanProcesses()
+	logger, err := scanlog.NewLogger(false)
+	if err != nil {
+		log.Fatalln("failed to set up logger:", err)
+	}
+
+	processes, err := process.ScanProcesses(logger)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error: failed to get process list:", err)
 		os.Exit(1)

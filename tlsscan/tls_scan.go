@@ -26,6 +26,9 @@ type result struct {
 func Scan(logger scanlog.Logger, host string, port string) (Results, error) {
 	results := Results{}
 
+	logger.Infof("Starting ciphersuite scan")
+	defer logger.Infof("Ciphersuite scan complete")
+
 	for _, version := range tls.ProtocolVersions {
 		results[version.Name] = []string{}
 	}
@@ -56,7 +59,7 @@ func Scan(logger scanlog.Logger, host string, port string) (Results, error) {
 
 				found, err := scan(host, port, version, cipherSuite)
 				if err != nil {
-					scanLogger.Warnf("Remote server did not respond affirmitavely to request: %s", err)
+					scanLogger.Debugf("Remote server did not respond affirmitavely to request: %s", err)
 					return
 				}
 
@@ -83,7 +86,7 @@ func Scan(logger scanlog.Logger, host string, port string) (Results, error) {
 }
 
 func scan(host, port string, version tls.ProtocolVersion, cipherSuite tls.CipherSuite) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
 	address := fmt.Sprintf("%s:%s", host, port)

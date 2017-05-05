@@ -8,6 +8,8 @@ import (
 )
 
 type Logger interface {
+	Debugf(msg string, args ...interface{})
+	Infof(msg string, args ...interface{})
 	Warnf(msg string, args ...interface{})
 	Errorf(msg string, args ...interface{})
 
@@ -22,13 +24,13 @@ func simpleTimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendString(t.Format("2006-01-02 15:04:05"))
 }
 
-func NewLogger(showWarnings bool) (Logger, error) {
+func NewLogger(debug bool) (Logger, error) {
 	dyn := zap.NewAtomicLevel()
 
-	if showWarnings {
-		dyn.SetLevel(zap.WarnLevel)
+	if debug {
+		dyn.SetLevel(zap.DebugLevel)
 	} else {
-		dyn.SetLevel(zap.ErrorLevel)
+		dyn.SetLevel(zap.InfoLevel)
 	}
 
 	config := zap.Config{
@@ -38,6 +40,7 @@ func NewLogger(showWarnings bool) (Logger, error) {
 		DisableStacktrace: true,
 		EncoderConfig: zapcore.EncoderConfig{
 			// Keys can be anything except the empty string.
+			TimeKey:        "T",
 			LevelKey:       "L",
 			NameKey:        "N",
 			MessageKey:     "M",
@@ -59,6 +62,14 @@ func NewLogger(showWarnings bool) (Logger, error) {
 	}, nil
 }
 
+func (l *log) Debugf(msg string, args ...interface{}) {
+	l.logger.Debugf(msg, args...)
+}
+
+func (l *log) Infof(msg string, args ...interface{}) {
+	l.logger.Infof(msg, args...)
+}
+
 func (l *log) Warnf(msg string, args ...interface{}) {
 	l.logger.Warnf(msg, args...)
 }
@@ -78,6 +89,12 @@ func NewNopLogger() Logger {
 }
 
 type nop struct{}
+
+func (n *nop) Debugf(msg string, args ...interface{}) {
+}
+
+func (n *nop) Infof(msg string, args ...interface{}) {
+}
 
 func (n *nop) Warnf(msg string, args ...interface{}) {
 }

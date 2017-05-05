@@ -1,7 +1,7 @@
 package commands
 
 type ScantronCommand struct {
-	Debug bool `long:"debug" description:"Show warnings in log output"`
+	Debug bool `long:"debug" description:"Show debug logs in output"`
 
 	BoshScan         BoshScanCommand         `command:"bosh-scan" description:"Scan all of the machines in a BOSH deployment"`
 	DirectScan       DirectScanCommand       `command:"direct-scan" description:"Scan a single machine"`

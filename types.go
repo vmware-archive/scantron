@@ -19,30 +19,30 @@ type Port struct {
 	Number   int    `json:"number"`
 	State    string `json:"state"`
 
-	TLSInformation TLSInformation
+	TLSInformation TLSInformation `json:"tls_information"`
 }
 
 type TLSInformation struct {
-	Certificate       *Certificate
-	CipherInformation tlsscan.Results
-	Mutual            bool
+	Certificate       *Certificate    `json:"certificate"`
+	CipherInformation tlsscan.Results `json:"cipher_information"`
+	Mutual            bool            `json:"mutual_tls"`
 
-	ScanError error
+	ScanError error `json:"scan_error,omitempty"`
 }
 
 type Certificate struct {
-	Expiration time.Time
-	Bits       int
-	Subject    CertificateSubject
+	Expiration time.Time          `json:"expiration"`
+	Bits       int                `json:"bits"`
+	Subject    CertificateSubject `json:"subject"`
 }
 
 type CertificateSubject struct {
-	Country  string
-	Province string
-	Locality string
+	Country  string `json:"country"`
+	Province string `json:"province"`
+	Locality string `json:"locality"`
 
-	Organization string
-	CommonName   string
+	Organization string `json:"organization"`
+	CommonName   string `json:"common_name"`
 }
 
 func (cs CertificateSubject) String() string {

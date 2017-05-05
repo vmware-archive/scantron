@@ -54,14 +54,12 @@ func (command *BoshScanCommand) Execute(args []string) error {
 	}
 	defer director.Cleanup()
 
-	s := scanner.AnnotateWithTLSInformation(scanner.Bosh(director))
-
 	db, err := db.OpenOrCreateDatabase(command.Database)
 	if err != nil {
 		log.Fatalf("failed to create database: %s", err.Error())
 	}
 
-	results, err := s.Scan(logger)
+	results, err := scanner.Bosh(director).Scan(logger)
 	if err != nil {
 		log.Fatalf("failed to scan: %s", err.Error())
 	}

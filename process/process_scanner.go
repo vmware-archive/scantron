@@ -11,9 +11,12 @@ import (
 	"github.com/keybase/go-ps"
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/netstat"
+	"github.com/pivotal-cf/scantron/scanlog"
+	"github.com/pivotal-cf/scantron/scanner"
+	"github.com/pivotal-cf/scantron/tlsscan"
 )
 
-func ScanProcesses() ([]scantron.Process, error) {
+func ScanProcesses(logger scanlog.Logger) ([]scantron.Process, error) {
 	rawProcesses, err := ps.Processes()
 	if err != nil {
 		return nil, err
@@ -32,13 +35,31 @@ func ScanProcesses() ([]scantron.Process, error) {
 			continue
 		}
 
+		ports := netstatPorts.LocalPortsForPID(pid)
+
+		for i := range ports {
+			port := ports[i]
+
+			if port.State != "LISTEN" {
+				continue
+			}
+
+			if port.Address == "127.0.0.1" {
+				continue
+			}
+
+			port.TLSInformation = getTLSInformation(logger, port)
+
+			ports[i] = port
+		}
+
 		process := scantron.Process{
 			CommandName: rawProcess.Executable(),
 			PID:         pid,
 			User:        user(pid),
 			Cmdline:     cmdline(pid),
 			Env:         env(pid),
-			Ports:       netstatPorts.LocalPortsForPID(pid),
+			Ports:       ports,
 		}
 
 		processes = append(processes, process)
@@ -82,6 +103,37 @@ func user(pid int) string {
 	}
 
 	return strings.TrimSpace(string(bs))
+}
+
+func getTLSInformation(logger scanlog.Logger, port scantron.Port) scantron.TLSInformation {
+	portNum := strconv.Itoa(port.Number)
+
+	portLogger := logger.With("port", portNum)
+
+	tlsInformation := scantron.TLSInformation{}
+
+	results, err := tlsscan.Scan(portLogger, "localhost", portNum)
+	if err != nil {
+		tlsInformation.ScanError = err
+		return tlsInformation
+	}
+
+	if !results.HasTLS() {
+		return tlsInformation
+	}
+
+	tlsInformation.CipherInformation = results
+
+	cert, mutual, err := scanner.FetchTLSInformation("localhost", portNum)
+	if err != nil {
+		tlsInformation.ScanError = err
+		return tlsInformation
+	}
+
+	tlsInformation.Certificate = cert
+	tlsInformation.Mutual = mutual
+
+	return tlsInformation
 }
 
 func cmdline(pid int) []string {

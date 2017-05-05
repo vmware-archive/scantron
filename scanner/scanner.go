@@ -55,6 +55,9 @@ func writeProcScanToTempFile() (string, error) {
 func scanMachine(logger scanlog.Logger, remoteMachine remotemachine.RemoteMachine) (scantron.SystemInfo, error) {
 	var systemInfo scantron.SystemInfo
 
+	logger.Infof("Starting VM scan")
+	defer logger.Infof("VM scan complete")
+
 	srcFilePath, err := writeProcScanToTempFile()
 	if err != nil {
 		return systemInfo, err

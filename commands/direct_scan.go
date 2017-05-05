@@ -52,15 +52,13 @@ func (command *DirectScanCommand) Execute(args []string) error {
 	remoteMachine := remotemachine.NewRemoteMachine(machine)
 	defer remoteMachine.Close()
 
-	s := scanner.AnnotateWithTLSInformation(scanner.Direct(remoteMachine))
-
 	db, err := db.OpenOrCreateDatabase(command.Database)
 
 	if err != nil {
 		log.Fatalf("failed to create database: %s", err.Error())
 	}
 
-	results, err := s.Scan(logger)
+	results, err := scanner.Direct(remoteMachine).Scan(logger)
 	if err != nil {
 		log.Fatalf("failed to scan: %s", err.Error())
 	}
