@@ -1,13 +1,11 @@
-package scanner_test
+package tlsscan_test
 
 import (
 	"crypto/tls"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -15,7 +13,7 @@ import (
 	"github.com/pivotal-cf/paraphernalia/secure/tlsconfig"
 	"github.com/pivotal-cf/paraphernalia/test/certtest"
 	"github.com/pivotal-cf/scantron"
-	"github.com/pivotal-cf/scantron/scanner"
+	"github.com/pivotal-cf/scantron/tlsscan"
 )
 
 var _ = Describe("TLS", func() {
@@ -60,7 +58,7 @@ var _ = Describe("TLS", func() {
 			It("should show TLS certificate details", func() {
 				host, port := hostport(server.URL)
 
-				cert, mutual, err := scanner.FetchTLSInformation(host, port)
+				cert, mutual, err := tlsscan.FetchTLSInformation(host, port)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(mutual).To(BeFalse())
 				Expect(cert).ShouldNot(BeNil())
@@ -101,7 +99,7 @@ var _ = Describe("TLS", func() {
 			It("should show TLS certificate details", func() {
 				host, port := hostport(server.URL)
 
-				cert, mutual, err := scanner.FetchTLSInformation(host, port)
+				cert, mutual, err := tlsscan.FetchTLSInformation(host, port)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(mutual).To(BeTrue())
 				Expect(cert).ShouldNot(BeNil())
@@ -134,13 +132,3 @@ var _ = Describe("TLS", func() {
 		})
 	})
 })
-
-func hostport(uri string) (string, string) {
-	pu, err := url.Parse(uri)
-	Expect(err).ShouldNot(HaveOccurred())
-
-	host, port, err := net.SplitHostPort(pu.Host)
-	Expect(err).ShouldNot(HaveOccurred())
-
-	return host, port
-}

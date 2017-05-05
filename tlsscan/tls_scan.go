@@ -9,6 +9,7 @@ import (
 
 	"time"
 
+	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/scanlog"
 	"github.com/pivotal-cf/scantron/tls"
 	"golang.org/x/sync/semaphore"
@@ -23,8 +24,8 @@ type result struct {
 	suite   string
 }
 
-func Scan(logger scanlog.Logger, host string, port string) (Results, error) {
-	results := Results{}
+func Scan(logger scanlog.Logger, host string, port string) (scantron.CipherInformation, error) {
+	results := scantron.CipherInformation{}
 
 	logger.Infof("Starting ciphersuite scan")
 	defer logger.Infof("Ciphersuite scan complete")
@@ -106,16 +107,4 @@ func scan(host, port string, version tls.ProtocolVersion, cipherSuite tls.Cipher
 	}
 
 	return true, nil
-}
-
-type Results map[string][]string
-
-func (r Results) HasTLS() bool {
-	for _, suites := range r {
-		if len(suites) != 0 {
-			return true
-		}
-	}
-
-	return false
 }

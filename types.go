@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	"time"
-
-	"github.com/pivotal-cf/scantron/tlsscan"
 )
 
 type File struct {
@@ -23,11 +21,23 @@ type Port struct {
 }
 
 type TLSInformation struct {
-	Certificate       *Certificate    `json:"certificate"`
-	CipherInformation tlsscan.Results `json:"cipher_information"`
-	Mutual            bool            `json:"mutual_tls"`
+	Certificate       *Certificate      `json:"certificate"`
+	CipherInformation CipherInformation `json:"cipher_information"`
+	Mutual            bool              `json:"mutual_tls"`
 
 	ScanError error `json:"scan_error,omitempty"`
+}
+
+type CipherInformation map[string][]string
+
+func (c CipherInformation) HasTLS() bool {
+	for _, suites := range c {
+		if len(suites) != 0 {
+			return true
+		}
+	}
+
+	return false
 }
 
 type Certificate struct {

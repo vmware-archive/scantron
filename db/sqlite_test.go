@@ -14,7 +14,6 @@ import (
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/db"
 	"github.com/pivotal-cf/scantron/scanner"
-	"github.com/pivotal-cf/scantron/tlsscan"
 )
 
 var _ = Describe("Sqlite", func() {
@@ -179,7 +178,7 @@ var _ = Describe("Sqlite", func() {
 								TLSInformation: scantron.TLSInformation{
 									ScanError: errors.New("this was a terrible error"),
 									Mutual:    true,
-									CipherInformation: tlsscan.Results{
+									CipherInformation: scantron.CipherInformation{
 										"tls1.0": []string{
 											"ECDHE-NOT-REALLY-SECURE",
 										},

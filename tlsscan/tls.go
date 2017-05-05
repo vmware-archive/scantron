@@ -1,4 +1,4 @@
-package scanner
+package tlsscan
 
 import (
 	"crypto/ecdsa"

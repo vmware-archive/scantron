@@ -12,7 +12,6 @@ import (
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/netstat"
 	"github.com/pivotal-cf/scantron/scanlog"
-	"github.com/pivotal-cf/scantron/scanner"
 	"github.com/pivotal-cf/scantron/tlsscan"
 )
 
@@ -124,7 +123,7 @@ func getTLSInformation(logger scanlog.Logger, port scantron.Port) scantron.TLSIn
 
 	tlsInformation.CipherInformation = results
 
-	cert, mutual, err := scanner.FetchTLSInformation("localhost", portNum)
+	cert, mutual, err := tlsscan.FetchTLSInformation("localhost", portNum)
 	if err != nil {
 		tlsInformation.ScanError = err
 		return tlsInformation
