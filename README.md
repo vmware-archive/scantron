@@ -27,7 +27,7 @@ supports authenticating with client credentials with a BOSH director at the
 moment. You can create a client for use with Scantron like so:
 
 1. `uaac target <bosh uaa host>:<bosh uaa port>`
-2. `uaac token client get admin -s <bosh uaa admin password>`
+2. `uaac token owner get login admin`
 3. `uaac client add scantron -s <scantron secret> --authorized_grant_types client_credentials --scope bosh.admin --authorities bosh.admin --access_token_validity 600 --refresh_token_validity 86400`
 
 You can then scan a BOSH deployment with the following command:
