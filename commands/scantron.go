@@ -7,6 +7,7 @@ type ScantronCommand struct {
 	DirectScan       DirectScanCommand       `command:"direct-scan" description:"Scan a single machine"`
 	Audit            AuditCommand            `command:"audit" description:"Audit a scan report for unexpected hosts, processes, and ports"`
 	GenerateManifest GenerateManifestCommand `command:"generate-manifest" description:"Generate a audit manifest from the last report"`
+	Report           ReportCommand           `command:"report" description:"Generate a human readable report from the given database"`
 }
 
 var Scantron ScantronCommand
