@@ -13,6 +13,10 @@ type Report struct {
 	Rows   [][]string
 }
 
+func (r Report) IsEmpty() bool {
+	return len(r.Rows) == 0
+}
+
 type cipherSuites map[string][]string
 
 type stringSlice []string
