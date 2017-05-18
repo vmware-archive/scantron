@@ -6,6 +6,7 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/pivotal-cf/scantron/db"
+	"github.com/pivotal-cf/scantron/report"
 )
 
 type ReportCommand struct {
@@ -18,59 +19,30 @@ func (command *ReportCommand) Execute(args []string) error {
 		return err
 	}
 
-	err = rootProcessReport(db)
+	rootReport, err := report.BuildRootProcessesReport(db)
 	if err != nil {
 		return err
 	}
+
+	tlsReport, err := report.BuildTLSViolationsReport(db)
+	if err != nil {
+		return err
+	}
+
+	printReport(rootReport, "Externally-accessible processes running as root:")
+	printReport(tlsReport, "Processes using non-approved protocols or cipher suites:")
 
 	return nil
 }
 
-func rootProcessReport(db *db.Database) error {
-	rows, err := db.DB().Query(`
-		SELECT DISTINCT h.name, po.number, pr.name
-        FROM hosts h
-        JOIN processes pr
-        ON h.id = pr.host_id
-        JOIN ports po
-        ON po.process_id = pr.id
-        WHERE po.state = "LISTEN"
-        AND po.address != "127.0.0.1"
-        AND pr.user = "root"
-        AND pr.name NOT IN ('sshd', 'rpcbind')
-        ORDER BY h.name, po.number
-	`)
-	if err != nil {
-		return err
-	}
-
-	defer rows.Close()
-
+func printReport(r report.Report, title string) {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Hostname", "Port", "Process Name"})
+	table.SetHeader(r.Header)
+	table.AppendBulk(r.Rows)
 
-	for rows.Next() {
-		var (
-			hostname    string
-			processName string
-			portNumber  int
-		)
-
-		err := rows.Scan(&hostname, &portNumber, &processName)
-		if err != nil {
-			return err
-		}
-
-		table.Append([]string{
-			hostname,
-			fmt.Sprintf("%d", portNumber),
-			processName,
-		})
-
-	}
-	fmt.Println("Processes Running as Root:")
-
+	fmt.Println(title)
+	fmt.Println("")
 	table.Render()
-
-	return nil
+	fmt.Println("")
+	fmt.Println("")
 }
