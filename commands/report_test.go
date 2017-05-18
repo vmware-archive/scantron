@@ -156,15 +156,19 @@ var _ = Describe("Report", func() {
 		Expect(session).To(Exit(0))
 
 		Expect(session.Out).To(Say("Processes Running as Root:"))
-		Expect(session.Out).To(Say("host1, 7890, command1"))
-		Expect(session.Out).To(Say("host1, 9999, command2"))
-		Expect(session.Out).To(Say("host2, 9999, command2"))
-		Expect(session.Out).To(Say("host3, 7890, command1"))
+		Expect(session.Out).To(Say(`\|\s+HOSTNAME\s+\|\s+PORT\s+\|\s+PROCESS NAME\s+\|`))
 
-		Expect(session.Out).NotTo(Say("7891"))                  // ignore processes not in LISTEN state
-		Expect(session.Out).NotTo(Say("8890"))                  // ignore processes listening on 127.0.0.1
-		Expect(session.Out).NotTo(Say("some-non-root-process")) // ignore processes not running as root
-		Expect(session.Out).NotTo(Say("sshd"))                  // ignore sshd process
-		Expect(session.Out).NotTo(Say("rpcbind"))               // ignore rpcbind process
+		Expect(session.Out).To(Say(`\|\s+host1\s+\|\s+7890\s+\|\s+command1\s+\|`))
+		Expect(session.Out).To(Say(`\|\s+host1\s+\|\s+9999\s+\|\s+command2\s+\|`))
+		Expect(session.Out).To(Say(`\|\s+host2\s+\|\s+9999\s+\|\s+command2\s+\|`))
+		Expect(session.Out).To(Say(`\|\s+host3\s+\|\s+7890\s+\|\s+command1\s+\|`))
+
+		contents := session.Out.Contents()
+
+		Expect(contents).NotTo(ContainSubstring("7891"))                  // ignore processes not in LISTEN state
+		Expect(contents).NotTo(ContainSubstring("8890"))                  // ignore processes listening on 127.0.0.1
+		Expect(contents).NotTo(ContainSubstring("some-non-root-process")) // ignore processes not running as root
+		Expect(contents).NotTo(ContainSubstring("sshd"))                  // ignore sshd process
+		Expect(contents).NotTo(ContainSubstring("rpcbind"))               // ignore rpcbind process
 	})
 })

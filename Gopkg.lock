@@ -1,4 +1,4 @@
-memo = "d01caf4ee6e35f70b99027bbde7ac4e07554fb8b33e25ec79d0e592b20464f20"
+memo = "e97a80cb7d1216a9f88480fc3c822f75e129574d5d4cc5c0a1226d3b357c8555"
 
 [[projects]]
   name = "github.com/bmatcuk/doublestar"
@@ -20,7 +20,7 @@ memo = "d01caf4ee6e35f70b99027bbde7ac4e07554fb8b33e25ec79d0e592b20464f20"
 
 [[projects]]
   name = "github.com/cloudfoundry/bosh-cli"
-  packages = ["cmd/config","director","ssh","uaa","ui","ui/fmt","ui/table"]
+  packages = ["cmd/config","director","uaa","ui","ui/fmt","ui/table"]
   revision = "88aa7909a381596c84b68a2bcdb3cafbfe2a60cf"
   version = "v2.0.16"
 
@@ -47,18 +47,6 @@ memo = "d01caf4ee6e35f70b99027bbde7ac4e07554fb8b33e25ec79d0e592b20464f20"
   packages = ["."]
   revision = "9131ab34cf20d2f6d83fdc67168a5430d1c7dc23"
   version = "v1.4.1"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/errwrap"
-  packages = ["."]
-  revision = "7554cd9344cec97297fa6649b055a8c98c2a1e55"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/go-multierror"
-  packages = ["."]
-  revision = "ed905158d87462226a13fe39ddf685ea65f1c11f"
 
 [[projects]]
   name = "github.com/jessevdk/go-flags"
@@ -113,6 +101,12 @@ memo = "d01caf4ee6e35f70b99027bbde7ac4e07554fb8b33e25ec79d0e592b20464f20"
   name = "github.com/nu7hatch/gouuid"
   packages = ["."]
   revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/olekukonko/tablewriter"
+  packages = ["."]
+  revision = "febf2d34b54a69ce7530036c7503b1c9fbfdf0bb"
 
 [[projects]]
   branch = "master"

@@ -2,7 +2,9 @@ package commands
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/olekukonko/tablewriter"
 	"github.com/pivotal-cf/scantron/db"
 )
 
@@ -44,22 +46,31 @@ func rootProcessReport(db *db.Database) error {
 
 	defer rows.Close()
 
-	var (
-		hostname    string
-		processName string
-		portNumber  int
-	)
-
-	fmt.Println("Processes Running as Root:")
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Hostname", "Port", "Process Name"})
 
 	for rows.Next() {
+		var (
+			hostname    string
+			processName string
+			portNumber  int
+		)
+
 		err := rows.Scan(&hostname, &portNumber, &processName)
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("%s, %d, %s\n", hostname, portNumber, processName)
+		table.Append([]string{
+			hostname,
+			fmt.Sprintf("%d", portNumber),
+			processName,
+		})
+
 	}
+	fmt.Println("Processes Running as Root:")
+
+	table.Render()
 
 	return nil
 }
