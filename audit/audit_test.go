@@ -17,8 +17,8 @@ import (
 
 var _ = Describe("Audit", func() {
 	var (
-		database     *db.Database
-		tmpdir string
+		database *db.Database
+		tmpdir   string
 
 		hosts []scanner.ScanResult
 		mani  manifest.Manifest

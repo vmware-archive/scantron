@@ -1,8 +1,8 @@
 package tls
 
 import (
-	"io"
 	"crypto/rand"
+	"io"
 )
 
 type Config struct {

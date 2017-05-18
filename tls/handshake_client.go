@@ -1,8 +1,8 @@
 package tls
 
 import (
-	"strings"
 	"net"
+	"strings"
 )
 
 // hostnameInSNI converts name into an approriate hostname for SNI.
