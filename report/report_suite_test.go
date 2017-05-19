@@ -20,6 +20,20 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
 	hosts := []scanner.ScanResult{
 		{
 			Job: "host3",
+			Files: []scantron.File{
+				{
+					Path:        "/var/vcap/data/jobs/world-readable",
+					Permissions: 0004,
+				},
+				{
+					Path:        "/var/vcap/data/jobs/world-writable",
+					Permissions: 0002,
+				},
+				{
+					Path:        "/var/vcap/data/jobs/world-executable",
+					Permissions: 0001,
+				},
+			},
 			Services: []scantron.Process{
 				{
 					CommandName: "command1",
@@ -42,6 +56,16 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
 		},
 		{
 			Job: "host1",
+			Files: []scantron.File{
+				{
+					Path:        "/var/vcap/data/jobs/world-everything",
+					Permissions: 0007,
+				},
+				{
+					Path:        "/root/world-everything",
+					Permissions: 0007,
+				},
+			},
 			Services: []scantron.Process{
 				{
 					CommandName: "command2",

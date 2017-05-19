@@ -30,8 +30,14 @@ func (command *ReportCommand) Execute(args []string) error {
 		return err
 	}
 
+	filesReport, err := report.BuildWorldReadableFilesReport(database)
+	if err != nil {
+		return err
+	}
+
 	printReport(rootReport, "Externally-accessible processes running as root:")
 	printReport(tlsReport, "Processes using non-approved protocols or cipher suites:")
+	printReport(filesReport, "World-readable files:")
 
 	if !rootReport.IsEmpty() || !tlsReport.IsEmpty() {
 		return errors.New("Violations were found!")

@@ -44,6 +44,12 @@ var _ = Describe("Report", func() {
 			hosts := []scanner.ScanResult{
 				{
 					Job: "host1",
+					Files: []scantron.File{
+						{
+							Path:        "/var/vcap/data/jobs/my.cnf",
+							Permissions: 0644,
+						},
+					},
 					Services: []scantron.Process{
 						{
 							CommandName: "command1",
@@ -91,6 +97,17 @@ var _ = Describe("Report", func() {
 
 			Expect(session.Out).To(Say(`\|\s+host1\s+\|\s+7890\s+\|\s+command1\s+\|\s+non-approved protocol\(s\)\s+\|`))
 			Expect(session.Out).To(Say(`\|\s+\|\s+\|\s+\|\s+non-approved cipher\(s\)\s+\|`))
+		})
+
+		It("shows world-readable files", func() {
+			session := runCommand("report", "--database", databasePath)
+
+			Expect(session).To(Exit(1))
+
+			Expect(session.Out).To(Say("World-readable files:"))
+			Expect(session.Out).To(Say(`\|\s+IDENTITY\s+\|\s+PATH\s+\|`))
+
+			Expect(session.Out).To(Say(`\|\s+host1\s+\|\s+/var/vcap/data/jobs/my.cnf\s+\|`))
 		})
 	})
 
