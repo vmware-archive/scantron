@@ -50,6 +50,12 @@ var _ = Describe("Report", func() {
 							Permissions: 0644,
 						},
 					},
+					SSHKeys: []scantron.SSHKey{
+						{
+							Type: "ssh-rsa",
+							Key:  "key-1",
+						},
+					},
 					Services: []scantron.Process{
 						{
 							CommandName: "command1",
@@ -67,6 +73,15 @@ var _ = Describe("Report", func() {
 									},
 								},
 							},
+						},
+					},
+				},
+				{
+					Job: "host2",
+					SSHKeys: []scantron.SSHKey{
+						{
+							Type: "ssh-rsa",
+							Key:  "key-1",
 						},
 					},
 				},
@@ -108,6 +123,17 @@ var _ = Describe("Report", func() {
 			Expect(session.Out).To(Say(`\|\s+IDENTITY\s+\|\s+PATH\s+\|`))
 
 			Expect(session.Out).To(Say(`\|\s+host1\s+\|\s+/var/vcap/data/jobs/my.cnf\s+\|`))
+		})
+
+		It("shows hosts with duplicate ssh keys", func() {
+			session := runCommand("report", "--database", databasePath)
+
+			Expect(session).To(Exit(1))
+			Expect(session.Out).To(Say("Duplicate SSH keys:"))
+			Expect(session.Out).To(Say(`\|\s+IDENTITY\s+\|`))
+
+			Expect(session.Out).To(Say(`\|\s+host1\s+\|`))
+			Expect(session.Out).To(Say(`\|\s+host2\s+\|`))
 		})
 	})
 

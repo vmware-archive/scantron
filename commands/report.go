@@ -35,11 +35,20 @@ func (command *ReportCommand) Execute(args []string) error {
 		return err
 	}
 
+	sshKeysReport, err := report.BuildInsecureSshKeyReport(database)
+	if err != nil {
+		return err
+	}
+
 	printReport(rootReport, "Externally-accessible processes running as root:")
 	printReport(tlsReport, "Processes using non-approved protocols or cipher suites:")
 	printReport(filesReport, "World-readable files:")
+	printReport(sshKeysReport, "Duplicate SSH keys:")
 
-	if !rootReport.IsEmpty() || !tlsReport.IsEmpty() {
+	if !rootReport.IsEmpty() ||
+		!tlsReport.IsEmpty() ||
+		!filesReport.IsEmpty() ||
+		!sshKeysReport.IsEmpty() {
 		return errors.New("Violations were found!")
 	}
 

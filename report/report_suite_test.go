@@ -34,6 +34,12 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
 					Permissions: 0001,
 				},
 			},
+			SSHKeys: []scantron.SSHKey{
+				{
+					Type: "ssh-rsa",
+					Key:  "SSH KEY 1",
+				},
+			},
 			Services: []scantron.Process{
 				{
 					CommandName: "command1",
@@ -64,6 +70,12 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
 				{
 					Path:        "/root/world-everything",
 					Permissions: 0007,
+				},
+			},
+			SSHKeys: []scantron.SSHKey{
+				{
+					Type: "ssh-rsa",
+					Key:  "SSH KEY 1",
 				},
 			},
 			Services: []scantron.Process{
@@ -141,6 +153,12 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
 		},
 		{
 			Job: "host2",
+			SSHKeys: []scantron.SSHKey{
+				{
+					Type: "ssh-rsa",
+					Key:  "SSH KEY 2",
+				},
+			},
 			Services: []scantron.Process{
 				{
 					CommandName: "command2",
