@@ -17,7 +17,7 @@ func Direct(machine remotemachine.RemoteMachine) Scanner {
 	}
 }
 
-func (d *direct) Scan(logger scanlog.Logger) ([]ScanResult, error) {
+func (d *direct) Scan(logger scanlog.Logger) (ScanResult, error) {
 	hostLogger := logger.With(
 		"host", d.machine.Address(),
 	)
@@ -25,17 +25,17 @@ func (d *direct) Scan(logger scanlog.Logger) ([]ScanResult, error) {
 	systemInfo, err := scanMachine(hostLogger, d.machine)
 	if err != nil {
 		hostLogger.Errorf("Failed to scan machine: %s", err)
-		return nil, err
+		return ScanResult{}, err
 	}
 	defer d.machine.Close()
 
 	hostname, _, err := net.SplitHostPort(d.machine.Address())
 	if err != nil {
 		hostLogger.Errorf("Machine address was malformed: %s", err)
-		return nil, err
+		return ScanResult{}, err
 	}
 
-	scannedHost := buildScanResult(systemInfo, hostname, hostname)
+	scannedHost := buildJobResult(systemInfo, hostname, hostname)
 
-	return []ScanResult{scannedHost}, nil
+	return ScanResult{JobResults: []JobResult{scannedHost}}, nil
 }

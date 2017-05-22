@@ -19,17 +19,17 @@ func Bosh(director bosh.BoshDirector) Scanner {
 	}
 }
 
-func (s *boshScanner) Scan(logger scanlog.Logger) ([]ScanResult, error) {
+func (s *boshScanner) Scan(logger scanlog.Logger) (ScanResult, error) {
 	vms := s.director.VMs()
 
 	wg := &sync.WaitGroup{}
 	wg.Add(len(vms))
 
-	hosts := make(chan ScanResult)
+	hosts := make(chan JobResult)
 
 	err := s.director.Setup()
 	if err != nil {
-		return nil, err
+		return ScanResult{}, err
 	}
 	defer s.director.Cleanup()
 
@@ -58,7 +58,7 @@ func (s *boshScanner) Scan(logger scanlog.Logger) ([]ScanResult, error) {
 			}
 
 			boshName := fmt.Sprintf("%s/%s", vm.JobName, vm.ID)
-			hosts <- buildScanResult(systemInfo, boshName, ip)
+			hosts <- buildJobResult(systemInfo, boshName, ip)
 		}()
 	}
 
@@ -67,13 +67,13 @@ func (s *boshScanner) Scan(logger scanlog.Logger) ([]ScanResult, error) {
 		close(hosts)
 	}()
 
-	var scannedHosts []ScanResult
+	var scannedHosts []JobResult
 
 	for host := range hosts {
 		scannedHosts = append(scannedHosts, host)
 	}
 
-	return scannedHosts, nil
+	return ScanResult{JobResults: scannedHosts}, nil
 }
 
 func index(index *int) string {

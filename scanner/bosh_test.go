@@ -26,7 +26,7 @@ var _ = Describe("Bosh Scanning", func() {
 		vmInfo     []boshdirector.VMInfo
 		systemInfo scantron.SystemInfo
 
-		scanResults []scanner.ScanResult
+		scanResults scanner.ScanResult
 		scanErr     error
 	)
 
@@ -82,7 +82,7 @@ var _ = Describe("Bosh Scanning", func() {
 	})
 
 	It("returns a report from the deployment", func() {
-		Expect(scanResults).To(Equal([]scanner.ScanResult{
+		Expect(scanResults.JobResults).To(Equal([]scanner.JobResult{
 			{
 				IP:       "10.0.0.1",
 				Job:      "service/id",

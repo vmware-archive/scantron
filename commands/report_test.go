@@ -41,47 +41,49 @@ var _ = Describe("Report", func() {
 
 	Context("when there are violations", func() {
 		BeforeEach(func() {
-			hosts := []scanner.ScanResult{
-				{
-					Job: "host1",
-					Files: []scantron.File{
-						{
-							Path:        "/var/vcap/data/jobs/my.cnf",
-							Permissions: 0644,
+			hosts := scanner.ScanResult{
+				JobResults: []scanner.JobResult{
+					{
+						Job: "host1",
+						Files: []scantron.File{
+							{
+								Path:        "/var/vcap/data/jobs/my.cnf",
+								Permissions: 0644,
+							},
 						},
-					},
-					SSHKeys: []scantron.SSHKey{
-						{
-							Type: "ssh-rsa",
-							Key:  "key-1",
+						SSHKeys: []scantron.SSHKey{
+							{
+								Type: "ssh-rsa",
+								Key:  "key-1",
+							},
 						},
-					},
-					Services: []scantron.Process{
-						{
-							CommandName: "command1",
-							User:        "root",
-							Ports: []scantron.Port{
-								{
-									State:   "LISTEN",
-									Address: "10.0.5.21",
-									Number:  7890,
-									TLSInformation: scantron.TLSInformation{
-										Certificate: &scantron.Certificate{},
-										CipherInformation: scantron.CipherInformation{
-											"VersionSSL30": []string{"bad cipher"},
+						Services: []scantron.Process{
+							{
+								CommandName: "command1",
+								User:        "root",
+								Ports: []scantron.Port{
+									{
+										State:   "LISTEN",
+										Address: "10.0.5.21",
+										Number:  7890,
+										TLSInformation: scantron.TLSInformation{
+											Certificate: &scantron.Certificate{},
+											CipherInformation: scantron.CipherInformation{
+												"VersionSSL30": []string{"bad cipher"},
+											},
 										},
 									},
 								},
 							},
 						},
 					},
-				},
-				{
-					Job: "host2",
-					SSHKeys: []scantron.SSHKey{
-						{
-							Type: "ssh-rsa",
-							Key:  "key-1",
+					{
+						Job: "host2",
+						SSHKeys: []scantron.SSHKey{
+							{
+								Type: "ssh-rsa",
+								Key:  "key-1",
+							},
 						},
 					},
 				},
@@ -139,22 +141,24 @@ var _ = Describe("Report", func() {
 
 	Context("when there are no violations", func() {
 		BeforeEach(func() {
-			hosts := []scanner.ScanResult{
-				{
-					Job: "host1",
-					Services: []scantron.Process{
-						{
-							CommandName: "command1",
-							User:        "vcap",
-							Ports: []scantron.Port{
-								{
-									State:   "LISTEN",
-									Address: "10.0.5.21",
-									Number:  7890,
-									TLSInformation: scantron.TLSInformation{
-										Certificate: &scantron.Certificate{},
-										CipherInformation: scantron.CipherInformation{
-											"VersionTLS12": []string{"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"},
+			hosts := scanner.ScanResult{
+				JobResults: []scanner.JobResult{
+					{
+						Job: "host1",
+						Services: []scantron.Process{
+							{
+								CommandName: "command1",
+								User:        "vcap",
+								Ports: []scantron.Port{
+									{
+										State:   "LISTEN",
+										Address: "10.0.5.21",
+										Number:  7890,
+										TLSInformation: scantron.TLSInformation{
+											Certificate: &scantron.Certificate{},
+											CipherInformation: scantron.CipherInformation{
+												"VersionTLS12": []string{"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"},
+											},
 										},
 									},
 								},

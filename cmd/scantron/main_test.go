@@ -23,7 +23,7 @@ var _ = Describe("Main", func() {
 			databasePath string
 
 			mani  manifest.Manifest
-			hosts []scanner.ScanResult
+			hosts scanner.ScanResult
 		)
 
 		BeforeEach(func() {
@@ -42,12 +42,14 @@ var _ = Describe("Main", func() {
 			}
 
 			databasePath = filepath.Join(tmpdir, "database.db")
-			hosts = []scanner.ScanResult{
-				{
-					Job: "prefix-name-1",
-				},
-				{
-					Job: "prefix-name-2",
+			hosts = scanner.ScanResult{
+				JobResults: []scanner.JobResult{
+					{
+						Job: "prefix-name-1",
+					},
+					{
+						Job: "prefix-name-2",
+					},
 				},
 			}
 		})
@@ -99,9 +101,11 @@ var _ = Describe("Main", func() {
 
 		Context("when the audit fails", func() {
 			BeforeEach(func() {
-				hosts = []scanner.ScanResult{
-					{
-						Job: "not-the-right-prefix-name",
+				hosts = scanner.ScanResult{
+					JobResults: []scanner.JobResult{
+						{
+							Job: "not-the-right-prefix-name",
+						},
 					},
 				}
 			})

@@ -21,7 +21,7 @@ var _ = Describe("Direct Scanning", func() {
 
 		systemInfo scantron.SystemInfo
 
-		scanResults []scanner.ScanResult
+		scanResults scanner.ScanResult
 		scanErr     error
 	)
 
@@ -72,7 +72,7 @@ var _ = Describe("Direct Scanning", func() {
 	})
 
 	It("returns a report from the machine", func() {
-		Expect(scanResults).To(Equal([]scanner.ScanResult{
+		Expect(scanResults.JobResults).To(Equal([]scanner.JobResult{
 			{
 				IP:       "10.0.0.1",
 				Job:      "10.0.0.1",

@@ -11,10 +11,14 @@ import (
 )
 
 type Scanner interface {
-	Scan(scanlog.Logger) ([]ScanResult, error)
+	Scan(scanlog.Logger) (ScanResult, error)
 }
 
 type ScanResult struct {
+	JobResults []JobResult
+}
+
+type JobResult struct {
 	IP  string
 	Job string
 
@@ -23,8 +27,8 @@ type ScanResult struct {
 	SSHKeys  []scantron.SSHKey
 }
 
-func buildScanResult(host scantron.SystemInfo, jobName, address string) ScanResult {
-	return ScanResult{
+func buildJobResult(host scantron.SystemInfo, jobName, address string) JobResult {
+	return JobResult{
 		Job:      jobName,
 		IP:       address,
 		Services: host.Processes,

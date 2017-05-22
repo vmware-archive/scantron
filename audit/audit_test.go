@@ -20,7 +20,7 @@ var _ = Describe("Audit", func() {
 		database *db.Database
 		tmpdir   string
 
-		hosts []scanner.ScanResult
+		hosts scanner.ScanResult
 		mani  manifest.Manifest
 	)
 
@@ -71,36 +71,38 @@ var _ = Describe("Audit", func() {
 					},
 				}
 
-				hosts = []scanner.ScanResult{
-					{
-						Job: "host1",
-						Services: []scantron.Process{
-							{
-								CommandName: "command1",
-								User:        "root",
-								Ports: []scantron.Port{
-									{
-										Number: 1234,
-										State:  "LISTEN",
-									},
-									{
-										Number: 6789,
-										State:  "LISTEN",
+				hosts = scanner.ScanResult{
+					JobResults: []scanner.JobResult{
+						{
+							Job: "host1",
+							Services: []scantron.Process{
+								{
+									CommandName: "command1",
+									User:        "root",
+									Ports: []scantron.Port{
+										{
+											Number: 1234,
+											State:  "LISTEN",
+										},
+										{
+											Number: 6789,
+											State:  "LISTEN",
+										},
 									},
 								},
 							},
 						},
-					},
-					{
-						Job: "host2",
-						Services: []scantron.Process{
-							{
-								CommandName: "command2",
-								User:        "vcap",
-								Ports: []scantron.Port{
-									{
-										Number: 5432,
-										State:  "LISTEN",
+						{
+							Job: "host2",
+							Services: []scantron.Process{
+								{
+									CommandName: "command2",
+									User:        "vcap",
+									Ports: []scantron.Port{
+										{
+											Number: 5432,
+											State:  "LISTEN",
+										},
 									},
 								},
 							},
@@ -144,32 +146,34 @@ var _ = Describe("Audit", func() {
 					},
 				}
 
-				hosts = []scanner.ScanResult{
-					{
-						Job: "host1-1234567",
-						Services: []scantron.Process{
-							{
-								CommandName: "command1",
-								User:        "root",
-								Ports: []scantron.Port{
-									{
-										Number: 1234,
-										State:  "LISTEN",
+				hosts = scanner.ScanResult{
+					JobResults: []scanner.JobResult{
+						{
+							Job: "host1-1234567",
+							Services: []scantron.Process{
+								{
+									CommandName: "command1",
+									User:        "root",
+									Ports: []scantron.Port{
+										{
+											Number: 1234,
+											State:  "LISTEN",
+										},
 									},
 								},
 							},
 						},
-					},
-					{
-						Job: "host2-123456",
-						Services: []scantron.Process{
-							{
-								CommandName: "command1",
-								User:        "root",
-								Ports: []scantron.Port{
-									{
-										Number: 1234,
-										State:  "LISTEN",
+						{
+							Job: "host2-123456",
+							Services: []scantron.Process{
+								{
+									CommandName: "command1",
+									User:        "root",
+									Ports: []scantron.Port{
+										{
+											Number: 1234,
+											State:  "LISTEN",
+										},
 									},
 								},
 							},
@@ -210,17 +214,19 @@ var _ = Describe("Audit", func() {
 					},
 				}
 
-				hosts = []scanner.ScanResult{
-					{
-						Job: "host1",
-						Services: []scantron.Process{
-							{
-								CommandName: "command1",
-								User:        "root",
-								Ports: []scantron.Port{
-									{
-										Number: 1234,
-										State:  "LISTEN",
+				hosts = scanner.ScanResult{
+					JobResults: []scanner.JobResult{
+						{
+							Job: "host1",
+							Services: []scantron.Process{
+								{
+									CommandName: "command1",
+									User:        "root",
+									Ports: []scantron.Port{
+										{
+											Number: 1234,
+											State:  "LISTEN",
+										},
 									},
 								},
 							},
@@ -261,40 +267,42 @@ var _ = Describe("Audit", func() {
 					},
 				}
 
-				hosts = []scanner.ScanResult{
-					{
-						Job: "host1",
-						Services: []scantron.Process{
-							{
-								CommandName: "command1",
-								User:        "root",
-								Ports: []scantron.Port{
-									{
-										Number: 1234,
-										State:  "LISTEN",
-									},
-									{
-										Number: 2345,
-										State:  "LISTEN",
-									},
-									{
-										Number:  3456,
-										State:   "LISTEN",
-										Address: "127.0.0.1",
-									},
-									{
-										Number: 234,
-										State:  "CLOSE_WAIT",
+				hosts = scanner.ScanResult{
+					JobResults: []scanner.JobResult{
+						{
+							Job: "host1",
+							Services: []scantron.Process{
+								{
+									CommandName: "command1",
+									User:        "root",
+									Ports: []scantron.Port{
+										{
+											Number: 1234,
+											State:  "LISTEN",
+										},
+										{
+											Number: 2345,
+											State:  "LISTEN",
+										},
+										{
+											Number:  3456,
+											State:   "LISTEN",
+											Address: "127.0.0.1",
+										},
+										{
+											Number: 234,
+											State:  "CLOSE_WAIT",
+										},
 									},
 								},
-							},
-							{
-								CommandName: "command2",
-								User:        "root",
-								Ports: []scantron.Port{
-									{
-										Number: 57332,
-										State:  "LISTEN",
+								{
+									CommandName: "command2",
+									User:        "root",
+									Ports: []scantron.Port{
+										{
+											Number: 57332,
+											State:  "LISTEN",
+										},
 									},
 								},
 							},
@@ -339,17 +347,19 @@ var _ = Describe("Audit", func() {
 					},
 				}
 
-				hosts = []scanner.ScanResult{
-					{
-						Job: "host1",
-						Services: []scantron.Process{
-							{
-								CommandName: "command1",
-								User:        "root",
-								Ports: []scantron.Port{
-									{
-										Number: 1234,
-										State:  "LISTEN",
+				hosts = scanner.ScanResult{
+					JobResults: []scanner.JobResult{
+						{
+							Job: "host1",
+							Services: []scantron.Process{
+								{
+									CommandName: "command1",
+									User:        "root",
+									Ports: []scantron.Port{
+										{
+											Number: 1234,
+											State:  "LISTEN",
+										},
 									},
 								},
 							},
@@ -376,7 +386,7 @@ var _ = Describe("Audit", func() {
 
 	Context("when there are multiple reports in the database", func() {
 		var (
-			latestHosts []scanner.ScanResult
+			latestHosts scanner.ScanResult
 		)
 
 		JustBeforeEach(func() {
@@ -410,21 +420,23 @@ var _ = Describe("Audit", func() {
 				},
 			}
 
-			hosts = []scanner.ScanResult{
-				{
-					Job: "not-in-question-host",
-					Services: []scantron.Process{
-						{
-							CommandName: "command1",
-							User:        "root",
-							Ports: []scantron.Port{
-								{
-									Number: 1234,
-									State:  "LISTEN",
-								},
-								{
-									Number: 6789,
-									State:  "LISTEN",
+			hosts = scanner.ScanResult{
+				JobResults: []scanner.JobResult{
+					{
+						Job: "not-in-question-host",
+						Services: []scantron.Process{
+							{
+								CommandName: "command1",
+								User:        "root",
+								Ports: []scantron.Port{
+									{
+										Number: 1234,
+										State:  "LISTEN",
+									},
+									{
+										Number: 6789,
+										State:  "LISTEN",
+									},
 								},
 							},
 						},
@@ -432,28 +444,30 @@ var _ = Describe("Audit", func() {
 				},
 			}
 
-			latestHosts = []scanner.ScanResult{
-				{
-					Job: "latest-host-1",
-					Services: []scantron.Process{
-						{
-							CommandName: "command1",
-							User:        "root",
-							Ports: []scantron.Port{
-								port(1234),
-								port(6789),
+			latestHosts = scanner.ScanResult{
+				JobResults: []scanner.JobResult{
+					{
+						Job: "latest-host-1",
+						Services: []scantron.Process{
+							{
+								CommandName: "command1",
+								User:        "root",
+								Ports: []scantron.Port{
+									port(1234),
+									port(6789),
+								},
 							},
 						},
 					},
-				},
-				{
-					Job: "latest-host-2",
-					Services: []scantron.Process{
-						{
-							CommandName: "command2",
-							User:        "vcap",
-							Ports: []scantron.Port{
-								port(5432),
+					{
+						Job: "latest-host-2",
+						Services: []scantron.Process{
+							{
+								CommandName: "command2",
+								User:        "vcap",
+								Ports: []scantron.Port{
+									port(5432),
+								},
 							},
 						},
 					},

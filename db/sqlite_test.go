@@ -132,8 +132,8 @@ var _ = Describe("Sqlite", func() {
 	Describe("SaveReport", func() {
 		var (
 			database       *db.Database
-			hosts          []scanner.ScanResult
-			host           scanner.ScanResult
+			hosts          scanner.ScanResult
+			host           scanner.JobResult
 			sqliteDB       *sql.DB
 			certExpiration time.Time
 		)
@@ -161,7 +161,7 @@ var _ = Describe("Sqlite", func() {
 				certExpiration, err = time.Parse(time.RFC3339, "2012-11-01T22:08:41+00:00")
 				Expect(err).NotTo(HaveOccurred())
 
-				host = scanner.ScanResult{
+				host = scanner.JobResult{
 					IP:  "10.0.0.1",
 					Job: "custom_name/0",
 					Services: []scantron.Process{{
@@ -219,7 +219,7 @@ var _ = Describe("Sqlite", func() {
 					},
 				}
 
-				hosts = []scanner.ScanResult{host}
+				hosts = scanner.ScanResult{JobResults: []scanner.JobResult{host}}
 			})
 
 			It("records host information", func() {
@@ -486,14 +486,16 @@ var _ = Describe("Sqlite", func() {
 
 		Context("with a multiple services that have the same host and job", func() {
 			BeforeEach(func() {
-				hosts = []scanner.ScanResult{
-					{
-						IP:  "10.0.0.1",
-						Job: "custom_name/0",
-					},
-					{
-						IP:  "10.0.0.1",
-						Job: "custom_name/0",
+				hosts = scanner.ScanResult{
+					JobResults: []scanner.JobResult{
+						{
+							IP:  "10.0.0.1",
+							Job: "custom_name/0",
+						},
+						{
+							IP:  "10.0.0.1",
+							Job: "custom_name/0",
+						},
 					},
 				}
 			})
@@ -516,14 +518,16 @@ var _ = Describe("Sqlite", func() {
 
 		Context("with a multiple services on different hosts", func() {
 			BeforeEach(func() {
-				hosts = []scanner.ScanResult{
-					{
-						IP:  "10.0.0.1",
-						Job: "custom_name/0",
-					},
-					{
-						IP:  "10.0.0.2",
-						Job: "custom_name/0",
+				hosts = scanner.ScanResult{
+					JobResults: []scanner.JobResult{
+						{
+							IP:  "10.0.0.1",
+							Job: "custom_name/0",
+						},
+						{
+							IP:  "10.0.0.2",
+							Job: "custom_name/0",
+						},
 					},
 				}
 			})

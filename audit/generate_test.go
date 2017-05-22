@@ -23,7 +23,7 @@ var _ = Describe("Generate", func() {
 		tmpdir   string
 
 		writer *bytes.Buffer
-		hosts  []scanner.ScanResult
+		hosts  scanner.ScanResult
 	)
 
 	BeforeEach(func() {
@@ -51,7 +51,9 @@ var _ = Describe("Generate", func() {
 
 		Context("when hosts is empty", func() {
 			BeforeEach(func() {
-				hosts = []scanner.ScanResult{}
+				hosts = scanner.ScanResult{
+					JobResults: []scanner.JobResult{},
+				}
 			})
 
 			It("shows empty manifest", func() {
@@ -64,57 +66,59 @@ var _ = Describe("Generate", func() {
 
 		Context("when a single host exists", func() {
 			BeforeEach(func() {
-				hosts = []scanner.ScanResult{
-					{
-						Job: "My Host",
-						Services: []scantron.Process{
-							{
-								CommandName: "some process",
-								User:        "some user",
-								Ports: []scantron.Port{
-									port(22),
-									port(80),
-								},
-							},
-							{
-								CommandName: "another process",
-								User:        "another user",
-								Ports: []scantron.Port{
-									port(443),
-									port(8080),
-									{
-										Number:  1024,
-										Address: "127.0.0.1",
-									},
-									{
-										Number: 1024,
-										State:  "ESTABLISHED",
-									},
-									{
-										Number: 1012,
-										State:  "CLOSE_WAIT",
+				hosts = scanner.ScanResult{
+					JobResults: []scanner.JobResult{
+						{
+							Job: "My Host",
+							Services: []scantron.Process{
+								{
+									CommandName: "some process",
+									User:        "some user",
+									Ports: []scantron.Port{
+										port(22),
+										port(80),
 									},
 								},
-							},
-							{
-								CommandName: "non-listening process",
-								User:        "non-listening user",
-							},
-							{
-								CommandName: "only-bad-ports process",
-								User:        "only-bad-ports user",
-								Ports: []scantron.Port{
-									{
-										Number:  1024,
-										Address: "127.0.0.1",
+								{
+									CommandName: "another process",
+									User:        "another user",
+									Ports: []scantron.Port{
+										port(443),
+										port(8080),
+										{
+											Number:  1024,
+											Address: "127.0.0.1",
+										},
+										{
+											Number: 1024,
+											State:  "ESTABLISHED",
+										},
+										{
+											Number: 1012,
+											State:  "CLOSE_WAIT",
+										},
 									},
-									{
-										Number: 1024,
-										State:  "ESTABLISHED",
-									},
-									{
-										Number: 1012,
-										State:  "CLOSE_WAIT",
+								},
+								{
+									CommandName: "non-listening process",
+									User:        "non-listening user",
+								},
+								{
+									CommandName: "only-bad-ports process",
+									User:        "only-bad-ports user",
+									Ports: []scantron.Port{
+										{
+											Number:  1024,
+											Address: "127.0.0.1",
+										},
+										{
+											Number: 1024,
+											State:  "ESTABLISHED",
+										},
+										{
+											Number: 1012,
+											State:  "CLOSE_WAIT",
+										},
 									},
 								},
 							},
@@ -128,16 +132,16 @@ var _ = Describe("Generate", func() {
 				err := yaml.Unmarshal(writer.Bytes(), &m)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(m.Specs).To(HaveLen(1))
-				Expect(m.Specs[0].Prefix).To(Equal(hosts[0].Job))
+				Expect(m.Specs[0].Prefix).To(Equal(hosts.JobResults[0].Job))
 				Expect(m.Specs[0].Processes).To(ConsistOf(
 					manifest.Process{
-						Command: hosts[0].Services[0].CommandName,
-						User:    hosts[0].Services[0].User,
+						Command: hosts.JobResults[0].Services[0].CommandName,
+						User:    hosts.JobResults[0].Services[0].User,
 						Ports:   []manifest.Port{22, 80},
 					},
 					manifest.Process{
-						Command: hosts[0].Services[1].CommandName,
-						User:    hosts[0].Services[1].User,
+						Command: hosts.JobResults[0].Services[1].CommandName,
+						User:    hosts.JobResults[0].Services[1].User,
 						Ports:   []manifest.Port{443, 8080},
 					},
 				))
@@ -150,29 +154,31 @@ var _ = Describe("Generate", func() {
 
 		Context("when multiple hosts exists", func() {
 			BeforeEach(func() {
-				hosts = []scanner.ScanResult{
-					{
-						Job: "My Host",
-						Services: []scantron.Process{
-							{
-								CommandName: "some process",
-								User:        "some user",
-								Ports: []scantron.Port{
-									port(22),
-									port(80),
+				hosts = scanner.ScanResult{
+					JobResults: []scanner.JobResult{
+						{
+							Job: "My Host",
+							Services: []scantron.Process{
+								{
+									CommandName: "some process",
+									User:        "some user",
+									Ports: []scantron.Port{
+										port(22),
+										port(80),
+									},
 								},
 							},
 						},
-					},
-					{
-						Job: "My Other Host",
-						Services: []scantron.Process{
-							{
-								CommandName: "some other process",
-								User:        "some other user",
-								Ports: []scantron.Port{
-									port(443),
-									port(8080),
+						{
+							Job: "My Other Host",
+							Services: []scantron.Process{
+								{
+									CommandName: "some other process",
+									User:        "some other user",
+									Ports: []scantron.Port{
+										port(443),
+										port(8080),
+									},
 								},
 							},
 						},
@@ -185,17 +191,17 @@ var _ = Describe("Generate", func() {
 				err := yaml.Unmarshal(writer.Bytes(), &m)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(m.Specs).To(HaveLen(2))
-				Expect(m.Specs[0].Prefix).To(Equal(hosts[0].Job))
+				Expect(m.Specs[0].Prefix).To(Equal(hosts.JobResults[0].Job))
 				Expect(m.Specs[0].Processes).To(ConsistOf(manifest.Process{
-					Command: hosts[0].Services[0].CommandName,
-					User:    hosts[0].Services[0].User,
+					Command: hosts.JobResults[0].Services[0].CommandName,
+					User:    hosts.JobResults[0].Services[0].User,
 					Ports:   []manifest.Port{22, 80},
 				}))
 
-				Expect(m.Specs[1].Prefix).To(Equal(hosts[1].Job))
+				Expect(m.Specs[1].Prefix).To(Equal(hosts.JobResults[1].Job))
 				Expect(m.Specs[1].Processes).To(ConsistOf(manifest.Process{
-					Command: hosts[1].Services[0].CommandName,
-					User:    hosts[1].Services[0].User,
+					Command: hosts.JobResults[1].Services[0].CommandName,
+					User:    hosts.JobResults[1].Services[0].User,
 					Ports:   []manifest.Port{443, 8080},
 				}))
 			})
@@ -204,7 +210,7 @@ var _ = Describe("Generate", func() {
 
 	Context("when there are multiple reports in the database", func() {
 		var (
-			latestHosts []scanner.ScanResult
+			latestHosts scanner.ScanResult
 		)
 
 		JustBeforeEach(func() {
@@ -219,32 +225,36 @@ var _ = Describe("Generate", func() {
 		})
 
 		BeforeEach(func() {
-			hosts = []scanner.ScanResult{
-				{
-					Job: "My Host",
-					Services: []scantron.Process{
-						{
-							CommandName: "some process",
-							User:        "some user",
-							Ports: []scantron.Port{
-								port(22),
-								port(80),
+			hosts = scanner.ScanResult{
+				JobResults: []scanner.JobResult{
+					{
+						Job: "My Host",
+						Services: []scantron.Process{
+							{
+								CommandName: "some process",
+								User:        "some user",
+								Ports: []scantron.Port{
+									port(22),
+									port(80),
+								},
 							},
 						},
 					},
 				},
 			}
 
-			latestHosts = []scanner.ScanResult{
-				{
-					Job: "My Latest Host",
-					Services: []scantron.Process{
-						{
-							CommandName: "some latest process",
-							User:        "some latest user",
-							Ports: []scantron.Port{
-								port(2222),
-								port(8000),
+			latestHosts = scanner.ScanResult{
+				JobResults: []scanner.JobResult{
+					{
+						Job: "My Latest Host",
+						Services: []scantron.Process{
+							{
+								CommandName: "some latest process",
+								User:        "some latest user",
+								Ports: []scantron.Port{
+									port(2222),
+									port(8000),
+								},
 							},
 						},
 					},
@@ -257,11 +267,11 @@ var _ = Describe("Generate", func() {
 			err := yaml.Unmarshal(writer.Bytes(), &m)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(m.Specs).To(HaveLen(1))
-			Expect(m.Specs[0].Prefix).To(Equal(latestHosts[0].Job))
+			Expect(m.Specs[0].Prefix).To(Equal(latestHosts.JobResults[0].Job))
 			Expect(m.Specs[0].Processes).To(ConsistOf(
 				manifest.Process{
-					Command: latestHosts[0].Services[0].CommandName,
-					User:    latestHosts[0].Services[0].User,
+					Command: latestHosts.JobResults[0].Services[0].CommandName,
+					User:    latestHosts.JobResults[0].Services[0].User,
 					Ports:   []manifest.Port{2222, 8000},
 				},
 			))
