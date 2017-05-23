@@ -73,7 +73,15 @@ func (s *boshScanner) Scan(logger scanlog.Logger) (ScanResult, error) {
 		scannedHosts = append(scannedHosts, host)
 	}
 
-	return ScanResult{JobResults: scannedHosts}, nil
+	releaseResults := []ReleaseResult{}
+	for _, release := range s.director.Releases() {
+		releaseResults = append(releaseResults, ReleaseResult{Name: release.Name(), Version: release.Version().String()})
+	}
+
+	return ScanResult{
+		JobResults:     scannedHosts,
+		ReleaseResults: releaseResults,
+	}, nil
 }
 
 func index(index *int) string {

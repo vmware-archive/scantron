@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/cppforlife/go-semi-semantic/version"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	boshdirector "github.com/cloudfoundry/bosh-cli/director"
+	"github.com/cloudfoundry/bosh-cli/director/directorfakes"
 
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/bosh/boshfakes"
@@ -26,8 +28,11 @@ var _ = Describe("Bosh Scanning", func() {
 		vmInfo     []boshdirector.VMInfo
 		systemInfo scantron.SystemInfo
 
-		scanResults scanner.ScanResult
-		scanErr     error
+		release1, release2 *directorfakes.FakeRelease
+		releaseInfo        []boshdirector.Release
+
+		scanResult scanner.ScanResult
+		scanErr    error
 	)
 
 	BeforeEach(func() {
@@ -64,14 +69,30 @@ var _ = Describe("Bosh Scanning", func() {
 			},
 		}
 
+		release1 = &directorfakes.FakeRelease{}
+		release1.NameReturns("release-1")
+		version1, err := version.NewVersionFromString("1.1.1")
+		Expect(err).NotTo(HaveOccurred())
+		release1.VersionReturns(version1)
+
+		release2 = &directorfakes.FakeRelease{}
+		release2.NameReturns("release-2")
+		version2, err := version.NewVersionFromString("2.2.2")
+		Expect(err).NotTo(HaveOccurred())
+		release2.VersionReturns(version2)
+
+		releaseInfo = []boshdirector.Release{release1, release2}
+
 		boshScan = scanner.Bosh(director)
 	})
 
 	JustBeforeEach(func() {
 		director.VMsReturns(vmInfo)
 
+		director.ReleasesReturns(releaseInfo)
+
 		logger := scanlog.NewNopLogger()
-		scanResults, scanErr = boshScan.Scan(logger)
+		scanResult, scanErr = boshScan.Scan(logger)
 	})
 
 	It("cleans up the proc_scan binary after the scanning is done", func() {
@@ -82,12 +103,24 @@ var _ = Describe("Bosh Scanning", func() {
 	})
 
 	It("returns a report from the deployment", func() {
-		Expect(scanResults.JobResults).To(Equal([]scanner.JobResult{
-			{
-				IP:       "10.0.0.1",
-				Job:      "service/id",
-				Services: systemInfo.Processes,
-				Files:    systemInfo.Files,
+		Expect(scanResult).To(Equal(scanner.ScanResult{
+			ReleaseResults: []scanner.ReleaseResult{
+				{
+					Name:    "release-1",
+					Version: "1.1.1",
+				},
+				{
+					Name:    "release-2",
+					Version: "2.2.2",
+				},
+			},
+			JobResults: []scanner.JobResult{
+				{
+					IP:       "10.0.0.1",
+					Job:      "service/id",
+					Services: systemInfo.Processes,
+					Files:    systemInfo.Files,
+				},
 			},
 		}))
 	})

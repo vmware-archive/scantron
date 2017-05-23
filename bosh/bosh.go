@@ -22,6 +22,8 @@ type BoshDirector interface {
 	VMs() []boshdir.VMInfo
 	ConnectTo(scanlog.Logger, boshdir.VMInfo) remotemachine.RemoteMachine
 
+	Releases() []boshdir.Release
+
 	Setup() error
 	Cleanup() error
 }
@@ -64,6 +66,12 @@ func NewBoshDirector(
 		return nil, err
 	}
 
+	releases, err := deployment.Releases()
+	if err != nil {
+		logger.Errorf("Failed to list releases: %s", err)
+		return nil, err
+	}
+
 	uuidgen := boshuuid.NewGenerator()
 
 	sshOpts, privKey, err := boshdir.NewSSHOpts(uuidgen)
@@ -80,6 +88,7 @@ func NewBoshDirector(
 
 	return &boshDirector{
 		vms:        vmInfos,
+		releases:   releases,
 		sshOpts:    sshOpts,
 		deployment: deployment,
 		signer:     signer,
@@ -91,6 +100,8 @@ type boshDirector struct {
 	vms     []boshdir.VMInfo
 	sshOpts boshdir.SSHOpts
 
+	releases []boshdir.Release
+
 	signer ssh.Signer
 
 	deployment boshdir.Deployment
@@ -100,6 +111,10 @@ type boshDirector struct {
 
 func (d *boshDirector) VMs() []boshdir.VMInfo {
 	return d.vms
+}
+
+func (d *boshDirector) Releases() []boshdir.Release {
+	return d.releases
 }
 
 func (d *boshDirector) Cleanup() error {

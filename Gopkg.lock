@@ -1,4 +1,4 @@
-memo = "e97a80cb7d1216a9f88480fc3c822f75e129574d5d4cc5c0a1226d3b357c8555"
+memo = "a87d4fb687dd057a3a1b978348c62fbf0c667866d24b87bfe59807d62ab73a7c"
 
 [[projects]]
   name = "github.com/bmatcuk/doublestar"
@@ -20,7 +20,7 @@ memo = "e97a80cb7d1216a9f88480fc3c822f75e129574d5d4cc5c0a1226d3b357c8555"
 
 [[projects]]
   name = "github.com/cloudfoundry/bosh-cli"
-  packages = ["cmd/config","director","uaa","ui","ui/fmt","ui/table"]
+  packages = ["cmd/config","director","director/directorfakes","uaa","ui","ui/fmt","ui/table"]
   revision = "88aa7909a381596c84b68a2bcdb3cafbfe2a60cf"
   version = "v2.0.16"
 

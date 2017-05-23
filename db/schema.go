@@ -1,7 +1,7 @@
 package db
 
 // Update the schema version when the DDL changes
-const SchemaVersion = 4
+const SchemaVersion = 5
 
 const createDDL = `
 CREATE TABLE reports (
@@ -86,6 +86,11 @@ CREATE TABLE ssh_keys (
 
 CREATE TABLE version (
 	version integer
+);
+
+CREATE TABLE releases (
+	name string,
+	version string
 );
 
 INSERT INTO version(version) VALUES(?);

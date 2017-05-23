@@ -73,15 +73,16 @@ var _ = Describe("Sqlite", func() {
 			}
 
 			Expect(tables).To(ConsistOf(
-				"reports",
-				"hosts",
-				"processes",
-				"ports",
+				"env_vars",
 				"files",
+				"hosts",
+				"ports",
+				"processes",
+				"releases",
+				"reports",
+				"ssh_keys",
 				"tls_informations",
 				"tls_scan_errors",
-				"env_vars",
-				"ssh_keys",
 				"version",
 			))
 		})
@@ -138,12 +139,9 @@ var _ = Describe("Sqlite", func() {
 			certExpiration time.Time
 		)
 
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			var err error
 			database, err = db.CreateDatabase(dbPath)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = database.SaveReport(hosts)
 			Expect(err).NotTo(HaveOccurred())
 
 			sqliteDB, err = sql.Open("sqlite3", dbPath)
@@ -151,8 +149,8 @@ var _ = Describe("Sqlite", func() {
 		})
 
 		AfterEach(func() {
-			database.Close()
-			sqliteDB.Close()
+			Expect(database.Close()).To(Succeed())
+			Expect(sqliteDB.Close()).To(Succeed())
 		})
 
 		Context("with a single host", func() {
@@ -223,6 +221,9 @@ var _ = Describe("Sqlite", func() {
 			})
 
 			It("records host information", func() {
+				err := database.SaveReport(hosts)
+				Expect(err).NotTo(HaveOccurred())
+
 				rows, err := sqliteDB.Query(` SELECT name, ip FROM	hosts `)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -242,6 +243,9 @@ var _ = Describe("Sqlite", func() {
 			})
 
 			It("records process information", func() {
+				err := database.SaveReport(hosts)
+				Expect(err).NotTo(HaveOccurred())
+
 				rows, err := sqliteDB.Query(` SELECT pid, user, cmdline FROM processes `)
 				Expect(err).NotTo(HaveOccurred())
 				defer rows.Close()
@@ -261,6 +265,9 @@ var _ = Describe("Sqlite", func() {
 			})
 
 			It("records port information", func() {
+				err := database.SaveReport(hosts)
+				Expect(err).NotTo(HaveOccurred())
+
 				rows, err := sqliteDB.Query(`SELECT protocol, address, number FROM ports`)
 				Expect(err).NotTo(HaveOccurred())
 				defer rows.Close()
@@ -281,6 +288,9 @@ var _ = Describe("Sqlite", func() {
 			})
 
 			It("records tls informations", func() {
+				err := database.SaveReport(hosts)
+				Expect(err).NotTo(HaveOccurred())
+
 				rows, err := sqliteDB.Query(`
 				SELECT
 					cert_expiration,
@@ -321,6 +331,9 @@ var _ = Describe("Sqlite", func() {
 			})
 
 			It("records tls errors", func() {
+				err := database.SaveReport(hosts)
+				Expect(err).NotTo(HaveOccurred())
+
 				rows, err := sqliteDB.Query(`SELECT cert_scan_error FROM tls_scan_errors`)
 				Expect(err).NotTo(HaveOccurred())
 				defer rows.Close()
@@ -337,6 +350,9 @@ var _ = Describe("Sqlite", func() {
 			})
 
 			It("records env_vars info", func() {
+				err := database.SaveReport(hosts)
+				Expect(err).NotTo(HaveOccurred())
+
 				rows, err := sqliteDB.Query(`SELECT env_vars.var FROM env_vars`)
 				Expect(err).NotTo(HaveOccurred())
 				defer rows.Close()
@@ -351,6 +367,9 @@ var _ = Describe("Sqlite", func() {
 			})
 
 			It("records file information", func() {
+				err := database.SaveReport(hosts)
+				Expect(err).NotTo(HaveOccurred())
+
 				rows, err := sqliteDB.Query(`SELECT path, permissions FROM files`)
 				Expect(err).NotTo(HaveOccurred())
 				defer rows.Close()
@@ -369,6 +388,9 @@ var _ = Describe("Sqlite", func() {
 			})
 
 			It("records sshkey information", func() {
+				err := database.SaveReport(hosts)
+				Expect(err).NotTo(HaveOccurred())
+
 				rows, err := sqliteDB.Query(`SELECT ssh_keys.type, ssh_keys.key FROM ssh_keys`)
 				Expect(err).NotTo(HaveOccurred())
 				defer rows.Close()
@@ -401,6 +423,9 @@ var _ = Describe("Sqlite", func() {
 				})
 
 				It("records a process", func() {
+					err := database.SaveReport(hosts)
+					Expect(err).NotTo(HaveOccurred())
+
 					rows, err := sqliteDB.Query(`
 						SELECT hosts.name,
 									 hosts.ip,
@@ -439,6 +464,9 @@ var _ = Describe("Sqlite", func() {
 				})
 
 				It("does not store any tls information", func() {
+					err := database.SaveReport(hosts)
+					Expect(err).NotTo(HaveOccurred())
+
 					rows, err := sqliteDB.Query(`SELECT count(1) FROM tls_informations`)
 					Expect(err).NotTo(HaveOccurred())
 					defer rows.Close()
@@ -455,6 +483,9 @@ var _ = Describe("Sqlite", func() {
 			})
 
 			It("belongs to a report", func() {
+				err := database.SaveReport(hosts)
+				Expect(err).NotTo(HaveOccurred())
+
 				saveTime := time.Now()
 
 				rows, err := sqliteDB.Query(`
@@ -501,6 +532,9 @@ var _ = Describe("Sqlite", func() {
 			})
 
 			It("records only a single host", func() {
+				err := database.SaveReport(hosts)
+				Expect(err).NotTo(HaveOccurred())
+
 				rows, err := sqliteDB.Query(`SELECT COUNT(*) FROM hosts`)
 				Expect(err).NotTo(HaveOccurred())
 				defer rows.Close()
@@ -533,6 +567,9 @@ var _ = Describe("Sqlite", func() {
 			})
 
 			It("records both hosts", func() {
+				err := database.SaveReport(hosts)
+				Expect(err).NotTo(HaveOccurred())
+
 				rows, err := sqliteDB.Query(`SELECT COUNT(*) FROM hosts`)
 				Expect(err).NotTo(HaveOccurred())
 				defer rows.Close()
@@ -545,6 +582,54 @@ var _ = Describe("Sqlite", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(count).To(Equal(2))
+			})
+		})
+
+		Context("with release information", func() {
+			BeforeEach(func() {
+				hosts.ReleaseResults = []scanner.ReleaseResult{
+					{
+						Name:    "cf-release",
+						Version: "256",
+					},
+					{
+						Name:    "diego-release",
+						Version: "2.0.0",
+					},
+				}
+			})
+
+			It("records the release version and name", func() {
+				err := database.SaveReport(hosts)
+				Expect(err).NotTo(HaveOccurred())
+
+				rows, err := sqliteDB.Query(` SELECT name, version FROM	releases `)
+				Expect(err).NotTo(HaveOccurred())
+
+				defer rows.Close()
+				Expect(rows.Next()).To(BeTrue())
+
+				var releases []scanner.ReleaseResult
+
+				var name, version string
+				err = rows.Scan(&name, &version)
+				Expect(err).NotTo(HaveOccurred())
+				releases = append(releases, scanner.ReleaseResult{Name: name, Version: version})
+
+				Expect(rows.Next()).To(BeTrue())
+				err = rows.Scan(&name, &version)
+				Expect(err).NotTo(HaveOccurred())
+				releases = append(releases, scanner.ReleaseResult{Name: name, Version: version})
+
+				Expect(releases).To(ConsistOf(hosts.ReleaseResults))
+			})
+
+			It("returns an error when inserting fails", func() {
+				_, err := sqliteDB.Exec(`DROP TABLE releases`)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = database.SaveReport(hosts)
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})

@@ -15,7 +15,8 @@ type Scanner interface {
 }
 
 type ScanResult struct {
-	JobResults []JobResult
+	JobResults     []JobResult
+	ReleaseResults []ReleaseResult
 }
 
 type JobResult struct {
@@ -25,6 +26,11 @@ type JobResult struct {
 	Services []scantron.Process
 	Files    []scantron.File
 	SSHKeys  []scantron.SSHKey
+}
+
+type ReleaseResult struct {
+	Name    string
+	Version string
 }
 
 func buildJobResult(host scantron.SystemInfo, jobName, address string) JobResult {

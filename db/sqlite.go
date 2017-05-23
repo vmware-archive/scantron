@@ -86,7 +86,7 @@ func (db *Database) Version() int {
 	return version
 }
 
-func (db *Database) SaveReport(scans scanner.ScanResult) error {
+func (db *Database) SaveReport(report scanner.ScanResult) error {
 	tx, err := db.db.Begin()
 	if err != nil {
 		return err
@@ -105,7 +105,7 @@ func (db *Database) SaveReport(scans scanner.ScanResult) error {
 
 	reportID := int(insertedID)
 
-	for _, scan := range scans.JobResults {
+	for _, scan := range report.JobResults {
 		var hostID int
 		query := "SELECT id FROM hosts WHERE name = ? AND ip = ? AND report_id = ?"
 		err := tx.QueryRow(query, scan.Job, scan.IP, reportID).Scan(&hostID)
@@ -234,6 +234,13 @@ func (db *Database) SaveReport(scans scanner.ScanResult) error {
 					return err
 				}
 			}
+		}
+	}
+
+	for _, releaseReport := range report.ReleaseResults {
+		_, err := tx.Exec("INSERT INTO releases(name, version) VALUES (?, ?)", releaseReport.Name, releaseReport.Version)
+		if err != nil {
+			return err
 		}
 	}
 

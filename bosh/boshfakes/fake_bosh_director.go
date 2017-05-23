@@ -32,6 +32,15 @@ type FakeBoshDirector struct {
 	connectToReturnsOnCall map[int]struct {
 		result1 remotemachine.RemoteMachine
 	}
+	ReleasesStub        func() []boshdir.Release
+	releasesMutex       sync.RWMutex
+	releasesArgsForCall []struct{}
+	releasesReturns     struct {
+		result1 []boshdir.Release
+	}
+	releasesReturnsOnCall map[int]struct {
+		result1 []boshdir.Release
+	}
 	SetupStub        func() error
 	setupMutex       sync.RWMutex
 	setupArgsForCall []struct{}
@@ -143,6 +152,46 @@ func (fake *FakeBoshDirector) ConnectToReturnsOnCall(i int, result1 remotemachin
 	}{result1}
 }
 
+func (fake *FakeBoshDirector) Releases() []boshdir.Release {
+	fake.releasesMutex.Lock()
+	ret, specificReturn := fake.releasesReturnsOnCall[len(fake.releasesArgsForCall)]
+	fake.releasesArgsForCall = append(fake.releasesArgsForCall, struct{}{})
+	fake.recordInvocation("Releases", []interface{}{})
+	fake.releasesMutex.Unlock()
+	if fake.ReleasesStub != nil {
+		return fake.ReleasesStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.releasesReturns.result1
+}
+
+func (fake *FakeBoshDirector) ReleasesCallCount() int {
+	fake.releasesMutex.RLock()
+	defer fake.releasesMutex.RUnlock()
+	return len(fake.releasesArgsForCall)
+}
+
+func (fake *FakeBoshDirector) ReleasesReturns(result1 []boshdir.Release) {
+	fake.ReleasesStub = nil
+	fake.releasesReturns = struct {
+		result1 []boshdir.Release
+	}{result1}
+}
+
+func (fake *FakeBoshDirector) ReleasesReturnsOnCall(i int, result1 []boshdir.Release) {
+	fake.ReleasesStub = nil
+	if fake.releasesReturnsOnCall == nil {
+		fake.releasesReturnsOnCall = make(map[int]struct {
+			result1 []boshdir.Release
+		})
+	}
+	fake.releasesReturnsOnCall[i] = struct {
+		result1 []boshdir.Release
+	}{result1}
+}
+
 func (fake *FakeBoshDirector) Setup() error {
 	fake.setupMutex.Lock()
 	ret, specificReturn := fake.setupReturnsOnCall[len(fake.setupArgsForCall)]
@@ -230,6 +279,8 @@ func (fake *FakeBoshDirector) Invocations() map[string][][]interface{} {
 	defer fake.vMsMutex.RUnlock()
 	fake.connectToMutex.RLock()
 	defer fake.connectToMutex.RUnlock()
+	fake.releasesMutex.RLock()
+	defer fake.releasesMutex.RUnlock()
 	fake.setupMutex.RLock()
 	defer fake.setupMutex.RUnlock()
 	fake.cleanupMutex.RLock()
