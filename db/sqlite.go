@@ -238,7 +238,7 @@ func (db *Database) SaveReport(report scanner.ScanResult) error {
 	}
 
 	for _, releaseReport := range report.ReleaseResults {
-		_, err := tx.Exec("INSERT INTO releases(name, version) VALUES (?, ?)", releaseReport.Name, releaseReport.Version)
+		_, err := tx.Exec("INSERT INTO releases(name, version, report_id) VALUES (?, ?, ?)", releaseReport.Name, releaseReport.Version, reportID)
 		if err != nil {
 			return err
 		}

@@ -603,7 +603,7 @@ var _ = Describe("Sqlite", func() {
 				err := database.SaveReport(hosts)
 				Expect(err).NotTo(HaveOccurred())
 
-				rows, err := sqliteDB.Query(` SELECT name, version FROM	releases `)
+				rows, err := sqliteDB.Query(` SELECT name, version, report_id FROM	releases `)
 				Expect(err).NotTo(HaveOccurred())
 
 				defer rows.Close()
@@ -612,13 +612,16 @@ var _ = Describe("Sqlite", func() {
 				var releases []scanner.ReleaseResult
 
 				var name, version string
-				err = rows.Scan(&name, &version)
+				var reportId int
+				err = rows.Scan(&name, &version, &reportId)
 				Expect(err).NotTo(HaveOccurred())
+				Expect(reportId).To(Equal(1))
 				releases = append(releases, scanner.ReleaseResult{Name: name, Version: version})
 
 				Expect(rows.Next()).To(BeTrue())
-				err = rows.Scan(&name, &version)
+				err = rows.Scan(&name, &version, &reportId)
 				Expect(err).NotTo(HaveOccurred())
+				Expect(reportId).To(Equal(1))
 				releases = append(releases, scanner.ReleaseResult{Name: name, Version: version})
 
 				Expect(releases).To(ConsistOf(hosts.ReleaseResults))
