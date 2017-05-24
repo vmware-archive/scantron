@@ -19,4 +19,4 @@ EOF
   --ca-cert "$CA_CERT"
 
 ./scantron-binary/scantron report \
-  --database scantron-reports/reports.db
+  --database scantron-reports/reports.db || true
