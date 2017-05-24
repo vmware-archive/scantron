@@ -17,3 +17,6 @@ EOF
   --client "$BOSH_CLIENT_ID" \
   --client-secret "$BOSH_CLIENT_SECRET" \
   --ca-cert "$CA_CERT"
+
+./scantron-binary/scantron report \
+  --database scantron-reports/reports.db
