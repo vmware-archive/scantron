@@ -40,10 +40,9 @@ var _ = Describe("BuildWorldReadableFilesReport", func() {
 		r, err := report.BuildWorldReadableFilesReport(database)
 		Expect(err).NotTo(HaveOccurred())
 
+		Expect(r.Title).To(Equal("World-readable files:"))
 		Expect(r.Header).To(Equal([]string{"Identity", "Path"}))
-
 		Expect(r.Rows).To(HaveLen(2))
-
 		Expect(r.Rows).To(Equal([][]string{
 			{"host1", "/var/vcap/data/jobs/world-everything"},
 			{"host3", "/var/vcap/data/jobs/world-readable"},

@@ -109,11 +109,10 @@ var _ = Describe("Report", func() {
 
 			Expect(session).To(Exit(1))
 
-			Expect(session.Out).To(Say("Processes using non-approved protocols or cipher suites:"))
-			Expect(session.Out).To(Say(`\|\s+IDENTITY\s+\|\s+PORT\s+\|\s+PROCESS NAME\s+\|\s+REASON\s+\|`))
-
-			Expect(session.Out).To(Say(`\|\s+host1\s+\|\s+7890\s+\|\s+command1\s+\|\s+non-approved protocol\(s\)\s+\|`))
-			Expect(session.Out).To(Say(`\|\s+\|\s+\|\s+\|\s+non-approved cipher\(s\)\s+\|`))
+			Expect(session.Out).To(Say("Processes using non-approved SSL/TLS settings:"))
+			Expect(session.Out).To(Say(`\|\s+IDENTITY\s+\|\s+PORT\s+\|\s+PROCESS NAME\s+\|\s+NON-APPROVED PROTOCOL\(S\)\s+\|\s+NON-APPROVED CIPHER\(S\)\s+\|`))
+			Expect(session.Out).To(Say(`\|\s+host1\s+\|\s+7890\s+\|\s+command1\s+\|\s+VersionSSL30\s+\|\s+bad cipher\s+\|`))
+			Expect(session.Out).To(Say("If this is not an internal endpoint then please check with your PM and the security team before applying this change. This change is not backwards compatible."))
 		})
 
 		It("shows world-readable files", func() {
@@ -178,7 +177,7 @@ var _ = Describe("Report", func() {
 			Expect(session).To(Exit(0))
 
 			Expect(session.Out).To(Say("Externally-accessible processes running as root:"))
-			Expect(session.Out).To(Say("Processes using non-approved protocols or cipher suites:"))
+			Expect(session.Out).To(Say("Processes using non-approved SSL/TLS settings:"))
 		})
 	})
 })

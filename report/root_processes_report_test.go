@@ -40,10 +40,9 @@ var _ = Describe("BuildRootProcessesReport", func() {
 		r, err := report.BuildRootProcessesReport(database)
 		Expect(err).NotTo(HaveOccurred())
 
+		Expect(r.Title).To(Equal("Externally-accessible processes running as root:"))
 		Expect(r.Header).To(Equal([]string{"Identity", "Port", "Process Name"}))
-
 		Expect(r.Rows).To(HaveLen(4))
-
 		Expect(r.Rows).To(Equal([][]string{
 			{"host1", " 7890", "command1"},
 			{"host1", "19999", "command2"},

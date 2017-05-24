@@ -39,10 +39,9 @@ var _ = Describe("BuildInsecureSshKeyReport", func() {
 		r, err := report.BuildInsecureSshKeyReport(database)
 		Expect(err).NotTo(HaveOccurred())
 
+		Expect(r.Title).To(Equal("Duplicate SSH keys:"))
 		Expect(r.Header).To(Equal([]string{"Identity"}))
-
 		Expect(r.Rows).To(HaveLen(2))
-
 		Expect(r.Rows).To(Equal([][]string{
 			{"host1"},
 			{"host3"},

@@ -27,6 +27,7 @@ func BuildRootProcessesReport(database *db.Database) (Report, error) {
 	defer rows.Close()
 
 	report := Report{
+		Title:  "Externally-accessible processes running as root:",
 		Header: []string{"Identity", "Port", "Process Name"},
 	}
 

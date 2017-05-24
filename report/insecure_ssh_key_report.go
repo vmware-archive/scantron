@@ -20,6 +20,7 @@ func BuildInsecureSshKeyReport(database *db.Database) (Report, error) {
 	defer rows.Close()
 
 	report := Report{
+		Title:  "Duplicate SSH keys:",
 		Header: []string{"Identity"},
 	}
 

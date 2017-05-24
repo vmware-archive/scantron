@@ -40,14 +40,21 @@ var _ = Describe("BuildTLSViolationsReport", func() {
 		r, err := report.BuildTLSViolationsReport(database)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(r.Header).To(Equal([]string{"Identity", "Port", "Process Name", "Reason"}))
+		Expect(r.Title).To(Equal("Processes using non-approved SSL/TLS settings:"))
+
+		Expect(r.Header).To(Equal([]string{
+			"Identity",
+			"Port",
+			"Process Name",
+			"Non-approved Protocol(s)",
+			"Non-approved Cipher(s)",
+		}))
 
 		Expect(r.Rows).To(HaveLen(3))
-
 		Expect(r.Rows).To(Equal([][]string{
-			{"host1", " 7890", "command1", "non-approved protocol(s)"},
-			{"host1", " 8890", "command1", "non-approved cipher(s)"},
-			{"host3", " 7890", "command1", "non-approved protocol(s)\nnon-approved cipher(s)"},
+			{"host1", " 7890", "command1", "VersionSSL30", ""},
+			{"host1", " 8890", "command1", "", "Bad Cipher"},
+			{"host3", " 7890", "command1", "VersionSSL30", "Just the worst"},
 		}))
 	})
 })

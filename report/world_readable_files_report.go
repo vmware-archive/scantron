@@ -19,6 +19,7 @@ func BuildWorldReadableFilesReport(database *db.Database) (Report, error) {
 	defer rows.Close()
 
 	report := Report{
+		Title:  "World-readable files:",
 		Header: []string{"Identity", "Path"},
 	}
 

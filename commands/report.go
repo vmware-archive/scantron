@@ -2,10 +2,8 @@ package commands
 
 import (
 	"errors"
-	"fmt"
 	"os"
 
-	"github.com/olekukonko/tablewriter"
 	"github.com/pivotal-cf/scantron/db"
 	"github.com/pivotal-cf/scantron/report"
 )
@@ -40,10 +38,10 @@ func (command *ReportCommand) Execute(args []string) error {
 		return err
 	}
 
-	printReport(rootReport, "Externally-accessible processes running as root:")
-	printReport(tlsReport, "Processes using non-approved protocols or cipher suites:")
-	printReport(filesReport, "World-readable files:")
-	printReport(sshKeysReport, "Duplicate SSH keys:")
+	rootReport.WriteTo(os.Stdout)
+	tlsReport.WriteTo(os.Stdout)
+	filesReport.WriteTo(os.Stdout)
+	sshKeysReport.WriteTo(os.Stdout)
 
 	if !rootReport.IsEmpty() ||
 		!tlsReport.IsEmpty() ||
@@ -53,16 +51,4 @@ func (command *ReportCommand) Execute(args []string) error {
 	}
 
 	return nil
-}
-
-func printReport(r report.Report, title string) {
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader(r.Header)
-	table.AppendBulk(r.Rows)
-
-	fmt.Println(title)
-	fmt.Println("")
-	table.Render()
-	fmt.Println("")
-	fmt.Println("")
 }

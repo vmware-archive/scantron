@@ -51,7 +51,15 @@ func BuildTLSViolationsReport(database *db.Database) (Report, error) {
 	defer rows.Close()
 
 	report := Report{
-		Header: []string{"Identity", "Port", "Process Name", "Reason"},
+		Title: "Processes using non-approved SSL/TLS settings:",
+		Header: []string{
+			"Identity",
+			"Port",
+			"Process Name",
+			"Non-approved Protocol(s)",
+			"Non-approved Cipher(s)",
+		},
+		Footnote: "If this is not an internal endpoint then please check with your PM and the security team before applying this change. This change is not backwards compatible.",
 	}
 
 	for rows.Next() {
@@ -74,47 +82,37 @@ func BuildTLSViolationsReport(database *db.Database) (Report, error) {
 			return Report{}, err
 		}
 
-		isGoodProtocol, isGoodCipher := approvedProtocolsAndCiphers(cs)
+		nonApprovedProtocols, nonApprovedCiphers := approvedProtocolsAndCiphers(cs)
 
-		if isGoodProtocol && isGoodCipher {
+		if len(nonApprovedProtocols) == 0 && len(nonApprovedCiphers) == 0 {
 			continue
-		}
-
-		reasons := []string{}
-
-		if !isGoodProtocol {
-			reasons = append(reasons, "non-approved protocol(s)")
-		}
-
-		if !isGoodCipher {
-			reasons = append(reasons, "non-approved cipher(s)")
 		}
 
 		report.Rows = append(report.Rows, []string{
 			hostname,
 			fmt.Sprintf("%5d", portNumber),
 			processName,
-			strings.Join(reasons, "\n"),
+			strings.Join(nonApprovedProtocols, "\n"),
+			strings.Join(nonApprovedCiphers, "\n"),
 		})
 	}
 	return report, nil
 }
 
-func approvedProtocolsAndCiphers(cs cipherSuites) (bool, bool) {
-	isGoodProtocol := true
-	isGoodCipher := true
+func approvedProtocolsAndCiphers(cs cipherSuites) ([]string, []string) {
+	var nonApprovedProtocols, nonApprovedCiphers []string
 
-	for protocol, suites := range cs {
-		if !goodProtocols.contains(protocol) && len(suites) > 0 {
-			isGoodProtocol = false
+	for protocol, cipherSuites := range cs {
+		if !goodProtocols.contains(protocol) && len(cipherSuites) > 0 {
+			nonApprovedProtocols = append(nonApprovedProtocols, protocol)
 		}
 
-		for _, s := range suites {
-			if !goodCiphers.contains(s) {
-				isGoodCipher = false
+		for _, cipher := range cipherSuites {
+			if !goodCiphers.contains(cipher) {
+				nonApprovedCiphers = append(nonApprovedCiphers, cipher)
 			}
 		}
 	}
 
-	return isGoodProtocol, isGoodCipher
+	return nonApprovedProtocols, nonApprovedCiphers
 }
