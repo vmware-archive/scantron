@@ -9,6 +9,8 @@ import (
 	. "github.com/onsi/gomega/gbytes"
 	. "github.com/onsi/gomega/gexec"
 
+	"path/filepath"
+
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/db"
 	"github.com/pivotal-cf/scantron/scanner"
@@ -135,6 +137,57 @@ var _ = Describe("Report", func() {
 
 			Expect(session.Out).To(Say(`\|\s+host1\s+\|`))
 			Expect(session.Out).To(Say(`\|\s+host2\s+\|`))
+		})
+
+		Context("and the csv flag is provided", func() {
+			var (
+				path string
+				err  error
+			)
+
+			BeforeEach(func() {
+				var err error
+
+				path, err = ioutil.TempDir("", "csv-export")
+				Expect(err).NotTo(HaveOccurred())
+
+				err = os.RemoveAll(path)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				err = os.RemoveAll(path)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("outputs root process results to csv", func() {
+				session := runCommand("report", "--database", databasePath, "--csv", path)
+				Expect(session).To(Exit(1))
+
+				result, err := ioutil.ReadFile(filepath.Join(path, "root_process_report.csv"))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(string(result)).To(ContainSubstring("Identity,Port,Process Name"))
+				Expect(string(result)).To(ContainSubstring("host1,7890,command1"))
+
+				result, err = ioutil.ReadFile(filepath.Join(path, "tls_violation_report.csv"))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(string(result)).To(ContainSubstring("Identity,Port,Process Name,Non-approved Protocol(s),Non-approved Cipher(s)"))
+				Expect(string(result)).To(ContainSubstring("host1,7890,command1,VersionSSL30,bad cipher"))
+
+				result, err = ioutil.ReadFile(filepath.Join(path, "world_readable_files_report.csv"))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(string(result)).To(ContainSubstring("Identity,Path"))
+				Expect(string(result)).To(ContainSubstring("host1,/var/vcap/data/jobs/my.cnf"))
+
+				result, err = ioutil.ReadFile(filepath.Join(path, "insecure_sshkey_report.csv"))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(string(result)).To(ContainSubstring("Identity"))
+				Expect(string(result)).To(ContainSubstring("host1"))
+			})
 		})
 	})
 

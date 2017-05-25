@@ -44,10 +44,10 @@ var _ = Describe("BuildRootProcessesReport", func() {
 		Expect(r.Header).To(Equal([]string{"Identity", "Port", "Process Name"}))
 		Expect(r.Rows).To(HaveLen(4))
 		Expect(r.Rows).To(Equal([][]string{
-			{"host1", " 7890", "command1"},
+			{"host1", "7890", "command1"},
 			{"host1", "19999", "command2"},
 			{"host2", "19999", "command2"},
-			{"host3", " 7890", "command1"},
+			{"host3", "7890", "command1"},
 		}))
 	})
 })

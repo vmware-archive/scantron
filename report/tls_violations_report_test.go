@@ -52,9 +52,9 @@ var _ = Describe("BuildTLSViolationsReport", func() {
 
 		Expect(r.Rows).To(HaveLen(3))
 		Expect(r.Rows).To(Equal([][]string{
-			{"host1", " 7890", "command1", "VersionSSL30", ""},
-			{"host1", " 8890", "command1", "", "Bad Cipher"},
-			{"host3", " 7890", "command1", "VersionSSL30", "Just the worst"},
+			{"host1", "7890", "command1", "VersionSSL30", ""},
+			{"host1", "8890", "command1", "", "Bad Cipher"},
+			{"host3", "7890", "command1", "VersionSSL30", "Just the worst"},
 		}))
 	})
 })

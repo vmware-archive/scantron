@@ -90,10 +90,10 @@ func BuildTLSViolationsReport(database *db.Database) (Report, error) {
 
 		report.Rows = append(report.Rows, []string{
 			hostname,
-			fmt.Sprintf("%5d", portNumber),
+			fmt.Sprintf("%d", portNumber),
 			processName,
-			strings.Join(nonApprovedProtocols, "\n"),
-			strings.Join(nonApprovedCiphers, "\n"),
+			strings.Join(nonApprovedProtocols, " "),
+			strings.Join(nonApprovedCiphers, " "),
 		})
 	}
 	return report, nil
