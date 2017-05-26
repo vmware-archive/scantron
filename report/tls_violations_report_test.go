@@ -3,6 +3,7 @@ package report_test
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -13,16 +14,15 @@ import (
 
 var _ = Describe("BuildTLSViolationsReport", func() {
 	var (
-		databasePath string
-		database     *db.Database
+		databasePath, tmpdir string
+		database             *db.Database
 	)
 
 	BeforeEach(func() {
-		databaseFile, err := ioutil.TempFile("", "database.db")
+		var err error
+		tmpdir, err = ioutil.TempDir("", "report-test")
 		Expect(err).NotTo(HaveOccurred())
-		databaseFile.Close()
-
-		databasePath = databaseFile.Name()
+		databasePath = filepath.Join(tmpdir, "db.db")
 
 		database, err = createTestDatabase(databasePath)
 		Expect(err).NotTo(HaveOccurred())
@@ -32,7 +32,7 @@ var _ = Describe("BuildTLSViolationsReport", func() {
 		err := database.Close()
 		Expect(err).NotTo(HaveOccurred())
 
-		err = os.Remove(databasePath)
+		err = os.RemoveAll(tmpdir)
 		Expect(err).NotTo(HaveOccurred())
 	})
 

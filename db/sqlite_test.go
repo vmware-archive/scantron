@@ -35,9 +35,9 @@ var _ = Describe("Sqlite", func() {
 		os.RemoveAll(tmpdir)
 	})
 
-	Describe("OpenOrCreateDatabase", func() {
+	Describe("CreateDatabase", func() {
 		It("creates a new database file", func() {
-			database, err := db.OpenOrCreateDatabase(dbPath)
+			database, err := db.CreateDatabase(dbPath)
 			Expect(err).NotTo(HaveOccurred())
 			defer database.Close()
 
@@ -45,7 +45,7 @@ var _ = Describe("Sqlite", func() {
 		})
 
 		It("creates the required tables", func() {
-			database, err := db.OpenOrCreateDatabase(dbPath)
+			database, err := db.CreateDatabase(dbPath)
 			Expect(err).NotTo(HaveOccurred())
 			defer database.Close()
 
@@ -88,18 +88,55 @@ var _ = Describe("Sqlite", func() {
 		})
 
 		It("sets the schema version", func() {
-			database, err := db.OpenOrCreateDatabase(dbPath)
+			database, err := db.CreateDatabase(dbPath)
 			Expect(err).NotTo(HaveOccurred())
 			defer database.Close()
 
 			Expect(database.Version()).To(Equal(db.SchemaVersion))
 		})
 
-		It("returns an error when the database version is unknown", func() {
-			database, err := db.OpenOrCreateDatabase(dbPath)
+		Context("when the database already exists", func() {
+			BeforeEach(func() {
+				database, err := sql.Open("sqlite3", dbPath)
+				Expect(err).NotTo(HaveOccurred())
+
+				// We need to perform a query to create the database file
+				_, err = database.Exec("CREATE TABLE test (id integer);")
+				Expect(err).NotTo(HaveOccurred())
+				defer database.Close()
+			})
+
+			It("returns an error", func() {
+				_, err := db.CreateDatabase(dbPath)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("OpenDatabase", func() {
+		BeforeEach(func() {
+			database, err := db.CreateDatabase(dbPath)
 			Expect(err).NotTo(HaveOccurred())
 			database.Close()
+		})
 
+		It("returns a connection to the database", func() {
+			database, err := db.OpenDatabase(dbPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(database.Version()).To(Equal(db.SchemaVersion))
+		})
+
+		It("returns an error when the database does not exist", func() {
+			bogusPath := filepath.Join(tmpdir, "i am a bogus database")
+			os.RemoveAll(bogusPath)
+			_, err := db.OpenDatabase(bogusPath)
+			Expect(err).To(HaveOccurred())
+			_, err = os.Stat(bogusPath)
+			Expect(os.IsNotExist(err)).To(BeTrue())
+		})
+
+		It("returns an error when the database version is unknown", func() {
 			sqliteDB, err := sql.Open("sqlite3", dbPath)
 			Expect(err).NotTo(HaveOccurred())
 			defer sqliteDB.Close()
@@ -107,16 +144,12 @@ var _ = Describe("Sqlite", func() {
 			_, err = sqliteDB.Exec("DROP TABLE version")
 			Expect(err).NotTo(HaveOccurred())
 
-			database, err = db.OpenOrCreateDatabase(dbPath)
+			_, err = db.OpenDatabase(dbPath)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("The database version (0) does not match latest version"))
 		})
 
 		It("returns an error when the database version is old", func() {
-			database, err := db.OpenOrCreateDatabase(dbPath)
-			Expect(err).NotTo(HaveOccurred())
-			database.Close()
-
 			sqliteDB, err := sql.Open("sqlite3", dbPath)
 			Expect(err).NotTo(HaveOccurred())
 			defer sqliteDB.Close()
@@ -124,7 +157,7 @@ var _ = Describe("Sqlite", func() {
 			_, err = sqliteDB.Exec("UPDATE version SET version = -42")
 			Expect(err).NotTo(HaveOccurred())
 
-			database, err = db.OpenOrCreateDatabase(dbPath)
+			_, err = db.OpenDatabase(dbPath)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("The database version (-42) does not match latest version"))
 		})

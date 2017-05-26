@@ -54,7 +54,7 @@ func (command *BoshScanCommand) Execute(args []string) error {
 	}
 	defer director.Cleanup()
 
-	db, err := db.OpenOrCreateDatabase(command.Database)
+	db, err := db.CreateDatabase(command.Database)
 	if err != nil {
 		log.Fatalf("failed to create database: %s", err.Error())
 	}

@@ -52,8 +52,7 @@ func (command *DirectScanCommand) Execute(args []string) error {
 	remoteMachine := remotemachine.NewRemoteMachine(machine)
 	defer remoteMachine.Close()
 
-	db, err := db.OpenOrCreateDatabase(command.Database)
-
+	db, err := db.CreateDatabase(command.Database)
 	if err != nil {
 		log.Fatalf("failed to create database: %s", err.Error())
 	}

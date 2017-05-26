@@ -18,16 +18,15 @@ import (
 
 var _ = Describe("Report", func() {
 	var (
-		databasePath string
-		database     *db.Database
+		databasePath, tmpdir string
+		database             *db.Database
 	)
 
 	BeforeEach(func() {
-		databaseFile, err := ioutil.TempFile("", "database.db")
+		var err error
+		tmpdir, err = ioutil.TempDir("", "report-test")
 		Expect(err).NotTo(HaveOccurred())
-		databaseFile.Close()
-
-		databasePath = databaseFile.Name()
+		databasePath = filepath.Join(tmpdir, "db.db")
 
 		database, err = db.CreateDatabase(databasePath)
 		Expect(err).NotTo(HaveOccurred())
@@ -37,7 +36,7 @@ var _ = Describe("Report", func() {
 		err := database.Close()
 		Expect(err).NotTo(HaveOccurred())
 
-		err = os.Remove(databasePath)
+		err = os.RemoveAll(tmpdir)
 		Expect(err).NotTo(HaveOccurred())
 	})
 

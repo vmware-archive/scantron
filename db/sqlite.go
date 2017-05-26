@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -22,17 +23,15 @@ func (d *Database) DB() *sql.DB {
 	return d.db
 }
 
-func OpenOrCreateDatabase(path string) (*Database, error) {
-	_, err := os.Stat(path)
-
-	if os.IsNotExist(err) {
-		return CreateDatabase(path)
-	} else {
-		return OpenDatabase(path)
-	}
-}
-
 func CreateDatabase(path string) (*Database, error) {
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, errors.New("database already exists")
+	}
+
 	database, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, err
@@ -47,6 +46,10 @@ func CreateDatabase(path string) (*Database, error) {
 }
 
 func OpenDatabase(path string) (*Database, error) {
+	if _, err := os.Stat(path); err != nil {
+		return nil, err
+	}
+
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, err
