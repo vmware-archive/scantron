@@ -1,0 +1,9 @@
+language: go
+sudo: true
+
+go:
+- 1.x
+
+script:
+- go install github.com/onsi/ginkgo/ginkgo
+- ginkgo -r -p --failOnPending -skipPackage "grpcacl"

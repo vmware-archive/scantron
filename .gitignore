@@ -1,12 +1,14 @@
 .idea
 .DS_Store
 /spec/examples.txt
-vendor
 
 # Scanning Artifacts
 /scantron
 /proc_scan
 /*.db
+cmd/proc_scan/proc_scan
+cmd/scantron/scantron
+
 
 # go-bindata
 /data/proc_scan
