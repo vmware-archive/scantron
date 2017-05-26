@@ -1,7 +1,7 @@
 package db
 
 // Update the schema version when the DDL changes
-const SchemaVersion = 6
+const SchemaVersion = 7
 
 const createDDL = `
 CREATE TABLE hosts (
