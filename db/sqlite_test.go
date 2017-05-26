@@ -79,7 +79,6 @@ var _ = Describe("Sqlite", func() {
 				"ports",
 				"processes",
 				"releases",
-				"reports",
 				"ssh_keys",
 				"tls_informations",
 				"tls_scan_errors",
@@ -514,38 +513,6 @@ var _ = Describe("Sqlite", func() {
 					Expect(count).To(BeZero())
 				})
 			})
-
-			It("belongs to a report", func() {
-				err := database.SaveReport(hosts)
-				Expect(err).NotTo(HaveOccurred())
-
-				saveTime := time.Now()
-
-				rows, err := sqliteDB.Query(`
-				SELECT reports.id,
-				       reports.timestamp,
-				       hosts.name,
-				       hosts.ip
-				FROM   hosts,
-							 reports
-				WHERE  hosts.report_id = reports.id`)
-				Expect(err).NotTo(HaveOccurred())
-				defer rows.Close()
-
-				hasRows := rows.Next()
-				Expect(hasRows).To(BeTrue())
-
-				var reportId, name, ip string
-				var reportTime time.Time
-
-				err = rows.Scan(&reportId, &reportTime, &name, &ip)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(reportId).To(Equal("1"))
-				Expect(reportTime).Should(BeTemporally("~", saveTime.UTC(), time.Second))
-				Expect(name).To(Equal("custom_name/0"))
-				Expect(ip).To(Equal("10.0.0.1"))
-			})
 		})
 
 		Context("with a multiple services that have the same host and job", func() {
@@ -636,7 +603,7 @@ var _ = Describe("Sqlite", func() {
 				err := database.SaveReport(hosts)
 				Expect(err).NotTo(HaveOccurred())
 
-				rows, err := sqliteDB.Query(` SELECT name, version, report_id FROM	releases `)
+				rows, err := sqliteDB.Query(` SELECT name, version FROM	releases `)
 				Expect(err).NotTo(HaveOccurred())
 
 				defer rows.Close()
@@ -645,16 +612,13 @@ var _ = Describe("Sqlite", func() {
 				var releases []scanner.ReleaseResult
 
 				var name, version string
-				var reportId int
-				err = rows.Scan(&name, &version, &reportId)
+				err = rows.Scan(&name, &version)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(reportId).To(Equal(1))
 				releases = append(releases, scanner.ReleaseResult{Name: name, Version: version})
 
 				Expect(rows.Next()).To(BeTrue())
-				err = rows.Scan(&name, &version, &reportId)
+				err = rows.Scan(&name, &version)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(reportId).To(Equal(1))
 				releases = append(releases, scanner.ReleaseResult{Name: name, Version: version})
 
 				Expect(releases).To(ConsistOf(hosts.ReleaseResults))

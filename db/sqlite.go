@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	// Include SQLite3 for database.
 	_ "github.com/mattn/go-sqlite3"
@@ -96,33 +95,21 @@ func (db *Database) SaveReport(report scanner.ScanResult) error {
 	}
 	defer tx.Rollback()
 
-	res, err := tx.Exec("INSERT INTO reports(timestamp) VALUES (?)", time.Now())
-	if err != nil {
-		return err
-	}
-
-	insertedID, err := res.LastInsertId()
-	if err != nil {
-		return err
-	}
-
-	reportID := int(insertedID)
-
 	for _, scan := range report.JobResults {
 		var hostID int
-		query := "SELECT id FROM hosts WHERE name = ? AND ip = ? AND report_id = ?"
-		err := tx.QueryRow(query, scan.Job, scan.IP, reportID).Scan(&hostID)
+		query := "SELECT id FROM hosts WHERE name = ? AND ip = ?"
+		err := tx.QueryRow(query, scan.Job, scan.IP).Scan(&hostID)
 		if err != nil {
 			if err != sql.ErrNoRows {
 				return err
 			}
 
-			res, err = tx.Exec("INSERT INTO hosts(name, ip, report_id) VALUES (?, ?, ?)", scan.Job, scan.IP, reportID)
+			res, err := tx.Exec("INSERT INTO hosts(name, ip) VALUES (?, ?)", scan.Job, scan.IP)
 			if err != nil {
 				return err
 			}
 
-			insertedID, err = res.LastInsertId()
+			insertedID, err := res.LastInsertId()
 			if err != nil {
 				return err
 			}
@@ -241,7 +228,7 @@ func (db *Database) SaveReport(report scanner.ScanResult) error {
 	}
 
 	for _, releaseReport := range report.ReleaseResults {
-		_, err := tx.Exec("INSERT INTO releases(name, version, report_id) VALUES (?, ?, ?)", releaseReport.Name, releaseReport.Version, reportID)
+		_, err := tx.Exec("INSERT INTO releases(name, version) VALUES (?, ?)", releaseReport.Name, releaseReport.Version)
 		if err != nil {
 			return err
 		}

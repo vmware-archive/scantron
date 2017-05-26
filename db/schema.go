@@ -4,19 +4,11 @@ package db
 const SchemaVersion = 6
 
 const createDDL = `
-CREATE TABLE reports (
-	id integer PRIMARY KEY AUTOINCREMENT,
-	timestamp datetime,
-	UNIQUE(timestamp)
-);
-
 CREATE TABLE hosts (
 	id integer PRIMARY KEY AUTOINCREMENT,
-	report_id integer,
 	name text,
 	ip text,
-	UNIQUE(ip, name, report_id)
-	FOREIGN KEY(report_id) REFERENCES reports(id)
+	UNIQUE(ip, name)
 );
 
 CREATE TABLE processes (
@@ -90,9 +82,7 @@ CREATE TABLE version (
 
 CREATE TABLE releases (
 	name string,
-	version string,
-	report_id integer,
-	FOREIGN KEY(report_id) REFERENCES reports(id)
+	version string
 );
 
 INSERT INTO version(version) VALUES(?);

@@ -12,12 +12,7 @@ import (
 func GenerateManifest(writer io.Writer, db *sql.DB) error {
 	m := manifest.Manifest{}
 
-	latestReportId, err := latestReportID(db)
-	if err != nil {
-		return err
-	}
-
-	specs, err := getSpecsFor(db, latestReportId)
+	specs, err := getSpecsFor(db)
 	if err != nil {
 		return err
 	}
@@ -32,29 +27,8 @@ func GenerateManifest(writer io.Writer, db *sql.DB) error {
 	return err
 }
 
-func latestReportID(db *sql.DB) (int, error) {
-	var latestReportId int
-
-	err := db.QueryRow(`
-			SELECT id
-			FROM reports
-			ORDER BY timestamp DESC
-			LIMIT 1
-	`).Scan(&latestReportId)
-
-	if err != nil {
-		return 0, err
-	}
-
-	return latestReportId, nil
-}
-
-func getSpecsFor(db *sql.DB, latestReportId int) ([]manifest.Spec, error) {
-	rows, err := db.Query(`
-			SELECT hosts.id, hosts.name
-			FROM hosts
-			WHERE hosts.report_id = ?
-	`, latestReportId)
+func getSpecsFor(db *sql.DB) ([]manifest.Spec, error) {
+	rows, err := db.Query(`SELECT hosts.id, hosts.name FROM hosts`)
 
 	if err != nil {
 		return nil, err
