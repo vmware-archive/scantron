@@ -1,4 +1,4 @@
-memo = "a87d4fb687dd057a3a1b978348c62fbf0c667866d24b87bfe59807d62ab73a7c"
+memo = "45afa35cb767566afb08003896db04c0e804b395f6e1f0112e0ad8fdccc03532"
 
 [[projects]]
   name = "github.com/bmatcuk/doublestar"

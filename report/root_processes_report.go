@@ -1,8 +1,8 @@
 package report
 
 import (
-	"github.com/pivotal-cf/scantron/db"
 	"fmt"
+	"github.com/pivotal-cf/scantron/db"
 )
 
 func BuildRootProcessesReport(database *db.Database) (Report, error) {
@@ -44,7 +44,7 @@ func BuildRootProcessesReport(database *db.Database) (Report, error) {
 
 		report.Rows = append(report.Rows, []string{
 			hostname,
-			fmt.Sprintf("%d",portNumber),
+			fmt.Sprintf("%d", portNumber),
 			processName,
 		})
 	}
