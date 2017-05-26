@@ -15,4 +15,4 @@ outputs:
   path: scantron-binary
 
 run:
-  path: go/src/github.com/pivotal-cf/scantron/ci/script/ci
+  path: go/src/github.com/pivotal-cf/scantron/ci/scripts/ci
