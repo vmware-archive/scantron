@@ -6,7 +6,7 @@ set -e -u
 date +%Y-%m-%d > release-params/tag-name
 
 # set tag commit
-git --git-dir="scantron/.git" rev-parse HEAD > ../release-params/commit-sha
+git --git-dir="scantron/.git" rev-parse HEAD > release-params/commit-sha
 
 # set release name
 date "+%b %e, %Y" > release-params/release-name
