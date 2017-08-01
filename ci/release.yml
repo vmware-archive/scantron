@@ -8,6 +8,7 @@ image_resource:
 
 inputs:
 - name: scantron
+- name: scantron-binary
 - name: version
 
 outputs:

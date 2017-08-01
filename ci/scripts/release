@@ -12,3 +12,6 @@ git --git-dir="scantron/.git" rev-parse HEAD > release-params/commit-sha
 
 # set release name
 date "Scantron ${version}" > release-params/release-name
+
+# set executable name
+cp scantron-binary/scantron release-params/scantron_linux_amd64
