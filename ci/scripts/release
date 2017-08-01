@@ -2,11 +2,13 @@
 
 set -e -u
 
+version=$(cat version/version)
+
 # set tag name
-date +%Y-%m-%d > release-params/tag-name
+echo "v${version}" > release-params/tag-name
 
 # set tag commit
 git --git-dir="scantron/.git" rev-parse HEAD > release-params/commit-sha
 
 # set release name
-date "+%b %e, %Y" > release-params/release-name
+date "Scantron ${version}" > release-params/release-name

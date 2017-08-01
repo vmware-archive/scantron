@@ -8,6 +8,7 @@ image_resource:
 
 inputs:
 - name: scantron
+- name: version
 
 outputs:
 - name: release-params
