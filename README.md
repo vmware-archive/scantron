@@ -63,20 +63,6 @@ any error, audit highlights the mismatched processes, ports, and/or permissions
 and returns with exit code 3. If audit does not have any errors, it will return
 with exit code 0.
 
-## development
-
-### building
-
-1. Install dep, the vendor package manager: https://github.com/golang/dep
-2. `go get github.com/pivotal-cf/scantron`
-3. `cd $GOPATH/src/github.com/pivotal-cf/scantron && dep ensure`
-4. `./scripts/build`
-
-### testing
-
-1. `./scripts/test`
-2. There is no step 2.
-
 ## notes
 
 ### scan filter
@@ -167,3 +153,17 @@ specs:
     user: root
     ignore_ports: true
 ```
+
+## development
+
+### building
+
+1. Install dep, the vendor package manager: https://github.com/golang/dep
+2. `go get github.com/pivotal-cf/scantron`
+3. `cd $GOPATH/src/github.com/pivotal-cf/scantron && dep ensure`
+4. `./scripts/build`
+
+### testing
+
+1. `./scripts/test`
+2. There is no step 2.
