@@ -1,6 +1,6 @@
 # scantron
 
-> scan BOSH deployments for security vulnerabilities
+> scan machines for unexpected processes, ports, or permissions
 
 ## purpose
 
