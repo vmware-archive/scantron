@@ -2,9 +2,19 @@
 
 > scan BOSH deployments for security vulnerabilities
 
+## purpose
+
+Scantron is a tool for performing a census of processes, ports, protocols, and
+file permissions on VMs. Scans can be performed against single VMs, or against
+all VMs in a bosh deployment. The intention is to provide a point-in-time scan
+which can be analysed offline. Scans are stored in a SQLite database. The CLI
+provides a summary report format or the SQLite db can be queried directly.
+
 ## usage
 
-### scanning machines
+Whether you scan a single host (`direct-scan`) or all VMs in a bosh deployment
+(`bosh-scan`) the results of the scan will be stored in a SQLite file, or
+appended to an existing file.
 
 #### single host scan
 
@@ -45,23 +55,31 @@ jumpbox is normally a good machine to run this from.
 
 ### checking reports
 
-After you have generated the report you can check it for compliance (no
-unexpected hosts or ports) against a known good manifest. These manifests can
-be quite lengthy! There is a `scantron` subcommand you can run in order to
-initially generate one.
+After you run a scan a report is saved to a SQLite database, by default
+`database.db`.
 
-     scantron generate-manifest > bosh.yml
+With this report it is possible to do the following:
 
-Some hand-tweaking may be necessary to handle non-deterministic ports in the
-generated manifest file. The resulting manifest file can be checked against a
-report.
+* Generate a summary of the findings.
 
-     scantron audit --manifest bosh.yml
+        scantron report
 
-Audit outputs the audited hosts along with either `err` or `ok`. When there's
-any error, audit highlights the mismatched processes, ports, and/or permissions
-and returns with exit code 3. If audit does not have any errors, it will return
-with exit code 0.
+* Check to see if any unexpected processes or ports are present in your
+  cluster.
+
+        scantron audit --manifest manifest-of-expected-things.yml
+
+The output from `audit` lists the audited host(s) along with either `err` or
+`ok`.  Where there are discrepancies with the manifest are highlighted. If
+there are any discrepancies `audit` the exit code is `3`, otherwise it is `0`.
+
+* Generate a manifest (preliminary) of "known good" ports and processes. 
+
+         scantron generate-manifest > manifest.yml
+
+**Note:** Some hand-tweaking may be necessary if there are non-deterministic
+ports in your cluster as the generated manifest will contain exactly those
+found in the latest scan.
 
 ## notes
 
