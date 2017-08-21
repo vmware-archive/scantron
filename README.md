@@ -71,7 +71,7 @@ With this report it is possible to do the following:
 
 The output from `audit` lists the audited host(s) along with either `err` or
 `ok`.  Where there are discrepancies with the manifest are highlighted. If
-there are any discrepancies `audit` the exit code is `3`, otherwise it is `0`.
+there are any discrepancies the exit code will be `3`, otherwise it is `0`.
 
 * Generate a manifest (preliminary) of "known good" ports and processes. 
 
