@@ -7,17 +7,7 @@ OUTPUT=$PWD/scantron-binary
 export GOPATH=$PWD/go
 export PATH=$GOPATH/bin:$PATH
 
-go get -u github.com/golang/dep/...
-
-pushd "${GOPATH}/src/github.com/golang/dep" > /dev/null
-  # known good version of golang/dep
-  git checkout b839831
-  go install ./...
-popd > /dev/null
-
 pushd "${GOPATH}/src/github.com/pivotal-cf/scantron" > /dev/null
-  dep ensure
-
   go install ./vendor/github.com/onsi/ginkgo/ginkgo
 
   ./scripts/test
