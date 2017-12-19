@@ -86,10 +86,6 @@ var _ = Describe("TLS Scan", func() {
 	})
 
 	Context("scanning a server that supports mutual TLS", func() {
-		var (
-			listener net.Listener
-		)
-
 		BeforeEach(func() {
 			ca, err := certtest.BuildCA("tlsscan")
 			Expect(err).NotTo(HaveOccurred())
@@ -117,23 +113,12 @@ var _ = Describe("TLS Scan", func() {
 				Certificates: []tls.Certificate{tlsCert},
 			}
 
-			// Curiously, the mutual TLS configuration above does not play well with
-			// the httptest.Server. Creating the listener ourselves works.
-			listener, err = tls.Listen("tcp", "127.0.0.1:0", config)
-			Expect(err).NotTo(HaveOccurred())
-
-			go http.Serve(listener, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				fmt.Fprintln(w, "hello?")
-			}))
-		})
-
-		AfterEach(func() {
-			listener.Close()
+			server.TLS = config
+			server.StartTLS()
 		})
 
 		It("performs a scan", func() {
-			host, port, err := net.SplitHostPort(listener.Addr().String())
-			Expect(err).NotTo(HaveOccurred())
+			host, port := hostport(server.URL)
 
 			result, err := tlsscan.Scan(logger, host, port)
 			Expect(err).NotTo(HaveOccurred())
