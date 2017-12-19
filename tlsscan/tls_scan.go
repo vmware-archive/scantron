@@ -42,25 +42,24 @@ func Scan(logger scanlog.Logger, host string, port string) (scantron.CipherInfor
 
 	for _, version := range tls.ProtocolVersions {
 		for _, cipherSuite := range tls.CipherSuites {
-			go func(version tls.ProtocolVersion, cipherSuite tls.CipherSuite) {
-				defer wg.Done()
+			scanLogger := logger.With(
+				"host", host,
+				"port", port,
+				"version", version.Name,
+				"suite", cipherSuite.Name,
+			)
 
-				scanLogger := logger.With(
-					"host", host,
-					"port", port,
-					"version", version.Name,
-					"suite", cipherSuite.Name,
-				)
+			if err := sem.Acquire(context.Background(), 1); err != nil {
+				scanLogger.Errorf("Failed to acquire lock: %q", err)
+			}
 
-				if err := sem.Acquire(context.Background(), 1); err != nil {
-					scanLogger.Errorf("Failed to acquire lock:", err)
-					return
-				}
+			go func(logger scanlog.Logger, version tls.ProtocolVersion, cipherSuite tls.CipherSuite) {
 				defer sem.Release(1)
+				defer wg.Done()
 
 				found, err := scan(host, port, version, cipherSuite)
 				if err != nil {
-					scanLogger.Debugf("Remote server did not respond affirmitavely to request: %s", err)
+					logger.Debugf("Remote server did not respond affirmitavely to request: %s", err)
 					return
 				}
 
@@ -70,7 +69,7 @@ func Scan(logger scanlog.Logger, host string, port string) (scantron.CipherInfor
 						suite:   cipherSuite.Name,
 					}
 				}
-			}(version, cipherSuite)
+			}(scanLogger, version, cipherSuite)
 		}
 	}
 
@@ -90,15 +89,13 @@ func scan(host, port string, version tls.ProtocolVersion, cipherSuite tls.Cipher
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
-	address := fmt.Sprintf("%s:%s", host, port)
-
 	config := tls.Config{
 		Version:     version.ID,
 		CipherSuite: cipherSuite.ID,
 	}
 
-	err := tls.Dial(ctx, "tcp", address, &config)
-	if err != nil {
+	address := fmt.Sprintf("%s:%s", host, port)
+	if err := tls.Dial(ctx, "tcp", address, &config); err != nil {
 		if strings.HasPrefix(err.Error(), "tls: remote error") {
 			return false, nil
 		}
