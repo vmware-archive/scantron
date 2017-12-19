@@ -26,15 +26,21 @@ func Dial(ctx context.Context, network, addr string, config *Config) error {
 
 	conn := Client(rawConn, config)
 
-	err = conn.Handshake()
-	if err != nil {
-		rawConn.Close()
-		return err
-	}
+	errs := make(chan error, 1)
+	go func() {
+		errs <- conn.Handshake()
+	}()
 
-	err = conn.Close()
-	if err != nil {
-		return err
+	select {
+	case err := <-errs:
+		if err != nil {
+			rawConn.Close()
+			return err
+		}
+
+		return conn.Close()
+	case <-ctx.Done():
+		rawConn.Close()
+		return ctx.Err()
 	}
-	return nil
 }

@@ -147,6 +147,46 @@ var _ = Describe("TLS Scan", func() {
 			}))
 		})
 	})
+
+	Context("when the server accepts the connection but doesn't respond to anything", func() {
+		var (
+			listener net.Listener
+		)
+
+		BeforeEach(func() {
+			ca, err := certtest.BuildCA("tlsscan")
+			Expect(err).NotTo(HaveOccurred())
+
+			cert, err := ca.BuildSignedCertificate("server")
+			Expect(err).NotTo(HaveOccurred())
+
+			tlsCert, err := cert.TLSCertificate()
+			Expect(err).NotTo(HaveOccurred())
+
+			listener, err = tls.Listen("tcp", "127.0.0.1:0", &tls.Config{
+				Certificates: []tls.Certificate{tlsCert},
+			})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			listener.Close()
+		})
+
+		It("gives up but does not hang forever", func() {
+			host, port, err := net.SplitHostPort(listener.Addr().String())
+			Expect(err).NotTo(HaveOccurred())
+
+			result, err := tlsscan.Scan(logger, host, port)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(result.HasTLS()).To(BeFalse())
+
+			Expect(result).To(HaveKeyWithValue("VersionTLS10", []string{}))
+			Expect(result).To(HaveKeyWithValue("VersionTLS11", []string{}))
+			Expect(result).To(HaveKeyWithValue("VersionTLS12", []string{}))
+		})
+	})
 })
 
 func hostport(uri string) (string, string) {
