@@ -1,0 +1,92 @@
+resource_types:
+- name: gcs
+  type: docker-image
+  source:
+    repository: frodenas/gcs-resource
+
+resources:
+- name: scantron
+  type: git
+  source:
+    uri: git@github.com:pivotal-cf/scantron.git
+    private_key:
+
+- name: scantron-binary
+  type: gcs
+  source:
+    bucket: scantron
+    versioned_file: scantron
+    json_key:
+
+- name: jessie
+  type: docker-image
+  source:
+    repository: debian
+    tag: jessie-slim
+
+- name: scantron-github-release
+  type: github-release
+  source:
+    user: pivotal-cf
+    repository: scantron
+    access_token:
+
+- name: version
+  type: semver
+  source:
+    access_key_id:
+    secret_access_key:
+    bucket: scantron-release-version
+    initial_version: 0.3.0
+    key: current-version
+
+jobs:
+- name: scantron
+  plan:
+  - get: scantron
+    trigger: true
+  - get: jessie
+    trigger: true
+  - task: test
+    file: scantron/ci/test.yml
+  - put: scantron-binary
+    params:
+      file: scantron-binary/scantron
+
+- name: scantron-github-release
+  serial_groups: [version]
+  plan:
+  - get: scantron
+    passed: [scantron]
+  - get: scantron-binary
+    passed: [scantron]
+    tags: [prod]
+  - get: version
+  - task: release
+    file: scantron/ci/release.yml
+  - put: scantron-github-release
+    params:
+      name: release-params/release-name
+      tag: release-params/tag-name
+      commitish: release-params/commit-sha
+      globs:
+      - "release-params/scantron_linux_amd64"
+  - put: version
+    params: {bump: patch}
+    params: {file: version/version}
+
+- name: major-bump
+  serial_groups: [version]
+  plan:
+  - get: version
+    params: {bump: major}
+  - put: version
+    params: {file: version/version}
+
+- name: minor-bump
+  serial_groups: [version]
+  plan:
+  - get: version
+    params: {bump: minor}
+  - put: version
+    params: {file: version/version}
