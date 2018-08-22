@@ -12,10 +12,12 @@ type File struct {
 }
 
 type Port struct {
-	Protocol string `json:"protocol"`
-	Address  string `json:"address"`
-	Number   int    `json:"number"`
-	State    string `json:"state"`
+	Protocol        string `json:"protocol"`
+	Address         string `json:"address"`
+	Number          int    `json:"number"`
+	ForeignAddress  string `json:"foreignAddress"`
+	ForeignNumber   int    `json:"foreignNumber"`
+	State           string `json:"state"`
 
 	TLSInformation TLSInformation `json:"tls_information"`
 }

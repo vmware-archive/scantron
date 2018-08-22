@@ -100,7 +100,7 @@ func parseNetstatLine(line string) (NetstatInfo, bool) {
 	}, true
 }
 
-func createPortFromAddress(infoAddress string, protocol string, state string) scantron.Port {
+func splitAddress(infoAddress string) (string, int) {
 	// XXX(cb): In the netstat output IPv6 addresses are shown as :::22 whereas
 	// Go parsing requires [::]:22. We try and fix this up here but this is
 	// undoubtedly imperfect.
@@ -109,18 +109,28 @@ func createPortFromAddress(infoAddress string, protocol string, state string) sc
 	if err != nil {
 		log.Printf("failed to split address %q: %s", conformAddr, err)
 	}
-	number, _ := strconv.Atoi(port)
+	number, err := strconv.Atoi(port)
+	if err != nil {
+		number = -1
+	}
+	return address, number
+}
 
+func createPortFromAddress(localAddressAndPort string, foreignAddressAndPort string, protocol string, state string) scantron.Port {
+  localAddress, localNumber := splitAddress(localAddressAndPort)
+  foreignAddress, foreignNumber := splitAddress(foreignAddressAndPort)
 	return scantron.Port{
-		Protocol: protocol,
-		Address:  address,
-		Number:   number,
-		State:    state,
+		Protocol:       protocol,
+		Address:        localAddress,
+		Number:         localNumber,
+		ForeignAddress: foreignAddress,
+		ForeignNumber:  foreignNumber,
+		State:          state,
 	}
 }
 
 func createNetstatPort(info NetstatInfo) NetstatPort {
-	port := createPortFromAddress(info.LocalAddress, info.Protocol, info.State)
+	port := createPortFromAddress(info.LocalAddress, info.ForeignAddress, info.Protocol, info.State)
 
 	id, _ := strconv.Atoi(info.PID)
 	return NetstatPort{

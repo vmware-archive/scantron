@@ -27,6 +27,8 @@ CREATE TABLE ports (
 	protocol string,
 	address string,
 	number integer,
+	foreignAddress string,
+	foreignNumber integer,
 	state string,
 	FOREIGN KEY(process_id) REFERENCES processes(id)
 );

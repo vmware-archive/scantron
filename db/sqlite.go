@@ -133,8 +133,8 @@ func (db *Database) SaveReport(report scanner.ScanResult) error {
 
 				for _, port := range service.Ports {
 					res, err = tx.Exec(
-						"INSERT INTO ports(process_id, protocol, address, number, state) VALUES (?, ?, ?, ?, ?)",
-						processID, port.Protocol, port.Address, port.Number, port.State,
+						"INSERT INTO ports(process_id, protocol, address, number, foreignAddress, foreignNumber, state) VALUES (?, ?, ?, ?, ?, ?, ?)",
+						processID, port.Protocol, port.Address, port.Number, port.ForeignAddress, port.ForeignNumber, port.State,
 					)
 					if err != nil {
 						return err

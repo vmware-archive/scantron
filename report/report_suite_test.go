@@ -50,6 +50,8 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
 								State:   "LISTEN",
 								Address: "10.0.5.23",
 								Number:  7890,
+								ForeignAddress: "0.0.0.0",
+								ForeignNumber: -1,
 								TLSInformation: scantron.TLSInformation{
 									Certificate: &scantron.Certificate{},
 									CipherInformation: scantron.CipherInformation{
@@ -88,6 +90,8 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
 								State:   "LISTEN",
 								Address: "10.0.5.21",
 								Number:  19999,
+								ForeignAddress: "0.0.0.0",
+								ForeignNumber: -1,
 							},
 						},
 					},
@@ -99,6 +103,8 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
 								State:   "LISTEN",
 								Address: "10.0.5.21",
 								Number:  7890,
+								ForeignAddress: "0.0.0.0",
+								ForeignNumber: -1,
 								TLSInformation: scantron.TLSInformation{
 									Certificate: &scantron.Certificate{},
 									CipherInformation: scantron.CipherInformation{
@@ -110,11 +116,15 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
 								State:   "LISTEN",
 								Address: "44.44.44.44",
 								Number:  7890,
+								ForeignAddress: "0.0.0.0",
+								ForeignNumber: -1,
 							},
 							{
 								State:   "LISTEN",
 								Address: "127.0.0.1",
 								Number:  8890,
+								ForeignAddress: "0.0.0.0",
+								ForeignNumber: -1,
 								TLSInformation: scantron.TLSInformation{
 									Certificate: &scantron.Certificate{},
 									CipherInformation: scantron.CipherInformation{
@@ -125,6 +135,8 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
 							{
 								State:  "ESTABLISHED",
 								Number: 7891,
+								ForeignAddress: "10.0.0.1",
+								ForeignNumber: 2345,
 							},
 						},
 					},
@@ -136,6 +148,8 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
 								State:   "LISTEN",
 								Address: "10.0.5.21",
 								Number:  22,
+								ForeignAddress: "0.0.0.0",
+								ForeignNumber: -1,
 							},
 						},
 					},
@@ -147,6 +161,8 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
 								State:   "LISTEN",
 								Address: "10.0.5.21",
 								Number:  111,
+								ForeignAddress: "0.0.0.0",
+								ForeignNumber: -1,
 							},
 						},
 					},
@@ -169,6 +185,8 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
 								State:   "LISTEN",
 								Address: "10.0.5.22",
 								Number:  19999,
+								ForeignAddress: "0.0.0.0",
+								ForeignNumber: -1,
 								TLSInformation: scantron.TLSInformation{
 									Certificate: &scantron.Certificate{},
 									CipherInformation: scantron.CipherInformation{
@@ -186,6 +204,8 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
 								State:   "LISTEN",
 								Address: "10.0.5.22",
 								Number:  12345,
+								ForeignAddress: "0.0.0.0",
+								ForeignNumber: -1,
 							},
 						},
 					},

@@ -20,6 +20,8 @@ tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      
 					Protocol: "tcp",
 					Address:  "127.0.0.1",
 					Number:   8080,
+					ForeignAddress: "0.0.0.0",
+					ForeignNumber: -1,
 					State:    "LISTEN",
 				},
 			},
@@ -29,7 +31,7 @@ tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      
 	It("parses and converts multiple lines correctly", func() {
 		input := `
 tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      1317/java
-udp        0      0 127.0.0.2:8080          0.0.0.0:*               LISTEN      1318/java
+udp        0      0 127.0.0.2:8080          127.0.0.3:8443          ESTABLISHED 1318/java
 		`
 		Expect(netstat.ParseNetstatOutputForPort(input)).To(Equal([]netstat.NetstatPort{
 			{
@@ -38,6 +40,8 @@ udp        0      0 127.0.0.2:8080          0.0.0.0:*               LISTEN      
 					Protocol: "tcp",
 					Address:  "127.0.0.1",
 					Number:   8080,
+					ForeignAddress: "0.0.0.0",
+					ForeignNumber: -1,
 					State:    "LISTEN",
 				},
 			},
@@ -47,7 +51,9 @@ udp        0      0 127.0.0.2:8080          0.0.0.0:*               LISTEN      
 					Protocol: "udp",
 					Address:  "127.0.0.2",
 					Number:   8080,
-					State:    "LISTEN",
+					ForeignAddress: "127.0.0.3",
+					ForeignNumber: 8443,
+					State:    "ESTABLISHED",
 				},
 			},
 		}))
@@ -65,6 +71,8 @@ udp        0      0 127.0.0.2:8080          0.0.0.0:*               LISTEN      
 					Protocol: "tcp6",
 					Address:  "::",
 					Number:   50051,
+					ForeignAddress: "::",
+					ForeignNumber: -1,
 					State:    "LISTEN",
 				},
 			},
@@ -74,6 +82,8 @@ udp        0      0 127.0.0.2:8080          0.0.0.0:*               LISTEN      
 					Protocol: "udp6",
 					Address:  "::",
 					Number:   111,
+					ForeignAddress: "::",
+					ForeignNumber: -1,
 					State:    "",
 				},
 			},
@@ -91,6 +101,8 @@ udp        0      0 127.0.0.2:8080          0.0.0.0:*               LISTEN      
 						Protocol: "udp",
 						Address:  "127.0.0.1",
 						Number:   53,
+						ForeignAddress: "0.0.0.0",
+						ForeignNumber: -1,
 						State:    "",
 					},
 				},
