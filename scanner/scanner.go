@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"fmt"
 
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/remotemachine"
@@ -83,8 +84,7 @@ func scanMachine(logger scanlog.Logger, remoteMachine remotemachine.RemoteMachin
 	}
 
 	defer remoteMachine.DeleteFile(dstFilePath)
-
-	output, err := remoteMachine.RunCommand(dstFilePath)
+	output, err := remoteMachine.RunCommand(fmt.Sprintf("%s %s", dstFilePath, remoteMachine.Host()))
 	if err != nil {
 		logger.Errorf("Failed to run scanner on remote machine: %s", err)
 		return systemInfo, err

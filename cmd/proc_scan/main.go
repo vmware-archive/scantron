@@ -15,10 +15,14 @@ import (
 )
 
 func main() {
-	logger, err := scanlog.NewLogger(false)
-	if err != nil {
-		log.Fatalln("failed to set up logger:", err)
-	}
+  address := os.Args[1]
+  logger, err := scanlog.NewLogger(false)
+  if err != nil {
+    log.Fatalln("failed to set up logger:", err)
+  }
+  logger = logger.With(
+    "host", address,
+  )
 
 	processes, err := process.ScanProcesses(logger)
 	if err != nil {

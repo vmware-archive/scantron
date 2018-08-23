@@ -15,6 +15,7 @@ import (
 
 type RemoteMachine interface {
 	Address() string
+	Host() string
 
 	UploadFile(localPath, remotePath string) error
 	DeleteFile(remotePath string) error
@@ -38,6 +39,10 @@ func NewRemoteMachine(machine scantron.Machine) RemoteMachine {
 
 func (r *remoteMachine) Address() string {
 	return fmt.Sprintf("%s:22", r.machine.Address)
+}
+
+func (r *remoteMachine) Host() string {
+	return r.machine.Address
 }
 
 func (r *remoteMachine) UploadFile(localPath, remotePath string) error {
@@ -95,6 +100,12 @@ func (r *remoteMachine) RunCommand(command string) (io.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	stderr, err := session.StderrPipe()
+	if err != nil {
+		return nil, err
+	}
+	go io.Copy(os.Stderr, stderr)
 
 	bs, err := session.Output(fmt.Sprintf("echo %s | sudo -S -- %s", r.machine.Password, command))
 	if err != nil {
