@@ -117,8 +117,8 @@ func splitAddress(infoAddress string) (string, int) {
 }
 
 func createPortFromAddress(localAddressAndPort string, foreignAddressAndPort string, protocol string, state string) scantron.Port {
-  localAddress, localNumber := splitAddress(localAddressAndPort)
-  foreignAddress, foreignNumber := splitAddress(foreignAddressAndPort)
+	localAddress, localNumber := splitAddress(localAddressAndPort)
+	foreignAddress, foreignNumber := splitAddress(foreignAddressAndPort)
 	return scantron.Port{
 		Protocol:       protocol,
 		Address:        localAddress,
