@@ -4,8 +4,10 @@ set -eux
 
 go install ./vendor/github.com/jteeuwen/go-bindata/go-bindata
 
-GOOS=linux GOARCH=amd64 go build -o data/proc_scan ./cmd/proc_scan
+rm data/proc_scan # file grows on each run
+rm proc_scan.go
 
+GOOS=linux GOARCH=amd64 go build -o data/proc_scan ./cmd/proc_scan
 go-bindata -o proc_scan.go -pkg scantron data
 
 go build -o scantron ./cmd/scantron
