@@ -1,6 +1,7 @@
 .idea
 .DS_Store
 /spec/examples.txt
+*.swp
 
 # Scanning Artifacts
 /scantron
