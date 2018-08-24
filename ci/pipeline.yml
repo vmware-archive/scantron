@@ -1,22 +1,17 @@
-resource_types:
-- name: gcs
-  type: docker-image
-  source:
-    repository: frodenas/gcs-resource
-
 resources:
 - name: scantron
   type: git
   source:
     uri: git@github.com:pivotal-cf/scantron.git
-    private_key:
+    private_key: ((github_user_key))
 
 - name: scantron-binary
-  type: gcs
+  type: s3 
   source:
-    bucket: scantron
     versioned_file: scantron
-    json_key:
+    access_key_id: ((pci-scantron-binary_access_key_id))
+    secret_access_key: ((pci-scantron-binary_secret_access_key))
+    bucket: pci-scantron-binary
 
 - name: jessie
   type: docker-image
@@ -29,16 +24,16 @@ resources:
   source:
     user: pivotal-cf
     repository: scantron
-    access_token:
+    access_token: ((pci_team_access_token))
 
 - name: version
   type: semver
   source:
-    access_key_id:
-    secret_access_key:
-    bucket: scantron-release-version
-    initial_version: 0.3.0
-    key: current-version
+    access_key_id: ((pci-bosh-release-version_access_key_id))
+    secret_access_key: ((pci-bosh-release-version_secret_access_key))
+    bucket: pci-bosh-release-version
+    initial_version: 0.4.0
+    key: scantron-final-release-version
 
 jobs:
 - name: scantron
