@@ -82,6 +82,10 @@ func (fake *FakeRemoteMachine) Address() string {
 	return fake.addressReturns.result1
 }
 
+func (fake *FakeRemoteMachine) Host() string {
+	return "host"
+}
+
 func (fake *FakeRemoteMachine) AddressCallCount() int {
 	fake.addressMutex.RLock()
 	defer fake.addressMutex.RUnlock()
