@@ -43,7 +43,7 @@ func ScanProcesses(logger scanlog.Logger) ([]scantron.Process, error) {
 				continue
 			}
 
-			if port.Address == "127.0.0.1" {
+			if port.Protocol == "udp" {
 				continue
 			}
 
