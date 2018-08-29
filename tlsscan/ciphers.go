@@ -1,4 +1,23 @@
-package tls
+package tlsscan
+
+const (
+	VersionSSL30 = 0x0300
+	VersionTLS10 = 0x0301
+	VersionTLS11 = 0x0302
+	VersionTLS12 = 0x0303
+)
+
+type ProtocolVersion struct {
+	ID   uint16
+	Name string
+}
+
+var ProtocolVersions = []ProtocolVersion{
+	{ID: VersionSSL30, Name: "VersionSSL30"},
+	{ID: VersionTLS10, Name: "VersionTLS10"},
+	{ID: VersionTLS11, Name: "VersionTLS11"},
+	{ID: VersionTLS12, Name: "VersionTLS12"},
+}
 
 type CipherSuite struct {
 	ID   uint16
