@@ -1,33 +1,131 @@
+# Refer to https://golang.github.io/dep/docs/Gopkg.toml.html
+# for detailed Gopkg.toml documentation.
+#
+# required = ["github.com/user/thing/cmd/thing"]
+# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
+#
+# [[constraint]]
+#   name = "github.com/user/project"
+#   version = "1.0.0"
+#
+# [[constraint]]
+#   name = "github.com/user/project2"
+#   branch = "dev"
+#   source = "github.com/myfork/project2"
+#
+# [[override]]
+#   name = "github.com/x/y"
+#   version = "2.4.0"
+#
+# [prune]
+#   non-go = false
+#   go-tests = true
+#   unused-packages = true
+
 required = ["github.com/jteeuwen/go-bindata"]
 
-[[dependencies]]
-  branch = "master"
+[[constraint]]
+  name = "github.com/cloudfoundry/bosh-cli"
+  version = "5.2.2"
+
+[[override]]
+  revision = "407dd7546455f1a0a50feba2dcaef0ae88da1810"
   name = "github.com/cloudfoundry/bosh-utils"
 
-[[dependencies]]
-  branch = "master"
+[[constraint]]
+  revision = "576b6af77ae4f3ccef356902fb3b9a9ae22e0b11"
+  name = "github.com/cppforlife/go-semi-semantic"
+
+[[constraint]]
+  name = "github.com/jessevdk/go-flags"
+  version = "1.4.0"
+
+[[constraint]]
+  revision = "668c8856d9992f97248b3177d45743d2cc1068db"
+  name = "github.com/keybase/go-ps"
+
+[[constraint]]
+  name = "github.com/mattn/go-sqlite3"
+  version = "1.9.0"
+
+[[constraint]]
+  revision = "d4647c9c7a84d847478d890b816b7d8b62b0b279"
   name = "github.com/olekukonko/tablewriter"
 
-[[dependencies]]
-  branch = "master"
+[[constraint]]
   name = "github.com/onsi/ginkgo"
+  version = "1.6.0"
 
-[[dependencies]]
-  branch = "master"
+[[constraint]]
   name = "github.com/onsi/gomega"
+  version = "1.4.1"
 
-[[dependencies]]
-  branch = "master"
+[[override]]
+  revision = "a64ae2051c20c5cde13292a41db01029566134ba"
+  name = "github.com/pivotal-cf/paraphernalia"
+
+[[constraint]]
+  name = "github.com/pkg/sftp"
+  version = "1.8.2"
+
+[[constraint]]
   name = "go.uber.org/zap"
+  version = "1.9.1"
 
-[[dependencies]]
-  branch = "master"
+[[override]]
+  revision = "0709b304e793a5edb4a2c0145f281ecdc20838a4"
   name = "golang.org/x/crypto"
 
-[[dependencies]]
-  branch = "master"
+[[override]]
+  revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
   name = "golang.org/x/sync"
 
-[[dependencies]]
-  branch = "v2"
+[[override]]
+  name = "golang.org/x/sys"
+  revision = "2b024373dcd9800f0cae693839fac6ede8d64a8c"
+
+[[override]]
+  name = "golang.org/x/net"
+  revision = "8a410e7b638dca158bf9e766925842f6651ff828"
+
+[[constraint]]
   name = "gopkg.in/yaml.v2"
+  version = "2.2.1"
+
+# https://github.com/go-fsnotify/fsnotify/issues/1#issuecomment-374967614
+[[override]]
+  name = "gopkg.in/fsnotify.v1"
+  source = "github.com/fsnotify/fsnotify"
+  version = "1.4.7"
+
+[[override]]
+  name = "github.com/nu7hatch/gouuid"
+  revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
+
+[[override]]
+  name = "github.com/charlievieth/fs"
+  revision = "7dc373669fa10ddf827c37c595dee30a2f001be9"
+
+[[override]]
+  name = "code.cloudfoundry.org/clock"
+  revision = "02e53af36e6c978af692887ed449b74026d76fec"
+
+[[override]]
+  name = "github.com/cheggaaa/pb"
+  version = "1.0.25"
+
+[[override]]
+  name = "github.com/cloudfoundry/go-socks5"
+  revision = "54f73bdb8a8e85a6611d3d29ab9bbf98c2a060d7"
+
+[[override]]
+  name = "github.com/cloudfoundry/socks5-proxy"
+  revision = "3659db090cb23a57807b53e2f8580b2427dc2659"
+
+[[override]]
+  name = "github.com/dustin/go-humanize"
+  revision = "9f541cc9db5d55bce703bd99987c9d5cb8eea45e"
+
+[prune]
+  go-tests = true
+  unused-packages = true

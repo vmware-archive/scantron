@@ -190,7 +190,7 @@ func getDirector(
 	return director, nil
 }
 
-func getUAA(dirConfig boshdir.Config, creds boshconfig.Creds, caCert string, logger boshlog.Logger) (boshuaa.UAA, error) {
+func getUAA(dirConfig boshdir.FactoryConfig, creds boshconfig.Creds, caCert string, logger boshlog.Logger) (boshuaa.UAA, error) {
 	director, err := boshdir.NewFactory(logger).New(dirConfig, boshdir.NewNoopTaskReporter(), boshdir.NewNoopFileReporter())
 	if err != nil {
 		return nil, err
@@ -221,7 +221,7 @@ func getUAA(dirConfig boshdir.Config, creds boshconfig.Creds, caCert string, log
 	return boshuaa.NewFactory(logger).New(uaaConfig)
 }
 
-func getDirectorInfo(logger boshlog.Logger, dirConfig boshdir.Config) (boshdir.Info, error) {
+func getDirectorInfo(logger boshlog.Logger, dirConfig boshdir.FactoryConfig) (boshdir.Info, error) {
 	anonymousDirector, err := boshdir.NewFactory(logger).New(dirConfig, nil, nil)
 	if err != nil {
 		return boshdir.Info{}, err

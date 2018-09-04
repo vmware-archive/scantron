@@ -176,9 +176,11 @@ specs:
 
 ### building
 
-1. `go get github.com/pivotal-cf/scantron`
-2. `cd $GOPATH/src/github.com/pivotal-cf/scantron`
-3. `./scripts/build`
+1. Install dep, the vendor package manager: https://github.com/golang/dep
+2. `go get github.com/pivotal-cf/scantron`
+3. `cd $GOPATH/src/github.com/pivotal-cf/scantron`
+4. `dep ensure` # Note: will fail with exit code 1 due to `doublestar` test files 
+5. `./scripts/build`
 
 ### testing
 

@@ -36,7 +36,7 @@ func (command *BoshScanCommand) Execute(args []string) error {
 	}
 
 	out := bufio.NewWriter(os.Stdout)
-	boshLogger := boshlog.NewWriterLogger(boshlog.LevelNone, out, nil)
+	boshLogger := boshlog.NewWriterLogger(boshlog.LevelNone, out)
 
 	director, err := bosh.NewBoshDirector(
 		logger,
