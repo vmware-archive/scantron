@@ -22,8 +22,6 @@
 #   go-tests = true
 #   unused-packages = true
 
-required = ["github.com/jteeuwen/go-bindata"]
-
 [[constraint]]
   name = "github.com/cloudfoundry/bosh-cli"
   version = "5.2.2"
