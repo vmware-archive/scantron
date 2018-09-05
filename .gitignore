@@ -13,5 +13,5 @@ cmd/scantron/scantron
 
 
 # go-bindata
-/data/proc_scan
+/data/**
 proc_scan.go
