@@ -121,14 +121,6 @@
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:0015060922f1b2e04469224e2ed82f0a67abbfee9a0a91852cf4980b91bf11d6"
-  name = "github.com/jteeuwen/go-bindata"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "bbd0c6e271208dce66d8fda4bc536453cd27fc4a"
-  version = "v3.0.7"
-
-[[projects]]
   digest = "1:6bc9f1251db7b9e95316813d9564d158a886b796f5073e767151b2c1178c7109"
   name = "github.com/keybase/go-ps"
   packages = [
@@ -429,7 +421,6 @@
     "github.com/cloudfoundry/bosh-utils/uuid",
     "github.com/cppforlife/go-semi-semantic/version",
     "github.com/jessevdk/go-flags",
-    "github.com/jteeuwen/go-bindata",
     "github.com/keybase/go-ps",
     "github.com/mattn/go-sqlite3",
     "github.com/olekukonko/tablewriter",
