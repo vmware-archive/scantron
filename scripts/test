@@ -11,7 +11,7 @@ root_dir="$( cd "${my_dir}/.." && pwd )"
 pushd "${root_dir}" > /dev/null
   ./scripts/build
 
-  ginkgo \
+  $GOPATH/bin/ginkgo \
     -r \
     -p \
     -race \
