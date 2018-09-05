@@ -29,12 +29,12 @@ type BoshDirector interface {
 }
 
 func NewBoshDirector(
-	logger scanlog.Logger,
-	creds boshconfig.Creds,
-	caCertPath string,
-	deploymentName string,
-	boshURL string,
-	boshLogger boshlog.Logger,
+		logger scanlog.Logger,
+		creds boshconfig.Creds,
+		caCertPath string,
+		deploymentName string,
+		boshURL string,
+		boshLogger boshlog.Logger,
 ) (BoshDirector, error) {
 	var caCert string
 
@@ -140,18 +140,21 @@ func (d *boshDirector) Setup() error {
 }
 
 func (d *boshDirector) ConnectTo(logger scanlog.Logger, vm boshdir.VMInfo) remotemachine.RemoteMachine {
+	stemcells, _ := d.deployment.Stemcells()
+	logger.Infof("Deployment stemcell: %s %s %s", stemcells[0].Name(), stemcells[0].OSName(), stemcells[0].Version())
 	return remotemachine.NewRemoteMachine(scantron.Machine{
 		Address:  BestAddress(vm.IPs),
 		Username: d.sshOpts.Username,
 		Key:      d.signer,
+		OSName:   stemcells[0].Name(),
 	})
 }
 
 func getDirector(
-	boshURL string,
-	creds boshconfig.Creds,
-	caCert string,
-	logger boshlog.Logger,
+		boshURL string,
+		creds boshconfig.Creds,
+		caCert string,
+		logger boshlog.Logger,
 ) (boshdir.Director, error) {
 	dirConfig, err := boshdir.NewConfigFromURL(boshURL)
 	if err != nil {

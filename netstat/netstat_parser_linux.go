@@ -1,3 +1,5 @@
+// +build !windows
+
 package netstat
 
 import (
@@ -25,18 +27,6 @@ type NetstatPort struct {
 }
 
 type NetstatPorts []NetstatPort
-
-func (ps NetstatPorts) LocalPortsForPID(pid int) []scantron.Port {
-	result := []scantron.Port{}
-
-	for _, nsPort := range ps {
-		if nsPort.PID == pid {
-			result = append(result, nsPort.Port)
-		}
-	}
-
-	return result
-}
 
 func ParseNetstatOutputForPort(output string) []NetstatPort {
 	scanner := bufio.NewScanner(strings.NewReader(output))

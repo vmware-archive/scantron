@@ -4,10 +4,13 @@ set -eux
 
 go get -u github.com/jteeuwen/go-bindata/...
 
-rm data/proc_scan || true # file grows on each run
+rm data/* || true # file grows on each run
 rm proc_scan.go || true
+rm scantron || true
 
-GOOS=linux GOARCH=amd64 go build -o data/proc_scan ./cmd/proc_scan
+GOOS=linux GOARCH=amd64 go build -o data/proc_scan_linux ./cmd/proc_scan
+GOOS=windows GOARCH=amd64 go build -o data/proc_scan_windows ./cmd/proc_scan
+
 $GOPATH/bin/go-bindata -o proc_scan.go -pkg scantron data
 
-go build -o scantron ./cmd/scantron
+GOOS=linux GOARCH=amd64 go build -o scantron ./cmd/scantron

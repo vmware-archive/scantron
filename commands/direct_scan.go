@@ -20,6 +20,7 @@ type DirectScanCommand struct {
 	Password   string `long:"password" description:"Password of machine to scan" value-name:"PASSWORD" required:"true"`
 	PrivateKey string `long:"private-key" description:"Private key of machine to scan" value-name:"PATH"`
 	Database   string `long:"database" description:"location of database where scan output will be stored" value-name:"PATH" default:"./database.db"`
+	OSName     string `long:"os-name" description:"Name of stemcell OS of machine to scan" value-name:"STRING" required:"true"`
 }
 
 func (command *DirectScanCommand) Execute(args []string) error {
@@ -47,6 +48,7 @@ func (command *DirectScanCommand) Execute(args []string) error {
 		Username: command.Username,
 		Password: command.Password,
 		Key:      privateKey,
+		OSName:   command.OSName,
 	}
 
 	remoteMachine := remotemachine.NewRemoteMachine(machine)

@@ -18,7 +18,7 @@ import (
 type BoshScanCommand struct {
 	Director struct {
 		URL        string `long:"director-url" description:"BOSH Director URL" value-name:"URL" required:"true"`
-		Deployment string `long:"bosh-deployment" description:"BOSH Deployment" value-name:"DEPLOYMENT_NAME" required:"true"`
+		Deployment string `long:"bosh-deployment" description:"BOSH Deployment" value-name:"DEPLOYMENT_NAME" required:"true"` // TODO multiple deployments
 
 		CACert string `long:"ca-cert" description:"Director CA certificate path" value-name:"CA_CERT"`
 

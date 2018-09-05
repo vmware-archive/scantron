@@ -18,4 +18,5 @@ type Machine struct {
 	Username string
 	Password string
 	Key      ssh.Signer
+	OSName   string
 }

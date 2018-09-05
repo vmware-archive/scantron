@@ -63,7 +63,7 @@ type FakeRemoteMachine struct {
 	closeReturnsOnCall map[int]struct {
 		result1 error
 	}
-	invocations      map[string][][]interface{}
+	invocations map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
@@ -84,6 +84,14 @@ func (fake *FakeRemoteMachine) Address() string {
 
 func (fake *FakeRemoteMachine) Host() string {
 	return "host"
+}
+
+func (fake *FakeRemoteMachine) OSName() string {
+	return "trusty"
+}
+
+func (fake *FakeRemoteMachine) Password() string {
+	return "password"
 }
 
 func (fake *FakeRemoteMachine) AddressCallCount() int {

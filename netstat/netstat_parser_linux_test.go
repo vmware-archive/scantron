@@ -3,6 +3,7 @@ package netstat_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pivotal-cf/scantron/process"
 
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/netstat"
@@ -13,7 +14,7 @@ var _ = Describe("NetstatParser", func() {
 		input := `
 tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      1317/java
 		`
-		Expect(netstat.ParseNetstatOutputForPort(input)).To(Equal([]netstat.NetstatPort{
+		Expect(netstat.ParseNetstatOutputForPort(input)).To(Equal([]process.ProcessPort{
 			{
 				PID: 1317,
 				Port: scantron.Port{
@@ -33,7 +34,7 @@ tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      
 tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      1317/java
 udp        0      0 127.0.0.2:8080          127.0.0.3:8443          ESTABLISHED 1318/java
 		`
-		Expect(netstat.ParseNetstatOutputForPort(input)).To(Equal([]netstat.NetstatPort{
+		Expect(netstat.ParseNetstatOutputForPort(input)).To(Equal([]process.ProcessPort{
 			{
 				PID: 1317,
 				Port: scantron.Port{
@@ -64,7 +65,7 @@ udp        0      0 127.0.0.2:8080          127.0.0.3:8443          ESTABLISHED 
 		tcp6       0      0 :::50051                :::*                    LISTEN      5149/rolodexd
 		udp6       0      0 :::111                  :::*                                777/rpcbind`
 
-		Expect(netstat.ParseNetstatOutputForPort(input)).To(Equal([]netstat.NetstatPort{
+		Expect(netstat.ParseNetstatOutputForPort(input)).To(Equal([]process.ProcessPort{
 			{
 				PID: 5149,
 				Port: scantron.Port{
@@ -94,7 +95,7 @@ udp        0      0 127.0.0.2:8080          127.0.0.3:8443          ESTABLISHED 
 		It("still parses that", func() {
 			input := "udp        0      0 127.0.0.1:53            0.0.0.0:*                           4113/consul"
 
-			Expect(netstat.ParseNetstatOutputForPort(input)).To(Equal([]netstat.NetstatPort{
+			Expect(netstat.ParseNetstatOutputForPort(input)).To(Equal([]process.ProcessPort{
 				{
 					PID: 4113,
 					Port: scantron.Port{

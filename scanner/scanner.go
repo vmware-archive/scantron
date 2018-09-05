@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"fmt"
+	"strings"
 
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/remotemachine"
@@ -44,8 +45,12 @@ func buildJobResult(host scantron.SystemInfo, jobName, address string) JobResult
 	}
 }
 
-func writeProcScanToTempFile() (string, error) {
-	data, err := scantron.Asset("data/proc_scan")
+func writeProcScanToTempFile(osName string) (string, error) {
+	data_path := "data/proc_scan_linux"
+	if strings.Contains(osName, "windows") {
+		data_path = "data/proc_scan_windows"
+	}
+	data, err := scantron.Asset(data_path)
 	if err != nil {
 		return "", err
 	}
@@ -69,13 +74,21 @@ func scanMachine(logger scanlog.Logger, remoteMachine remotemachine.RemoteMachin
 	logger.Infof("Starting VM scan")
 	defer logger.Infof("VM scan complete")
 
-	srcFilePath, err := writeProcScanToTempFile()
+	osName := remoteMachine.OSName()
+	logger.Infof("Deployment stemcell is %s", osName)
+
+	srcFilePath, err := writeProcScanToTempFile(osName)
 	if err != nil {
 		return systemInfo, err
 	}
 	defer os.Remove(srcFilePath)
 
 	dstFilePath := "./proc_scan"
+	command := fmt.Sprintf("echo %s | sudo -S -- %s", remoteMachine.Password(), dstFilePath)
+	if strings.Contains(osName, "windows") {
+		dstFilePath = ".\\proc_scan.exe"
+		command = ".\\proc_scan.exe"
+	}
 
 	err = remoteMachine.UploadFile(srcFilePath, dstFilePath)
 	if err != nil {
@@ -83,8 +96,10 @@ func scanMachine(logger scanlog.Logger, remoteMachine remotemachine.RemoteMachin
 		return systemInfo, err
 	}
 
+	logger.Infof("Running %s on %s", command, remoteMachine.Host())
+
 	defer remoteMachine.DeleteFile(dstFilePath)
-	output, err := remoteMachine.RunCommand(fmt.Sprintf("%s %s", dstFilePath, remoteMachine.Host()))
+	output, err := remoteMachine.RunCommand(fmt.Sprintf("%s %s", command, remoteMachine.Host()))
 	if err != nil {
 		logger.Errorf("Failed to run scanner on remote machine: %s", err)
 		return systemInfo, err

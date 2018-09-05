@@ -16,6 +16,8 @@ import (
 type RemoteMachine interface {
 	Address() string
 	Host() string
+	OSName() string
+	Password() string
 
 	UploadFile(localPath, remotePath string) error
 	DeleteFile(remotePath string) error
@@ -43,6 +45,14 @@ func (r *remoteMachine) Address() string {
 
 func (r *remoteMachine) Host() string {
 	return r.machine.Address
+}
+
+func (r *remoteMachine) OSName() string {
+	return r.machine.OSName
+}
+
+func (r *remoteMachine) Password() string {
+	return r.machine.Password
 }
 
 func (r *remoteMachine) UploadFile(localPath, remotePath string) error {
@@ -107,7 +117,7 @@ func (r *remoteMachine) RunCommand(command string) (io.Reader, error) {
 	}
 	go io.Copy(os.Stderr, stderr)
 
-	bs, err := session.Output(fmt.Sprintf("echo %s | sudo -S -- %s", r.machine.Password, command))
+	bs, err := session.Output(command)
 	if err != nil {
 		return nil, err
 	}
