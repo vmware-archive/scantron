@@ -3,6 +3,7 @@
 /spec/examples.txt
 *.swp
 vendor/**
+*.coverprofile
 
 # Scanning Artifacts
 /scantron
