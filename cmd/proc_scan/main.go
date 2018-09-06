@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/pivotal-cf/scantron/filesystem"
 	"github.com/pivotal-cf/scantron/ssh"
+	"github.com/pivotal-cf/scantron/tlsscan"
 	"os"
 
 	"log"
@@ -25,7 +26,12 @@ func main() {
 		"host", address,
 	)
 
-	processes, err := process.ScanProcesses(logger)
+	processScanner := process.ProcessScanner{
+		SysRes: &process.SystemResourceImpl {},
+		TlsScan: &tlsscan.TlsScannerImpl {},
+	}
+
+	processes, err := processScanner.ScanProcesses(logger)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error: failed to get process list:", err)
 		os.Exit(1)

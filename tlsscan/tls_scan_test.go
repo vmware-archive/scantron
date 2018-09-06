@@ -21,6 +21,7 @@ var _ = Describe("TLS Scan", func() {
 	var (
 		server *httptest.Server
 		logger scanlog.Logger
+		subject *tlsscan.TlsScannerImpl
 	)
 
 	BeforeEach(func() {
@@ -31,6 +32,8 @@ var _ = Describe("TLS Scan", func() {
 		server = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, "hello?")
 		}))
+
+		subject = &tlsscan.TlsScannerImpl{}
 	})
 
 	AfterEach(func() {
@@ -56,7 +59,7 @@ var _ = Describe("TLS Scan", func() {
 		It("performs a scan", func() {
 			host, port := hostport(server.URL)
 
-			result, err := tlsscan.Scan(logger, host, port)
+			result, err := subject.Scan(logger, host, port)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(result.HasTLS()).To(BeTrue())
@@ -74,7 +77,7 @@ var _ = Describe("TLS Scan", func() {
 
 		It("performs a scan", func() {
 			host, port := hostport(server.URL)
-			result, err := tlsscan.Scan(logger, host, port)
+			result, err := subject.Scan(logger, host, port)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(result.HasTLS()).To(BeFalse())
@@ -120,7 +123,7 @@ var _ = Describe("TLS Scan", func() {
 		It("performs a scan", func() {
 			host, port := hostport(server.URL)
 
-			result, err := tlsscan.Scan(logger, host, port)
+			result, err := subject.Scan(logger, host, port)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(result.HasTLS()).To(BeTrue())
@@ -162,7 +165,7 @@ var _ = Describe("TLS Scan", func() {
 			host, port, err := net.SplitHostPort(listener.Addr().String())
 			Expect(err).NotTo(HaveOccurred())
 
-			result, err := tlsscan.Scan(logger, host, port)
+			result, err := subject.Scan(logger, host, port)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(result.HasTLS()).To(BeFalse())

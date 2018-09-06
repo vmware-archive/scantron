@@ -30,8 +30,10 @@ type WinPort struct {
 	OwningProcess int `json:"owningprocess"`
 	State string `json:"state"`
 }
+type SystemResourceImpl struct {
 
-func GetProcesses() ([]scantron.Process, error) {
+}
+func (s *SystemResourceImpl) GetProcesses() ([]scantron.Process, error) {
 
 	cmd := exec.Command("powershell", "get-wmiobject win32_process | select @{Name='pid'; Expression={$_.ProcessId}}, @{Name='name'; Expression={$_.Name}}, @{Name='user'; Expression={$_.GetOwner().User }}, @{Name='cmdline'; Expression={$_.Commandline}} | ConvertTo-Json")
 
@@ -52,9 +54,9 @@ func GetProcesses() ([]scantron.Process, error) {
 		process := scantron.Process{
 			CommandName: rawProcess.CommandName,
 			PID:         pid,
-			User: 			 rawProcess.User,
+			User:        rawProcess.User,
 			Cmdline:     strings.Split(rawProcess.Cmdline, " "),
-			Env: GetEnv(pid),
+			Env:         getEnv(pid),
 		}
 		processes = append(processes, process)
 	}
@@ -62,7 +64,7 @@ func GetProcesses() ([]scantron.Process, error) {
 	return processes, nil
 }
 
-func GetPorts() ProcessPorts {
+func (s *SystemResourceImpl) GetPorts() ProcessPorts {
 	cmd := exec.Command("powershell", "get-netudpendpoint | select localaddress,localport,owningprocess| convertto-json")
 	out, e := cmd.Output()
 	if e != nil {
@@ -117,7 +119,7 @@ func GetPorts() ProcessPorts {
 	return ports
 }
 
-func GetEnv(pid int) []string {
+func getEnv(pid int) []string {
 	cmd := exec.Command("powershell", fmt.Sprintf("(get-process -id %d).StartInfo.EnvironmentVariables | Convertto-json", pid))
 
 	out, e := cmd.Output()

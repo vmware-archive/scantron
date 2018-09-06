@@ -14,7 +14,11 @@ import (
 	"github.com/pivotal-cf/scantron/netstat"
 )
 
-func GetProcesses() ([]scantron.Process, error) {
+type SystemResourceImpl struct {
+
+}
+
+func (s *SystemResourceImpl) GetProcesses() ([]scantron.Process, error) {
 	rawProcesses, err := ps.Processes()
 
 	if err != nil {
@@ -26,9 +30,9 @@ func GetProcesses() ([]scantron.Process, error) {
 		process := scantron.Process{
 			CommandName: rawProcess.Executable(),
 			PID:         pid,
-			User: 			 GetUser(pid),
-			Cmdline: GetCmdline(pid),
-			Env: GetEnv(pid),
+			User:        getUser(pid),
+			Cmdline:     getCmdline(pid),
+			Env:         getEnv(pid),
 		}
 		processes = append(processes, process)
 	}
@@ -36,7 +40,7 @@ func GetProcesses() ([]scantron.Process, error) {
 	return processes, nil
 }
 
-func GetPorts() ProcessPorts {
+func (s *SystemResourceImpl) GetPorts() ProcessPorts {
 	bs, err := exec.Command("netstat", "-at", "-4", "-6", "--numeric-ports", "-u", "-p").Output()
 	if err != nil {
 		return nil
@@ -54,7 +58,7 @@ func GetPorts() ProcessPorts {
 	return processPorts
 }
 
-func GetUser(pid int) string {
+func getUser(pid int) string {
 	bs, err := exec.Command("ps", "-e", "-o", "uname:20=", "-f", strconv.Itoa(pid)).CombinedOutput()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error getting user:", err)
@@ -64,7 +68,7 @@ func GetUser(pid int) string {
 	return strings.TrimSpace(string(bs))
 }
 
-func GetCmdline(pid int) []string {
+func getCmdline(pid int) []string {
 	cmdline, err := readFile(fmt.Sprintf("/proc/%d/cmdline", pid))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error getting cmdline:", err)
@@ -74,7 +78,7 @@ func GetCmdline(pid int) []string {
 	return cmdline
 }
 
-func GetEnv(pid int) []string {
+func getEnv(pid int) []string {
 	env, err := readFile(fmt.Sprintf("/proc/%d/environ", pid))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error getting env:", err)

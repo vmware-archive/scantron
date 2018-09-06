@@ -14,7 +14,7 @@ import (
 
 var ErrExpectedAbort = errors.New("tls: aborting handshake")
 
-func FetchTLSInformation(host, port string) (*scantron.Certificate, bool, error) {
+func (s *TlsScannerImpl) FetchTLSInformation(host, port string) (*scantron.Certificate, bool, error) {
 	certs := []x509.Certificate{}
 	mutual := false
 

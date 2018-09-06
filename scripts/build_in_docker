@@ -1,0 +1,1 @@
+docker run -it -v $GOPATH/src/github.com/pivotal-cf/scantron:/go/src/github.com/pivotal-cf/scantron golang bash -c 'go get -u github.com/golang/dep/cmd/dep && export PATH=$PATH:/go/bin/ && pushd /go/src/github.com/pivotal-cf/scantron && dep ensure -v && ./scripts/build && popd'

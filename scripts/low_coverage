@@ -1,0 +1,22 @@
+#!/bin/bash
+
+COVER="`ginkgo -r -cover`"
+PASS=$?
+
+if [ $PASS -ne 0 ]
+then
+  echo "There are failing tests"
+  echo "$COVER"
+fi
+
+LOW="`echo \"$COVER\" | grep -E 'coverage: [1-6]?[0-9]\.[0-9]%' -B1`"
+
+if [ -n "$LOW" ]
+then
+  echo "Found packages with coverage < 70%:"
+  echo "$LOW"
+  exit 1
+else
+  echo "All packages have 70% coverage"
+  exit $PASS
+fi

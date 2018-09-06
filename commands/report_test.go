@@ -67,7 +67,7 @@ var _ = Describe("Report", func() {
 										State:   "LISTEN",
 										Address: "10.0.5.21",
 										Number:  7890,
-										TLSInformation: scantron.TLSInformation{
+										TLSInformation: &scantron.TLSInformation{
 											Certificate: &scantron.Certificate{},
 											CipherInformation: scantron.CipherInformation{
 												"VersionSSL30": []string{"bad cipher"},
@@ -205,7 +205,7 @@ var _ = Describe("Report", func() {
 										State:   "LISTEN",
 										Address: "10.0.5.21",
 										Number:  7890,
-										TLSInformation: scantron.TLSInformation{
+										TLSInformation: &scantron.TLSInformation{
 											Certificate: &scantron.Certificate{},
 											CipherInformation: scantron.CipherInformation{
 												"VersionTLS12": []string{"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"},

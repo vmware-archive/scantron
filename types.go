@@ -19,7 +19,7 @@ type Port struct {
 	ForeignNumber   int    `json:"foreignNumber"`
 	State           string `json:"state"`
 
-	TLSInformation TLSInformation `json:"tls_information"`
+	TLSInformation  *TLSInformation `json:"tls_information"`
 }
 
 type TLSInformation struct {

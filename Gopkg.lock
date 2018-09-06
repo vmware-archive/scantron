@@ -99,6 +99,14 @@
   version = "v1.7.0"
 
 [[projects]]
+  digest = "1:bc38c7c481812e178d85160472e231c5e1c9a7f5845d67e23ee4e706933c10d8"
+  name = "github.com/golang/mock"
+  packages = ["gomock"]
+  pruneopts = "UT"
+  revision = "c34cdb4725f4c3844d095133c6e40e448b86589b"
+  version = "v1.1.1"
+
+[[projects]]
   digest = "1:a1038ef593beb4771c8f0f9c26e8b00410acd800af5c6864651d9bf160ea1813"
   name = "github.com/hpcloud/tail"
   packages = [
@@ -420,6 +428,7 @@
     "github.com/cloudfoundry/bosh-utils/logger",
     "github.com/cloudfoundry/bosh-utils/uuid",
     "github.com/cppforlife/go-semi-semantic/version",
+    "github.com/golang/mock/gomock",
     "github.com/jessevdk/go-flags",
     "github.com/keybase/go-ps",
     "github.com/mattn/go-sqlite3",

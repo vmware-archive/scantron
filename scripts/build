@@ -2,7 +2,7 @@
 
 set -eux
 
-go get -u github.com/jteeuwen/go-bindata/...
+go get github.com/jteeuwen/go-bindata/...
 
 rm data/* || true # file grows on each run
 rm proc_scan.go || true

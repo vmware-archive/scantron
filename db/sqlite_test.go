@@ -205,7 +205,7 @@ var _ = Describe("Sqlite", func() {
 								Protocol: "TCP",
 								Address:  "123.0.0.1",
 								Number:   123,
-								TLSInformation: scantron.TLSInformation{
+								TLSInformation: &scantron.TLSInformation{
 									ScanError: errors.New("this was a terrible error"),
 									Mutual:    true,
 									CipherInformation: scantron.CipherInformation{

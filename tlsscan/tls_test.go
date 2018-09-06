@@ -17,8 +17,10 @@ import (
 )
 
 var _ = Describe("TLS", func() {
+	var subject *tlsscan.TlsScannerImpl
 	BeforeEach(func() {
 		log.SetOutput(GinkgoWriter)
+		subject = &tlsscan.TlsScannerImpl{}
 	})
 
 	Describe("Certificate Report", func() {
@@ -58,7 +60,7 @@ var _ = Describe("TLS", func() {
 			It("should show TLS certificate details", func() {
 				host, port := hostport(server.URL)
 
-				cert, mutual, err := tlsscan.FetchTLSInformation(host, port)
+				cert, mutual, err := subject.FetchTLSInformation(host, port)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(mutual).To(BeFalse())
 				Expect(cert).ShouldNot(BeNil())
@@ -99,7 +101,7 @@ var _ = Describe("TLS", func() {
 			It("should show TLS certificate details", func() {
 				host, port := hostport(server.URL)
 
-				cert, mutual, err := tlsscan.FetchTLSInformation(host, port)
+				cert, mutual, err := subject.FetchTLSInformation(host, port)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(mutual).To(BeTrue())
 				Expect(cert).ShouldNot(BeNil())

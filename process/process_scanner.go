@@ -17,13 +17,18 @@ type ProcessPort struct {
 
 type ProcessPorts []ProcessPort
 
-func ScanProcesses(logger scanlog.Logger) ([]scantron.Process, error) {
-	processes, err := GetProcesses()
+type ProcessScanner struct {
+	SysRes SystemResources
+	TlsScan tlsscan.TlsScanner
+}
+
+func (ps *ProcessScanner) ScanProcesses(logger scanlog.Logger) ([]scantron.Process, error) {
+	processes, err := ps.SysRes.GetProcesses()
 	if err != nil {
 		return nil, err
 	}
 
-	ports := GetPorts()
+	ports := ps.SysRes.GetPorts()
 	for i := range processes {
 		portsForPid := ports.LocalPortsForPID(processes[i].PID)
 
@@ -37,7 +42,7 @@ func ScanProcesses(logger scanlog.Logger) ([]scantron.Process, error) {
 			 continue
 		 }
 
-		 portsForPid[j].TLSInformation = getTLSInformation(logger, portsForPid[j])
+		 portsForPid[j].TLSInformation = ps.getTLSInformation(logger, portsForPid[j])
 		}
 
 		processes[i].Ports = portsForPid
@@ -76,26 +81,26 @@ func readFile(path string) ([]string, error) {
 	return output, nil
 }
 
-func getTLSInformation(logger scanlog.Logger, port scantron.Port) scantron.TLSInformation {
+func (ps *ProcessScanner) getTLSInformation(logger scanlog.Logger, port scantron.Port) *scantron.TLSInformation {
 	portNum := strconv.Itoa(port.Number)
 
 	portLogger := logger.With("port", portNum)
 
-	tlsInformation := scantron.TLSInformation{}
+	tlsInformation := &scantron.TLSInformation{}
 
-	results, err := tlsscan.Scan(portLogger, "localhost", portNum)
+	results, err := ps.TlsScan.Scan(portLogger, "localhost", portNum)
 	if err != nil {
 		tlsInformation.ScanError = err
 		return tlsInformation
 	}
 
 	if !results.HasTLS() {
-		return tlsInformation
+		return nil
 	}
 
 	tlsInformation.CipherInformation = results
 
-	cert, mutual, err := tlsscan.FetchTLSInformation("localhost", portNum)
+	cert, mutual, err := ps.TlsScan.FetchTLSInformation("localhost", portNum)
 	if err != nil {
 		tlsInformation.ScanError = err
 		return tlsInformation
