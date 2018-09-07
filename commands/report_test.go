@@ -90,7 +90,7 @@ var _ = Describe("Report", func() {
 				},
 			}
 
-			err := database.SaveReport(hosts)
+			err := database.SaveReport("cf1", hosts)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -219,7 +219,7 @@ var _ = Describe("Report", func() {
 				},
 			}
 
-			err := database.SaveReport(hosts)
+			err := database.SaveReport("cf1", hosts)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

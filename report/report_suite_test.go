@@ -219,7 +219,7 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
     return nil, err
   }
 
-  err = database.SaveReport(hosts)
+  err = database.SaveReport("cf1", hosts)
   if err != nil {
     return nil, err
   }

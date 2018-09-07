@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/golang/mock/gomock"
+	"github.com/pivotal-cf/scantron/bosh"
+	"github.com/pivotal-cf/scantron/remotemachine"
 
 	"github.com/cppforlife/go-semi-semantic/version"
 	. "github.com/onsi/ginkgo"
@@ -13,17 +16,16 @@ import (
 	"github.com/cloudfoundry/bosh-cli/director/directorfakes"
 
 	"github.com/pivotal-cf/scantron"
-	"github.com/pivotal-cf/scantron/bosh/boshfakes"
-	"github.com/pivotal-cf/scantron/remotemachine/remotemachinefakes"
 	"github.com/pivotal-cf/scantron/scanlog"
 	"github.com/pivotal-cf/scantron/scanner"
 )
 
 var _ = Describe("Bosh Scanning", func() {
 	var (
-		boshScan scanner.Scanner
-		director *boshfakes.FakeBoshDirector
-		machine  *remotemachinefakes.FakeRemoteMachine
+		mockCtrl         *gomock.Controller
+		boshScan         scanner.Scanner
+		targetDeployment *bosh.MockTargetDeployment
+		machine          *remotemachine.MockRemoteMachine
 
 		vmInfo     []boshdirector.VMInfo
 		systemInfo scantron.SystemInfo
@@ -33,10 +35,18 @@ var _ = Describe("Bosh Scanning", func() {
 
 		scanResult scanner.ScanResult
 		scanErr    error
+		logger scanlog.Logger
+		buffer *bytes.Buffer
 	)
 
+	AfterEach(func() {
+		mockCtrl.Finish()
+	})
+
 	BeforeEach(func() {
-		machine = &remotemachinefakes.FakeRemoteMachine{}
+		mockCtrl = gomock.NewController(Test)
+		machine = remotemachine.NewMockRemoteMachine(mockCtrl)
+		logger = scanlog.NewNopLogger()
 
 		systemInfo = scantron.SystemInfo{
 			Processes: []scantron.Process{
@@ -51,15 +61,17 @@ var _ = Describe("Bosh Scanning", func() {
 			},
 		}
 
-		buffer := &bytes.Buffer{}
+		buffer = &bytes.Buffer{}
 		err := json.NewEncoder(buffer).Encode(systemInfo)
 		Expect(err).NotTo(HaveOccurred())
 
-		machine.AddressReturns("10.0.0.1")
-		machine.RunCommandReturns(buffer, nil)
+		machine.EXPECT().Address().Return("10.0.0.1:22").AnyTimes()
+		machine.EXPECT().Host().Return("10.0.0.1").AnyTimes()
+		machine.EXPECT().OSName().Return("trusty").AnyTimes()
+		machine.EXPECT().Password().Return("password").AnyTimes()
+		machine.EXPECT().Close().Return(nil).Times(1)
 
-		director = &boshfakes.FakeBoshDirector{}
-		director.ConnectToReturns(machine)
+		targetDeployment = bosh.NewMockTargetDeployment(mockCtrl)
 
 		vmInfo = []boshdirector.VMInfo{
 			{
@@ -68,6 +80,7 @@ var _ = Describe("Bosh Scanning", func() {
 				IPs:     []string{"10.0.0.1"},
 			},
 		}
+		targetDeployment.EXPECT().ConnectTo(vmInfo[0]).Return(machine).Times(1)
 
 		release1 = &directorfakes.FakeRelease{}
 		release1.NameReturns("release-1")
@@ -83,26 +96,31 @@ var _ = Describe("Bosh Scanning", func() {
 
 		releaseInfo = []boshdirector.Release{release1, release2}
 
-		boshScan = scanner.Bosh(director)
+		boshScan = scanner.Bosh(targetDeployment)
 	})
 
 	JustBeforeEach(func() {
-		director.VMsReturns(vmInfo)
+		setupCall := targetDeployment.EXPECT().Setup().Times(1)
+		targetDeployment.EXPECT().Name().Return("vm").AnyTimes()
+		targetDeployment.EXPECT().VMs().Return(vmInfo).Times(1)
+		targetDeployment.EXPECT().Releases().Return(releaseInfo).Times(1)
+		targetDeployment.EXPECT().Cleanup().Times(1).After(setupCall)
 
-		director.ReleasesReturns(releaseInfo)
-
-		logger := scanlog.NewNopLogger()
-		scanResult, scanErr = boshScan.Scan(logger)
 	})
 
 	It("cleans up the proc_scan binary after the scanning is done", func() {
-		Expect(machine.DeleteFileCallCount()).To(Equal(1))
-
-		remotePath := machine.DeleteFileArgsForCall(0)
-		Expect(remotePath).To(Equal("./proc_scan"))
+		machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
+		machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan 10.0.0.1").Return(buffer, nil).Times(1)
+		machine.EXPECT().DeleteFile("./proc_scan").Times(1)
+		scanResult, scanErr = boshScan.Scan(logger)
 	})
 
 	It("returns a report from the deployment", func() {
+
+		machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
+		machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan 10.0.0.1").Return(buffer, nil).Times(1)
+		machine.EXPECT().DeleteFile("./proc_scan").Times(1)
+		scanResult, scanErr = boshScan.Scan(logger)
 		Expect(scanResult).To(Equal(scanner.ScanResult{
 			ReleaseResults: []scanner.ReleaseResult{
 				{
@@ -128,29 +146,37 @@ var _ = Describe("Bosh Scanning", func() {
 	Context("when the vm index is nil", func() {
 		BeforeEach(func() {
 			vmInfo[0].Index = nil
+			machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
+			machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan 10.0.0.1").Return(buffer, nil).Times(1)
+			machine.EXPECT().DeleteFile("./proc_scan").Times(1)
 		})
 
 		It("all still works", func() {
+			scanResult, scanErr = boshScan.Scan(logger)
 			Expect(scanErr).ShouldNot(HaveOccurred())
 		})
 	})
 
 	Context("when uploading the scanning binary fails", func() {
 		BeforeEach(func() {
-			machine.UploadFileReturns(errors.New("disaster"))
+			machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(errors.New("disaster")).Times(1)
 		})
 
 		It("keeps going", func() {
+			scanResult, scanErr = boshScan.Scan(logger)
 			Expect(scanErr).NotTo(HaveOccurred())
 		})
 	})
 
 	Context("when running the scanning binary fails", func() {
 		BeforeEach(func() {
-			machine.RunCommandReturns(nil, errors.New("disaster"))
+			machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
+			machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan 10.0.0.1").Return(nil, errors.New("disaster")).Times(1)
+			machine.EXPECT().DeleteFile("./proc_scan").Times(1)
 		})
 
 		It("keeps going", func() {
+			scanResult, scanErr = boshScan.Scan(logger)
 			Expect(scanErr).NotTo(HaveOccurred())
 		})
 	})

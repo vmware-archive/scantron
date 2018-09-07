@@ -1,8 +1,10 @@
 package bosh
 
 import (
+	"bufio"
 	"io/ioutil"
 	"net"
+	"os"
 
 	boshconfig "github.com/cloudfoundry/bosh-cli/cmd/config"
 	boshdir "github.com/cloudfoundry/bosh-cli/director"
@@ -16,26 +18,30 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-//go:generate counterfeiter . BoshDirector
-
-type BoshDirector interface {
+type TargetDeployment interface {
+	Name() string
 	VMs() []boshdir.VMInfo
-	ConnectTo(scanlog.Logger, boshdir.VMInfo) remotemachine.RemoteMachine
-
 	Releases() []boshdir.Release
 
 	Setup() error
+	ConnectTo(boshdir.VMInfo) remotemachine.RemoteMachine
 	Cleanup() error
 }
 
-func NewBoshDirector(
-		logger scanlog.Logger,
+type TargetDeploymentImpl struct {
+	sshOpts boshdir.SSHOpts
+	signer ssh.Signer
+	deployment boshdir.Deployment
+	logger scanlog.Logger
+}
+
+func GetDeployments(
 		creds boshconfig.Creds,
 		caCertPath string,
-		deploymentName string,
+		deploymentNames []string,
 		boshURL string,
-		boshLogger boshlog.Logger,
-) (BoshDirector, error) {
+		logger scanlog.Logger) ([]TargetDeployment, error) {
+
 	var caCert string
 
 	if caCertPath != "" {
@@ -48,106 +54,93 @@ func NewBoshDirector(
 		caCert = string(caCertBytes)
 	}
 
+	out := bufio.NewWriter(os.Stdout)
+	boshLogger := boshlog.NewWriterLogger(boshlog.LevelNone, out)
 	director, err := getDirector(boshURL, creds, caCert, boshLogger)
 	if err != nil {
 		logger.Errorf("Could not reach BOSH Director (%s): %s", boshURL, err)
 		return nil, err
 	}
 
-	deployment, err := director.FindDeployment(deploymentName)
-	if err != nil {
-		logger.Errorf("Failed to find deployment (%s): %s", deploymentName, err)
-		return nil, err
-	}
-
-	vmInfos, err := deployment.VMInfos()
-	if err != nil {
-		logger.Errorf("Failed to list instances: %s", err)
-		return nil, err
-	}
-
-	releases, err := deployment.Releases()
-	if err != nil {
-		logger.Errorf("Failed to list releases: %s", err)
-		return nil, err
-	}
-
+	deps := []TargetDeployment{}
 	uuidgen := boshuuid.NewGenerator()
+	for _, depName := range deploymentNames {
 
-	sshOpts, privKey, err := boshdir.NewSSHOpts(uuidgen)
-	if err != nil {
-		logger.Errorf("Could not create SSH options: %s", err)
-		return nil, err
+		sshOpts, privKey, err := boshdir.NewSSHOpts(uuidgen)
+		if err != nil {
+			logger.Errorf("Could not create SSH options: %s", err)
+			return nil, err
+		}
+		logger.Debugf("Generated user %s for deployment %s", sshOpts.Username, depName)
+
+		signer, err := ssh.ParsePrivateKey([]byte(privKey))
+		if err != nil {
+			logger.Errorf("Failed to parse SSH key: %s", err)
+			return nil, err
+		}
+
+		deployment, err := director.FindDeployment(depName)
+		if err != nil {
+			logger.Errorf("Failed to find deployment (%s): %s", depName, err)
+			return nil, err
+		}
+		logger.Debugf("Found deployment %s", deployment.Name())
+		deps = append(deps, &TargetDeploymentImpl {
+			sshOpts: sshOpts,
+			signer: signer,
+			deployment: deployment,
+			logger: logger,
+		})
 	}
 
-	signer, err := ssh.ParsePrivateKey([]byte(privKey))
-	if err != nil {
-		logger.Errorf("Failed to parse SSH key: %s", err)
-		return nil, err
+	for _, d := range deps {
+		logger.Debugf("Generated Target deployment %s", d.Name())
 	}
 
-	return &boshDirector{
-		vms:        vmInfos,
-		releases:   releases,
-		sshOpts:    sshOpts,
-		deployment: deployment,
-		signer:     signer,
-		logger:     logger,
-	}, nil
+	return deps, nil
 }
 
-type boshDirector struct {
-	vms     []boshdir.VMInfo
-	sshOpts boshdir.SSHOpts
-
-	releases []boshdir.Release
-
-	signer ssh.Signer
-
-	deployment boshdir.Deployment
-
-	logger scanlog.Logger
+func (d *TargetDeploymentImpl) Name() string {
+	return d.deployment.Name()
 }
 
-func (d *boshDirector) VMs() []boshdir.VMInfo {
-	return d.vms
+func (d *TargetDeploymentImpl) VMs() []boshdir.VMInfo {
+	vms, _ := d.deployment.VMInfos()
+	return vms
 }
 
-func (d *boshDirector) Releases() []boshdir.Release {
-	return d.releases
+func (d *TargetDeploymentImpl) Releases() []boshdir.Release {
+	releases, _ := d.deployment.Releases()
+	return releases
 }
 
-func (d *boshDirector) Cleanup() error {
-	slug := boshdir.NewAllOrInstanceGroupOrInstanceSlug("", "")
-	err := d.deployment.CleanUpSSH(slug, d.sshOpts)
-	if err != nil {
-		d.logger.Errorf("Failed to cleanup SSH session: %s", err)
-	}
-
-	return err
-}
-
-func (d *boshDirector) Setup() error {
+func (d *TargetDeploymentImpl) Setup() error {
+	d.logger.Debugf("About to setup SSH for deployment %s", d.Name())
 	slug := boshdir.NewAllOrInstanceGroupOrInstanceSlug("", "")
 
 	_, err := d.deployment.SetUpSSH(slug, d.sshOpts)
 	if err != nil {
-		d.logger.Errorf("Failed to set up SSH session: %s", err)
 		return err
 	}
 
 	return nil
 }
 
-func (d *boshDirector) ConnectTo(logger scanlog.Logger, vm boshdir.VMInfo) remotemachine.RemoteMachine {
+func (d *TargetDeploymentImpl) ConnectTo(vm boshdir.VMInfo) remotemachine.RemoteMachine {
 	stemcells, _ := d.deployment.Stemcells()
-	logger.Infof("Deployment stemcell: %s %s %s", stemcells[0].Name(), stemcells[0].OSName(), stemcells[0].Version())
 	return remotemachine.NewRemoteMachine(scantron.Machine{
 		Address:  BestAddress(vm.IPs),
 		Username: d.sshOpts.Username,
 		Key:      d.signer,
 		OSName:   stemcells[0].Name(),
 	})
+}
+
+func (d *TargetDeploymentImpl) Cleanup() error {
+	d.logger.Debugf("About to cleanup SSH for deployment %s", d.Name())
+	slug := boshdir.NewAllOrInstanceGroupOrInstanceSlug("", "")
+	err := d.deployment.CleanUpSSH(slug, d.sshOpts)
+	return err
 }
 
 func getDirector(

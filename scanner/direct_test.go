@@ -4,29 +4,35 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/golang/mock/gomock"
+	"github.com/pivotal-cf/scantron/remotemachine"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/pivotal-cf/scantron"
-	"github.com/pivotal-cf/scantron/remotemachine/remotemachinefakes"
 	"github.com/pivotal-cf/scantron/scanlog"
 	"github.com/pivotal-cf/scantron/scanner"
 )
 
 var _ = Describe("Direct Scanning", func() {
 	var (
+		mockCtrl         *gomock.Controller
 		directScan scanner.Scanner
-		machine    *remotemachinefakes.FakeRemoteMachine
+		machine    *remotemachine.MockRemoteMachine
 
 		systemInfo scantron.SystemInfo
 
 		scanResults scanner.ScanResult
 		scanErr     error
+		logger scanlog.Logger
+		buffer *bytes.Buffer
 	)
 
 	BeforeEach(func() {
-		machine = &remotemachinefakes.FakeRemoteMachine{}
+		mockCtrl = gomock.NewController(Test)
+		logger = scanlog.NewNopLogger()
+		machine = remotemachine.NewMockRemoteMachine(mockCtrl)
 
 		systemInfo = scantron.SystemInfo{
 			Processes: []scantron.Process{
@@ -41,37 +47,34 @@ var _ = Describe("Direct Scanning", func() {
 			},
 		}
 
-		buffer := &bytes.Buffer{}
+		buffer = &bytes.Buffer{}
 		err := json.NewEncoder(buffer).Encode(systemInfo)
 		Expect(err).NotTo(HaveOccurred())
 
-		machine.AddressReturns("10.0.0.1:22")
-		machine.RunCommandReturns(buffer, nil)
+		machine.EXPECT().Address().Return("10.0.0.1:22").AnyTimes()
+		machine.EXPECT().Host().Return("10.0.0.1").AnyTimes()
+		machine.EXPECT().OSName().Return("trusty").AnyTimes()
+		machine.EXPECT().Password().Return("password").AnyTimes()
 
 		directScan = scanner.Direct(machine)
 	})
 
-	JustBeforeEach(func() {
-		logger := scanlog.NewNopLogger()
+	AfterEach(func() {
+		mockCtrl.Finish()
+	})
+
+	It("uploads and cleans the proc_scan binary to the remote machine", func() {
+		machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
+		machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan 10.0.0.1").Return(buffer, nil).Times(1)
+		machine.EXPECT().DeleteFile("./proc_scan").Times(1)
 		scanResults, scanErr = directScan.Scan(logger)
 	})
 
-	It("uploads the proc_scan binary to the remote machine", func() {
-		Expect(machine.UploadFileCallCount()).To(Equal(1))
-
-		localPath, remotePath := machine.UploadFileArgsForCall(0)
-		Expect(localPath).To(ContainSubstring("/proc_scan"))
-		Expect(remotePath).To(Equal("./proc_scan"))
-	})
-
-	It("cleans up the proc_scan binary after the scanning is done", func() {
-		Expect(machine.DeleteFileCallCount()).To(Equal(1))
-
-		remotePath := machine.DeleteFileArgsForCall(0)
-		Expect(remotePath).To(Equal("./proc_scan"))
-	})
-
 	It("returns a report from the machine", func() {
+		machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
+		machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan 10.0.0.1").Return(buffer, nil).Times(1)
+		machine.EXPECT().DeleteFile("./proc_scan").Times(1)
+		scanResults, scanErr = directScan.Scan(logger)
 		Expect(scanResults.JobResults).To(Equal([]scanner.JobResult{
 			{
 				IP:       "10.0.0.1",
@@ -84,20 +87,24 @@ var _ = Describe("Direct Scanning", func() {
 
 	Context("when uploading the scanning binary fails", func() {
 		BeforeEach(func() {
-			machine.UploadFileReturns(errors.New("disaster"))
+			machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(errors.New("disaster")).Times(1)
 		})
 
 		It("fails to scan", func() {
+			scanResults, scanErr = directScan.Scan(logger)
 			Expect(scanErr).To(MatchError("disaster"))
 		})
 	})
 
 	Context("when running the scanning binary fails", func() {
 		BeforeEach(func() {
-			machine.RunCommandReturns(nil, errors.New("disaster"))
+			machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
+			machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan 10.0.0.1").Return(nil, errors.New("disaster")).Times(1)
+			machine.EXPECT().DeleteFile("./proc_scan").Times(1)
 		})
 
 		It("fails to scan", func() {
+			scanResults, scanErr = directScan.Scan(logger)
 			Expect(scanErr).To(MatchError("disaster"))
 		})
 	})

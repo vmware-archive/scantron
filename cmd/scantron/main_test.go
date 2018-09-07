@@ -65,7 +65,7 @@ var _ = Describe("Main", func() {
 			Expect(err).NotTo(HaveOccurred())
 			defer database.Close()
 
-			err = database.SaveReport(hosts)
+			err = database.SaveReport("cf1", hosts)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

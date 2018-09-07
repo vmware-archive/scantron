@@ -11,8 +11,6 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-//go:generate counterfeiter . RemoteMachine
-
 type RemoteMachine interface {
 	Address() string
 	Host() string

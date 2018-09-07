@@ -88,23 +88,45 @@ func (db *Database) Version() int {
   return version
 }
 
-func (db *Database) SaveReport(report scanner.ScanResult) error {
+func (db *Database) SaveReport(deployment string, report scanner.ScanResult) error {
   tx, err := db.db.Begin()
   if err != nil {
     return err
   }
   defer tx.Rollback()
 
+  var depID int
+  depQuery := "SELECT id FROM deployments WHERE name = ?"
+  err = tx.QueryRow(depQuery, deployment).Scan(&depID)
+  if err != nil {
+    if err != sql.ErrNoRows {
+      return err
+    }
+
+    res, err := tx.Exec("INSERT INTO deployments(name) VALUES (?)", deployment)
+    if err != nil {
+      return err
+    }
+
+    insertedID, err := res.LastInsertId()
+    if err != nil {
+      return err
+    }
+
+    depID = int(insertedID)
+  }
+
   for _, scan := range report.JobResults {
+
     var hostID int
     query := "SELECT id FROM hosts WHERE name = ? AND ip = ?"
-    err := tx.QueryRow(query, scan.Job, scan.IP).Scan(&hostID)
+    err = tx.QueryRow(query, scan.Job, scan.IP).Scan(&hostID)
     if err != nil {
       if err != sql.ErrNoRows {
         return err
       }
 
-      res, err := tx.Exec("INSERT INTO hosts(name, ip) VALUES (?, ?)", scan.Job, scan.IP)
+      res, err := tx.Exec("INSERT INTO hosts(name, ip, deployment_id) VALUES (?, ?, ?)", scan.Job, scan.IP, depID)
       if err != nil {
         return err
       }
@@ -115,59 +137,60 @@ func (db *Database) SaveReport(report scanner.ScanResult) error {
       }
 
       hostID = int(insertedID)
+    }
 
-      for _, service := range scan.Services {
-        cmdline := strings.Join(service.Cmdline, " ")
-        res, err := tx.Exec(
-          "INSERT INTO processes(host_id, name, pid, cmdline, user) VALUES (?, ?, ?, ?, ?)",
-          hostID, service.CommandName, service.PID, cmdline, service.User,
+    for _, service := range scan.Services {
+      cmdline := strings.Join(service.Cmdline, " ")
+      res, err := tx.Exec(
+        "INSERT INTO processes(host_id, name, pid, cmdline, user) VALUES (?, ?, ?, ?, ?)",
+        hostID, service.CommandName, service.PID, cmdline, service.User,
+      )
+      if err != nil {
+        return err
+      }
+
+      processID, err := res.LastInsertId()
+      if err != nil {
+        return err
+      }
+
+      for _, port := range service.Ports {
+        res, err = tx.Exec(
+          "INSERT INTO ports(process_id, protocol, address, number, foreignAddress, foreignNumber, state) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          processID, port.Protocol, port.Address, port.Number, port.ForeignAddress, port.ForeignNumber, port.State,
         )
         if err != nil {
           return err
         }
 
-        processID, err := res.LastInsertId()
+        portID, err := res.LastInsertId()
         if err != nil {
           return err
         }
 
-        for _, port := range service.Ports {
-          res, err = tx.Exec(
-            "INSERT INTO ports(process_id, protocol, address, number, foreignAddress, foreignNumber, state) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            processID, port.Protocol, port.Address, port.Number, port.ForeignAddress, port.ForeignNumber, port.State,
-          )
-          if err != nil {
-            return err
-          }
-
-          portID, err := res.LastInsertId()
-          if err != nil {
-            return err
-          }
-
-          if port.TLSInformation != nil && port.TLSInformation.ScanError != nil {
-            _, err = tx.Exec(`
+        if port.TLSInformation != nil && port.TLSInformation.ScanError != nil {
+          _, err = tx.Exec(`
             INSERT INTO tls_scan_errors (
                port_id,
                cert_scan_error
             ) VALUES (?, ?)`,
-              portID,
-              port.TLSInformation.ScanError.Error(),
-            )
-            if err != nil {
-              return err
-            }
+            portID,
+            port.TLSInformation.ScanError.Error(),
+          )
+          if err != nil {
+            return err
+          }
+        }
+
+        if port.TLSInformation != nil && port.TLSInformation.Certificate != nil {
+          cert := port.TLSInformation.Certificate
+
+          ciJson, err := json.Marshal(port.TLSInformation.CipherInformation)
+          if err != nil {
+            return err
           }
 
-          if port.TLSInformation != nil && port.TLSInformation.Certificate != nil {
-            cert := port.TLSInformation.Certificate
-
-            ciJson, err := json.Marshal(port.TLSInformation.CipherInformation)
-            if err != nil {
-              return err
-            }
-
-            _, err = tx.Exec(`
+          _, err = tx.Exec(`
             INSERT INTO tls_informations (
                port_id,
                cert_expiration,
@@ -180,55 +203,54 @@ func (db *Database) SaveReport(report scanner.ScanResult) error {
                cipher_suites,
                mutual
              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              portID,
-              cert.Expiration,
-              cert.Bits,
-              cert.Subject.Country,
-              cert.Subject.Province,
-              cert.Subject.Locality,
-              cert.Subject.Organization,
-              cert.Subject.CommonName,
-              string(ciJson),
-              port.TLSInformation.Mutual,
-            )
-            if err != nil {
-              return err
-            }
+            portID,
+            cert.Expiration,
+            cert.Bits,
+            cert.Subject.Country,
+            cert.Subject.Province,
+            cert.Subject.Locality,
+            cert.Subject.Organization,
+            cert.Subject.CommonName,
+            string(ciJson),
+            port.TLSInformation.Mutual,
+          )
+          if err != nil {
+            return err
           }
         }
-
-        _, err = tx.Exec("INSERT INTO env_vars(var, process_id) VALUES (?, ?)",
-          strings.Join(service.Env, " "), processID,
-        )
-        if err != nil {
-          return err
-        }
       }
 
-      for _, file := range scan.Files {
-        _, err = tx.Exec(
-          "INSERT INTO files(host_id, path, permissions) VALUES (?, ?, ?)",
-          hostID, file.Path, file.Permissions,
-        )
-        if err != nil {
-          return err
-        }
+      _, err = tx.Exec("INSERT INTO env_vars(var, process_id) VALUES (?, ?)",
+        strings.Join(service.Env, " "), processID,
+      )
+      if err != nil {
+        return err
       }
+    }
 
-      for _, sshKey := range scan.SSHKeys {
-        _, err = tx.Exec(
-          "INSERT INTO ssh_keys(host_id, type, key) VALUES (?, ?, ?)",
-          hostID, sshKey.Type, sshKey.Key,
-        )
-        if err != nil {
-          return err
-        }
+    for _, file := range scan.Files {
+      _, err = tx.Exec(
+        "INSERT INTO files(host_id, path, permissions) VALUES (?, ?, ?)",
+        hostID, file.Path, file.Permissions,
+      )
+      if err != nil {
+        return err
+      }
+    }
+
+    for _, sshKey := range scan.SSHKeys {
+      _, err = tx.Exec(
+        "INSERT INTO ssh_keys(host_id, type, key) VALUES (?, ?, ?)",
+        hostID, sshKey.Type, sshKey.Key,
+      )
+      if err != nil {
+        return err
       }
     }
   }
 
   for _, releaseReport := range report.ReleaseResults {
-    _, err := tx.Exec("INSERT INTO releases(name, version) VALUES (?, ?)", releaseReport.Name, releaseReport.Version)
+    _, err := tx.Exec("INSERT INTO releases(name, version, deployment_id) VALUES (?, ?, ?)", releaseReport.Name, releaseReport.Version, depID)
     if err != nil {
       return err
     }

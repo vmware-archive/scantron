@@ -48,6 +48,16 @@ You can then scan a BOSH deployment with the following command:
       --client scantron \
       --client-secret <scantron secret> \
       [--ca-cert bosh.pem]
+      
+Multiple deployments can be specified and the results merged into a single database.
+
+    scantron bosh-scan \
+      --director-url <bosh address> \
+      --bosh-deployment <bosh deployment name> \
+      --bosh-deployment <second bosh deployment name> \
+      --client scantron \
+      --client-secret <scantron secret> \
+      [--ca-cert bosh.pem]
 
 **Note:** The scan expects to be able to reach the BOSH machines directly at
 the moment so that it can scan the endpoints for their TLS configuration. A

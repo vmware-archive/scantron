@@ -64,7 +64,7 @@ func (command *DirectScanCommand) Execute(args []string) error {
 		log.Fatalf("failed to scan: %s", err.Error())
 	}
 
-	err = db.SaveReport(results)
+	err = db.SaveReport("direct-scan", results)
 	if err != nil {
 		log.Fatalf("failed to save to database: %s", err.Error())
 	}

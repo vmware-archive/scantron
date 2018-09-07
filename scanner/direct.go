@@ -27,7 +27,6 @@ func (d *direct) Scan(logger scanlog.Logger) (ScanResult, error) {
 		hostLogger.Errorf("Failed to scan machine: %s", err)
 		return ScanResult{}, err
 	}
-	defer d.machine.Close()
 
 	hostname, _, err := net.SplitHostPort(d.machine.Address())
 	if err != nil {

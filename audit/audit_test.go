@@ -34,7 +34,7 @@ var _ = Describe("Audit", func() {
 	})
 
 	JustBeforeEach(func() {
-		err := database.SaveReport(hosts)
+		err := database.SaveReport("cf1", hosts)
 		Expect(err).NotTo(HaveOccurred())
 	})
 

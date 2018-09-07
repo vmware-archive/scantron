@@ -42,7 +42,7 @@ var _ = Describe("Generate", func() {
 	})
 
 	JustBeforeEach(func() {
-		err := database.SaveReport(hosts)
+		err := database.SaveReport("cf1", hosts)
 		Expect(err).NotTo(HaveOccurred())
 		err = audit.GenerateManifest(writer, database.DB())
 		Expect(err).NotTo(HaveOccurred())

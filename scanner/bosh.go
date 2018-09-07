@@ -1,37 +1,37 @@
 package scanner
 
 import (
-	"fmt"
-	"strconv"
-	"sync"
+  "fmt"
+  "strconv"
+  "sync"
 
-	"github.com/pivotal-cf/scantron/bosh"
-	"github.com/pivotal-cf/scantron/scanlog"
+  "github.com/pivotal-cf/scantron/bosh"
+  "github.com/pivotal-cf/scantron/scanlog"
 )
 
 type boshScanner struct {
-	director bosh.BoshDirector
+  deployment bosh.TargetDeployment
 }
 
-func Bosh(director bosh.BoshDirector) Scanner {
-	return &boshScanner{
-		director: director,
-	}
+func Bosh(deployment bosh.TargetDeployment) Scanner {
+  return &boshScanner{
+    deployment: deployment,
+  }
 }
 
 func (s *boshScanner) Scan(logger scanlog.Logger) (ScanResult, error) {
-	vms := s.director.VMs()
+	vms := s.deployment.VMs()
 
 	wg := &sync.WaitGroup{}
 	wg.Add(len(vms))
 
 	hosts := make(chan JobResult)
 
-	err := s.director.Setup()
+	err := s.deployment.Setup()
 	if err != nil {
 		return ScanResult{}, err
 	}
-	defer s.director.Cleanup()
+	defer s.deployment.Cleanup()
 
 	for _, vm := range vms {
 		vm := vm
@@ -48,7 +48,7 @@ func (s *boshScanner) Scan(logger scanlog.Logger) (ScanResult, error) {
 				"address", ip,
 			)
 
-			remoteMachine := s.director.ConnectTo(machineLogger, vm)
+			remoteMachine := s.deployment.ConnectTo(vm)
 			defer remoteMachine.Close()
 
 			systemInfo, err := scanMachine(machineLogger, remoteMachine)
@@ -74,7 +74,7 @@ func (s *boshScanner) Scan(logger scanlog.Logger) (ScanResult, error) {
 	}
 
 	releaseResults := []ReleaseResult{}
-	for _, release := range s.director.Releases() {
+	for _, release := range s.deployment.Releases() {
 		releaseResults = append(releaseResults, ReleaseResult{Name: release.Name(), Version: release.Version().String()})
 	}
 
