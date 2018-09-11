@@ -20,3 +20,9 @@ type Machine struct {
 	Key      ssh.Signer
 	OSName   string
 }
+
+var Debug bool
+
+func SetDebug(debug bool) {
+	Debug = debug
+}

@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	boshconfig "github.com/cloudfoundry/bosh-cli/cmd/config"
+	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/bosh"
 	"github.com/pivotal-cf/scantron/db"
 	"github.com/pivotal-cf/scantron/scanlog"
@@ -26,6 +27,7 @@ type BoshScanCommand struct {
 }
 
 func (command *BoshScanCommand) Execute(args []string) error {
+	scantron.SetDebug(Scantron.Debug)
 	logger, err := scanlog.NewLogger(Scantron.Debug)
 	if err != nil {
 		log.Fatalln("failed to set up logger:", err)

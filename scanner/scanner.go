@@ -97,16 +97,19 @@ func scanMachine(logger scanlog.Logger, remoteMachine remotemachine.RemoteMachin
 		command = ".\\proc_scan.exe"
 	}
 
+	if scantron.Debug {
+		command = strings.Join([]string{command, "--debug"}, " ")
+	}
+	command = strings.Join([]string{command, "--context", remoteMachine.Host()}, " ")
+
 	err = remoteMachine.UploadFile(srcFilePath, dstFilePath)
 	if err != nil {
 		logger.Errorf("Failed to upload scanner to remote machine: %s", err)
 		return systemInfo, err
 	}
 
-	logger.Infof("Running %s on %s", command, remoteMachine.Host())
-
 	defer remoteMachine.DeleteFile(dstFilePath)
-	output, err := remoteMachine.RunCommand(fmt.Sprintf("%s %s", command, remoteMachine.Host()))
+	output, err := remoteMachine.RunCommand(command)
 	if err != nil {
 		logger.Errorf("Failed to run scanner on remote machine: %s", err)
 		return systemInfo, err

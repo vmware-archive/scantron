@@ -24,6 +24,7 @@ type DirectScanCommand struct {
 }
 
 func (command *DirectScanCommand) Execute(args []string) error {
+	scantron.SetDebug(Scantron.Debug)
 	logger, err := scanlog.NewLogger(Scantron.Debug)
 	if err != nil {
 		log.Fatalln("failed to set up logger:", err)

@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jessevdk/go-flags"
 	"github.com/pivotal-cf/scantron/filesystem"
 	"github.com/pivotal-cf/scantron/ssh"
 	"github.com/pivotal-cf/scantron/tlsscan"
 	"os"
-
 	"log"
 
 	"github.com/pivotal-cf/scantron"
@@ -16,14 +16,22 @@ import (
 )
 
 func main() {
+	var opts struct {
+		Debug bool `long:"debug" description:"Show debug logs in output"`
+		Context string `long:"context" description:"Log context"`
+	}
 
-	address := os.Args[1]
-	logger, err := scanlog.NewLogger(false)
+	_, err := flags.Parse(&opts)
+	if err != nil {
+		panic(err)
+	}
+
+	logger, err := scanlog.NewLogger(opts.Debug)
 	if err != nil {
 		log.Fatalln("failed to set up logger:", err)
 	}
 	logger = logger.With(
-		"host", address,
+		"context", opts.Context,
 	)
 
 	processScanner := process.ProcessScanner{
