@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"github.com/pivotal-cf/scantron/tlsscan"
 
 	"github.com/pivotal-cf/scantron/db"
 )
@@ -21,15 +22,23 @@ func (s stringSlice) contains(str string) bool {
 	return false
 }
 
-var goodCiphers = stringSlice{
-	"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
-	"TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
-	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-	"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-}
-
 var goodProtocols = stringSlice{
 	"VersionTLS12",
+}
+
+func buildGoodCiphers() (stringSlice, error) {
+	allCiphers, err := tlsscan.BuildCipherSuites()
+	if err != nil {
+		return nil, err
+	}
+
+	goodCiphers := make(stringSlice, 0)
+	for _, c := range allCiphers {
+		if c.Recommended {
+			goodCiphers = append(goodCiphers, c.Name)
+		}
+	}
+	return goodCiphers, nil
 }
 
 func BuildTLSViolationsReport(database *db.Database) (Report, error) {
@@ -82,7 +91,10 @@ func BuildTLSViolationsReport(database *db.Database) (Report, error) {
 			return Report{}, err
 		}
 
-		nonApprovedProtocols, nonApprovedCiphers := approvedProtocolsAndCiphers(cs)
+		nonApprovedProtocols, nonApprovedCiphers, err := approvedProtocolsAndCiphers(cs)
+		if err != nil {
+			return Report{}, err
+		}
 
 		if len(nonApprovedProtocols) == 0 && len(nonApprovedCiphers) == 0 {
 			continue
@@ -99,8 +111,13 @@ func BuildTLSViolationsReport(database *db.Database) (Report, error) {
 	return report, nil
 }
 
-func approvedProtocolsAndCiphers(cs cipherSuites) ([]string, []string) {
-	var nonApprovedProtocols, nonApprovedCiphers []string
+func approvedProtocolsAndCiphers(cs cipherSuites) ([]string, []string, error) {
+	var nonApprovedProtocols, nonApprovedCiphers stringSlice
+
+	goodCiphers, err := buildGoodCiphers()
+	if err != nil {
+		return nil, nil, err
+	}
 
 	for protocol, cipherSuites := range cs {
 		if !goodProtocols.contains(protocol) && len(cipherSuites) > 0 {
@@ -115,5 +132,5 @@ func approvedProtocolsAndCiphers(cs cipherSuites) ([]string, []string) {
 		}
 	}
 
-	return nonApprovedProtocols, nonApprovedCiphers
+	return nonApprovedProtocols, nonApprovedCiphers, nil
 }

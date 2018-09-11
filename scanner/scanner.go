@@ -2,14 +2,16 @@ package scanner
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/rakyll/statik/fs"
 	"io/ioutil"
 	"os"
-	"fmt"
 	"strings"
 
 	"github.com/pivotal-cf/scantron"
 	"github.com/pivotal-cf/scantron/remotemachine"
 	"github.com/pivotal-cf/scantron/scanlog"
+	_ "github.com/pivotal-cf/scantron/statik"
 )
 
 type Scanner interface {
@@ -46,11 +48,16 @@ func buildJobResult(host scantron.SystemInfo, jobName, address string) JobResult
 }
 
 func writeProcScanToTempFile(osName string) (string, error) {
-	data_path := "data/proc_scan_linux"
+	data_path := "/proc_scan/proc_scan_linux"
 	if strings.Contains(osName, "windows") {
-		data_path = "data/proc_scan_windows"
+		data_path = "/proc_scan/proc_scan_windows"
 	}
-	data, err := scantron.Asset(data_path)
+	statikFS, err := fs.New()
+	if err != nil {
+		return "", err
+	}
+
+	data, err := fs.ReadFile(statikFS, data_path)
 	if err != nil {
 		return "", err
 	}

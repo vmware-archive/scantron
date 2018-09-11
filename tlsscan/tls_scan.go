@@ -50,16 +50,20 @@ func (s *TlsScannerImpl) Scan(logger scanlog.Logger, host string, port string) (
   logger.Infof("Starting cipher scan for %s:%s", host, port)
 
   sem := semaphore.NewWeighted(maxInFlight)
-  ciphersuites:= len(supportedProtocols) * len(CipherSuites)
+  cipherSuites, err := BuildCipherSuites()
+  if err != nil {
+    return results, err
+  }
+  numCiphersuites := len(supportedProtocols) * len(cipherSuites)
   resultChan := make(chan result, maxInFlight)
 
   wg := &sync.WaitGroup{}
-  wg.Add(ciphersuites)
+  wg.Add(numCiphersuites)
 
   go func(logger scanlog.Logger) {
     for _, version := range supportedProtocols {
       logger.Debugf("Starting TLS version %s", version.Name)
-      for _, cipherSuite := range CipherSuites {
+      for _, cipherSuite := range cipherSuites {
         logger.Debugf("Starting ciphersuite %s", cipherSuite.Name)
         scanLogger := logger.With(
           "host", host,

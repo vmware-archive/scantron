@@ -128,6 +128,10 @@
   name = "github.com/golang/mock"
   version = "1.1.1"
 
+[[constraint]]
+  name = "github.com/rakyll/statik"
+  version = "0.1.4"
+
 [prune]
   go-tests = true
   unused-packages = true

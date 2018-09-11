@@ -2,15 +2,15 @@
 
 set -eux
 
-go get github.com/jteeuwen/go-bindata/...
+go get github.com/rakyll/statik
 
-rm data/* || true # file grows on each run
-rm proc_scan.go || true
+rm data/proc_scan/* || true
 rm scantron || true
+rm -rf statik*
 
-GOOS=linux GOARCH=amd64 go build -o data/proc_scan_linux ./cmd/proc_scan
-GOOS=windows GOARCH=amd64 go build -o data/proc_scan_windows ./cmd/proc_scan
+statik -src=data -p statik
+GOOS=linux GOARCH=amd64 go build -o data/proc_scan/proc_scan_linux ./cmd/proc_scan
+GOOS=windows GOARCH=amd64 go build -o data/proc_scan/proc_scan_windows ./cmd/proc_scan
 
-$GOPATH/bin/go-bindata -o proc_scan.go -pkg scantron data
-
+statik -src=data -p statik -f # overwrite statik.go to include the two proc_scan binaries in addition to the tls-parameters.csv
 GOOS=linux GOARCH=amd64 go build -o scantron ./cmd/scantron

@@ -271,6 +271,14 @@
   version = "v1.8.2"
 
 [[projects]]
+  digest = "1:ea0700160aca4ef099f4e06686a665a87691f4248dddd40796925eda2e46bd64"
+  name = "github.com/rakyll/statik"
+  packages = ["fs"]
+  pruneopts = "UT"
+  revision = "aa8a7b1baecd0f31a436bf7956fcdcc609a83035"
+  version = "v0.1.4"
+
+[[projects]]
   digest = "1:0aa7bbe67c190457533cbaca642225027be7ce74c986db703ca634f74a0389a0"
   name = "github.com/square/certstrap"
   packages = ["pkix"]
@@ -441,6 +449,7 @@
     "github.com/pivotal-cf/paraphernalia/secure/tlsconfig",
     "github.com/pivotal-cf/paraphernalia/test/certtest",
     "github.com/pkg/sftp",
+    "github.com/rakyll/statik/fs",
     "go.uber.org/zap",
     "go.uber.org/zap/zapcore",
     "golang.org/x/crypto/ed25519",

@@ -13,6 +13,6 @@ cmd/proc_scan/proc_scan
 cmd/scantron/scantron
 
 
-# go-bindata
-/data/**
-proc_scan.go
+# statik
+/data/proc_scan/**
+/statik*
