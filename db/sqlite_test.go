@@ -146,7 +146,7 @@ var _ = Describe("Sqlite", func() {
 
 			_, err = db.OpenDatabase(dbPath)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("The database version (0) does not match latest version"))
+			Expect(err.Error()).To(ContainSubstring("no such table: version"))
 		})
 
 		It("returns an error when the database version is old", func() {

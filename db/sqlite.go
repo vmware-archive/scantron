@@ -56,7 +56,10 @@ func OpenDatabase(path string) (*Database, error) {
 
   database := &Database{db: db}
 
-  version := database.Version()
+  version, err := database.Version()
+  if err != nil {
+    return nil, err
+  }
 
   if version != SchemaVersion {
     return nil, fmt.Errorf("The database version (%d) does not match latest version (%d). Please create a new database.", version, SchemaVersion)
@@ -69,23 +72,23 @@ func (db *Database) Close() error {
   return db.db.Close()
 }
 
-func (db *Database) Version() int {
+func (db *Database) Version() (int,error) {
   rows, err := db.db.Query("SELECT version FROM version")
   if err != nil {
-    return 0
+    return -1, err
   }
 
   defer rows.Close()
 
   hasRow := rows.Next()
   if !hasRow {
-    return 0
+    return -1, errors.New("No version record found")
   }
 
   var version int
   rows.Scan(&version)
 
-  return version
+  return version, nil
 }
 
 func (db *Database) SaveReport(deployment string, report scanner.ScanResult) error {
