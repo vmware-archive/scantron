@@ -108,7 +108,8 @@ func approvedProtocolsAndCiphers(cs cipherSuites) ([]string, []string) {
 		}
 
 		for _, cipher := range cipherSuites {
-			if !goodCiphers.contains(cipher) {
+			// record list of distinct non-approved ciphers
+			if !goodCiphers.contains(cipher) && !nonApprovedCiphers.contains(cipher) {
 				nonApprovedCiphers = append(nonApprovedCiphers, cipher)
 			}
 		}
