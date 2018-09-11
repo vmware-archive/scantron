@@ -74,6 +74,16 @@ With this report it is possible to do the following:
 
         scantron report
 
+  The report has sections for:
+  * Externally-accessible processes running as root
+    * Excluding sshd and rpcbind
+  * Processes using non-approved SSL/TLS settings 
+    * Current recommendation is TLS 1.2 and ciphers recommended by 
+      https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-4
+  * World-readable files
+    * Filtered for files from bosh releases (/var/vcap/data/jobs/%)
+  * Duplicate SSH keys
+
 * Check to see if any unexpected processes or ports are present in your
   cluster.
 
@@ -129,7 +139,7 @@ FROM ports
   JOIN hosts
     ON processes.host_id = hosts.id
 WHERE ports.number = 6061
-  AND ports.state = "listen"
+  AND upper(ports.state) = "LISTEN"
 ```
 
 ### manifest format
