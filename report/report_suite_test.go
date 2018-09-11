@@ -211,6 +211,68 @@ func createTestDatabase(databasePath string) (*db.Database, error) {
           },
         },
       },
+      {
+        Job: "winhost1",
+        SSHKeys: []scantron.SSHKey{
+          {
+            Type: "ssh-rsa",
+            Key:  "SSH KEY 3",
+          },
+        },
+        Services: []scantron.Process{
+          {
+            CommandName: "command.exe",
+            User:        "SYSTEM",
+            Ports: []scantron.Port{
+              {
+                State:   "Bound",
+                Address: "10.0.5.25",
+                Number:  19998,
+                ForeignAddress: "0.0.0.0",
+                ForeignNumber: -1,
+                TLSInformation: &scantron.TLSInformation{
+                  Certificate: &scantron.Certificate{},
+                  CipherInformation: scantron.CipherInformation{
+                    "VersionTLS12": []string{"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"},
+                  },
+                },
+              },
+            },
+          },
+          {
+            CommandName: "command2.exe",
+            User:        "SYSTEM",
+            Ports: []scantron.Port{
+              {
+                State:   "Listen",
+                Address: "10.0.5.25",
+                Number:  19999,
+                ForeignAddress: "0.0.0.0",
+                ForeignNumber: -1,
+                TLSInformation: &scantron.TLSInformation{
+                  Certificate: &scantron.Certificate{},
+                  CipherInformation: scantron.CipherInformation{
+                    "VersionTLS12": []string{"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"},
+                  },
+                },
+              },
+            },
+          },
+          {
+            CommandName: "some-non-root-process.exe",
+            User:        "vcap",
+            Ports: []scantron.Port{
+              {
+                State:   "Listen",
+                Address: "10.0.5.25",
+                Number:  12345,
+                ForeignAddress: "0.0.0.0",
+                ForeignNumber: -1,
+              },
+            },
+          },
+        },
+      },
     },
   }
 

@@ -13,10 +13,12 @@ func BuildRootProcessesReport(database *db.Database) (Report, error) {
         ON h.id = pr.host_id
       JOIN ports po
         ON po.process_id = pr.id
-	WHERE po.state = "LISTEN"
-      AND po.address != "127.0.0.1"
-      AND pr.user = "root"
-      AND pr.name NOT IN ('sshd', 'rpcbind')
+	WHERE (upper(po.state) = "LISTEN" OR po.state = "Bound")
+    AND po.address != "127.0.0.1" 
+    AND po.address NOT LIKE "172.%"
+    AND po.address NOT LIKE "169.%"
+    AND (pr.user = "root" OR pr.user = "SYSTEM")
+    AND pr.name NOT IN ('sshd', 'rpcbind')
     ORDER BY h.name, po.number
 	`)
 	if err != nil {
