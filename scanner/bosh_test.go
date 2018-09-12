@@ -147,7 +147,7 @@ var _ = Describe("Bosh Scanning", func() {
 		BeforeEach(func() {
 			vmInfo[0].Index = nil
 			machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
-			machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan 10.0.0.1").Return(buffer, nil).Times(1)
+			machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan --context 10.0.0.1").Return(buffer, nil).Times(1)
 			machine.EXPECT().DeleteFile("./proc_scan").Times(1)
 		})
 
