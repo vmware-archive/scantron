@@ -110,7 +110,7 @@ var _ = Describe("Bosh Scanning", func() {
 
 	It("cleans up the proc_scan binary after the scanning is done", func() {
 		machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
-		machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan 10.0.0.1").Return(buffer, nil).Times(1)
+		machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan --context 10.0.0.1").Return(buffer, nil).Times(1)
 		machine.EXPECT().DeleteFile("./proc_scan").Times(1)
 		scanResult, scanErr = boshScan.Scan(logger)
 	})
@@ -118,7 +118,7 @@ var _ = Describe("Bosh Scanning", func() {
 	It("returns a report from the deployment", func() {
 
 		machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
-		machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan 10.0.0.1").Return(buffer, nil).Times(1)
+		machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan --context 10.0.0.1").Return(buffer, nil).Times(1)
 		machine.EXPECT().DeleteFile("./proc_scan").Times(1)
 		scanResult, scanErr = boshScan.Scan(logger)
 		Expect(scanResult).To(Equal(scanner.ScanResult{
@@ -171,7 +171,7 @@ var _ = Describe("Bosh Scanning", func() {
 	Context("when running the scanning binary fails", func() {
 		BeforeEach(func() {
 			machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
-			machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan 10.0.0.1").Return(nil, errors.New("disaster")).Times(1)
+			machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan --context 10.0.0.1").Return(nil, errors.New("disaster")).Times(1)
 			machine.EXPECT().DeleteFile("./proc_scan").Times(1)
 		})
 
