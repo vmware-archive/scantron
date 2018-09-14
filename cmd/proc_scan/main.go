@@ -45,7 +45,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	files, err := filesystem.ScanFiles()
+	fs := filesystem.FileScanner{
+		Walker: filesystem.NewWalker(filesystem.GetFileConfig(), logger),
+		Metadata: filesystem.GetFileMetadata(),
+		Logger:   logger,
+	}
+	files, err := fs.ScanFiles()
 	if err != nil {
 	 fmt.Fprintln(os.Stderr, "error: failed to scan filesystem:", err)
 	 os.Exit(1)

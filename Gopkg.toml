@@ -132,6 +132,10 @@
   name = "github.com/rakyll/statik"
   version = "0.1.4"
 
+[[constraint]]
+  name = "github.com/hectane/go-acl"
+  revision = "7f56832555fc229dad908c67d65ed3ce6156b70c"
+
 [prune]
   go-tests = true
   unused-packages = true

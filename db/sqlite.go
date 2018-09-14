@@ -233,8 +233,8 @@ func (db *Database) SaveReport(deployment string, report scanner.ScanResult) err
 
     for _, file := range scan.Files {
       _, err = tx.Exec(
-        "INSERT INTO files(host_id, path, permissions) VALUES (?, ?, ?)",
-        hostID, file.Path, file.Permissions,
+        "INSERT INTO files(host_id, path, permissions, user, file_group, size, modified) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        hostID, file.Path, file.Permissions, file.User, file.Group, file.Size, file.ModifiedTime,
       )
       if err != nil {
         return err

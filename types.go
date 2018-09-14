@@ -7,8 +7,12 @@ import (
 )
 
 type File struct {
-	Path        string      `json:"path"`
-	Permissions os.FileMode `json:"permissions"`
+	Path         string      `json:"path"`
+	Permissions  os.FileMode `json:"permissions"`
+	User         string      `json:"user"`
+	Group        string      `json:"group"`
+	ModifiedTime time.Time   `json:"modified_time"`
+	Size         int64       `json:"size"`
 }
 
 type Port struct {

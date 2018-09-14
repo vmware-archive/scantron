@@ -107,6 +107,13 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:15c0125eb48cc287796abc07c694d56b2a38beece0db0c3febac05b5e6e721b4"
+  name = "github.com/hectane/go-acl"
+  packages = ["api"]
+  pruneopts = "UT"
+  revision = "7f56832555fc229dad908c67d65ed3ce6156b70c"
+
+[[projects]]
   digest = "1:a1038ef593beb4771c8f0f9c26e8b00410acd800af5c6864651d9bf160ea1813"
   name = "github.com/hpcloud/tail"
   packages = [
@@ -437,6 +444,7 @@
     "github.com/cloudfoundry/bosh-utils/uuid",
     "github.com/cppforlife/go-semi-semantic/version",
     "github.com/golang/mock/gomock",
+    "github.com/hectane/go-acl/api",
     "github.com/jessevdk/go-flags",
     "github.com/keybase/go-ps",
     "github.com/mattn/go-sqlite3",
@@ -455,6 +463,7 @@
     "golang.org/x/crypto/ed25519",
     "golang.org/x/crypto/ssh",
     "golang.org/x/sync/semaphore",
+    "golang.org/x/sys/windows",
     "gopkg.in/yaml.v2",
   ]
   solver-name = "gps-cdcl"

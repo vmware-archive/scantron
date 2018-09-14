@@ -74,6 +74,10 @@ CREATE TABLE files (
   host_id integer,
   path text,
   permissions integer,
+  user text,
+  file_group text,
+  size integer,
+  modified datetime,
   FOREIGN KEY(host_id) REFERENCES hosts(id)
 );
 

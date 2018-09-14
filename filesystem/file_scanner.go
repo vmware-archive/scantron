@@ -1,48 +1,55 @@
 package filesystem
 
 import (
-	"os"
-
-	"path/filepath"
-
 	"github.com/pivotal-cf/scantron"
+	"github.com/pivotal-cf/scantron/scanlog"
+	"os"
 )
 
-func ScanFilesystem(rootPath string, excludedPaths []string) ([]scantron.File, error) {
-	files := []scantron.File{}
+type FileMetadata interface {
+	GetUser(path string, fileInfo os.FileInfo) (string, error)
+	GetGroup(path string, fileInfo os.FileInfo) (string, error)
+}
 
-	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
+type FileScanner struct {
+	Walker 		FileWalker
+	Metadata FileMetadata
+	Logger   scanlog.Logger
+}
 
-		if info.IsDir() {
-			for _, excludedPath := range excludedPaths {
-				if excludedPath == path {
-					return filepath.SkipDir
-				}
-			}
+func (fs *FileScanner) ScanFiles() ([]scantron.File, error) {
 
-			return nil
-		}
-
-		if !info.Mode().IsRegular() {
-			return nil
-		}
-
-		// File has world read, write or execute permission
-		if info.Mode()&07 > 0 {
-			files = append(files, scantron.File{
-				Path:        path,
-				Permissions: info.Mode(),
-			})
-		}
-
-		return nil
-	})
-
+	walkedFiles, err := fs.Walker.Walk()
 	if err != nil {
 		return nil, err
+	}
+
+	files := []scantron.File{}
+	for _, wf := range walkedFiles {
+		user, err := fs.Metadata.GetUser(wf.Path, wf.Info)
+
+		// Some files (e.g. C:\pagefile.sys) don't have user/group
+		if err != nil {
+			fs.Logger.Warnf("Error retrieving user for %s: %s", wf.Path, err)
+		}
+		group, err := fs.Metadata.GetGroup(wf.Path, wf.Info)
+		if err != nil {
+			fs.Logger.Warnf("Error retrieving group for %s: %s", wf.Path, err)
+		}
+
+		file := scantron.File{
+			Path:         wf.Path,
+			Permissions:  wf.Info.Mode(),
+			Size:         wf.Info.Size(),
+			User:         user,
+			Group:        group,
+			ModifiedTime: wf.Info.ModTime(),
+		}
+
+		fs.Logger.Debugf("Record file %s: Permissions: '%d' User: '%s' Group: '%s' Size: '%d' Modified: '%s'",
+			wf.Path, file.Permissions, file.User, file.Group, file.Size, file.ModifiedTime.String())
+
+		files = append(files, file)
 	}
 
 	return files, nil
