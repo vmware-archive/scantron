@@ -40,14 +40,13 @@ func (s *TlsScannerImpl) Scan(logger scanlog.Logger, host string, port string) (
     results[version.Name] = []string{}
   }
 
-  logger.Infof("About to test %s:%s", host, port)
   supportedProtocols := getSupportedProtocols(logger, host, port)
   if len(supportedProtocols) == 0 {
-    logger.Infof("Skipping cipher scan for %s:%s (no supported protocols)", host, port)
+    logger.Debugf("Skipping cipher scan for %s:%s (no supported protocols)", host, port)
     return results, nil
   }
 
-  logger.Infof("Starting cipher scan for %s:%s", host, port)
+  logger.Debugf("Starting cipher scan for %s:%s", host, port)
 
   sem := semaphore.NewWeighted(maxInFlight)
   cipherSuites, err := BuildCipherSuites()
@@ -79,7 +78,6 @@ func (s *TlsScannerImpl) Scan(logger scanlog.Logger, host string, port string) (
 
         go testCipher(scanLogger, version, cipherSuite, sem, wg, host, port, resultChan)
       }
-      logger.Debugf("Finished TLS version %s", version.Name)
     }
   } (logger)
 
@@ -95,7 +93,7 @@ func (s *TlsScannerImpl) Scan(logger scanlog.Logger, host string, port string) (
     results[res.version] = append(results[res.version], res.suite)
   }
 
-  logger.Infof("Finished cipher scan for %s:%s", host, port)
+  logger.Debugf("Finished cipher scan for %s:%s", host, port)
   return results, nil
 }
 
@@ -146,13 +144,12 @@ func getSupportedProtocols(logger scanlog.Logger, host string, port string) ([]P
       },
     }
     err := AttemptHandshake(logger, &net.Dialer{Timeout: 1 * time.Second}, "tcp", fmt.Sprintf("%s:%s", host, port), &config)
-    logger.Infof("%s:%s provides cert %b wants cert %b (%s)", host, port, providesCert, wantsCert, err)
 
     if providesCert {
-      logger.Infof("%s:%s accepts TLS (%s)", host, port, version.Name)
+      logger.Debugf("%s:%s accepts TLS (%s mutual=%t)", host, port, version.Name, wantsCert)
       supportedVersions = append(supportedVersions, version)
     } else {
-      logger.Infof("%s:%s refuses TLS (%s %s)", host, port, version.Name, err)
+      logger.Debugf("%s:%s refuses TLS (%s %s)", host, port, version.Name, err)
     }
   }
   return supportedVersions

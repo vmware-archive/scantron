@@ -82,7 +82,7 @@ func scanMachine(logger scanlog.Logger, remoteMachine remotemachine.RemoteMachin
 	defer logger.Infof("VM scan complete")
 
 	osName := remoteMachine.OSName()
-	logger.Infof("Deployment stemcell is %s", osName)
+	logger.Debugf("Deployment stemcell is %s", osName)
 
 	srcFilePath, err := writeProcScanToTempFile(osName)
 	if err != nil {
