@@ -6,6 +6,7 @@ import (
 	"github.com/rakyll/statik/fs"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/pivotal-cf/scantron"
@@ -15,7 +16,7 @@ import (
 )
 
 type Scanner interface {
-	Scan(scanlog.Logger) (ScanResult, error)
+	Scan(*scantron.FileMatch, scanlog.Logger) (ScanResult, error)
 }
 
 type ScanResult struct {
@@ -75,7 +76,7 @@ func writeProcScanToTempFile(osName string) (string, error) {
 	return tmpFile.Name(), nil
 }
 
-func scanMachine(logger scanlog.Logger, remoteMachine remotemachine.RemoteMachine) (scantron.SystemInfo, error) {
+func scanMachine(fileRegexes *scantron.FileMatch, logger scanlog.Logger, remoteMachine remotemachine.RemoteMachine) (scantron.SystemInfo, error) {
 	var systemInfo scantron.SystemInfo
 
 	logger.Infof("Starting VM scan")
@@ -100,7 +101,25 @@ func scanMachine(logger scanlog.Logger, remoteMachine remotemachine.RemoteMachin
 	if scantron.Debug {
 		command = strings.Join([]string{command, "--debug"}, " ")
 	}
-	command = strings.Join([]string{command, "--context", remoteMachine.Host()}, " ")
+	command = strings.Join([]string{
+		command,
+		"--context", remoteMachine.Host(),
+		"--max", strconv.FormatInt(fileRegexes.MaxRegexFileSize, 10),
+	}, " ")
+
+	// Use escaped " since ' doesn't handle whitespace on windows
+	for _, r := range fileRegexes.PathRegexes {
+		command = strings.Join([]string{
+			command,
+			"--path", fmt.Sprintf("\"%s\"", r),
+		}, " ")
+	}
+	for _, r := range fileRegexes.ContentRegexes {
+		command = strings.Join([]string{
+			command,
+			"--content", fmt.Sprintf("\"%s\"", r),
+		}, " ")
+	}
 
 	err = remoteMachine.UploadFile(srcFilePath, dstFilePath)
 	if err != nil {

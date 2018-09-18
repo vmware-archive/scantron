@@ -84,6 +84,8 @@ var _ = Describe("Sqlite", func() {
 				"tls_informations",
 				"tls_scan_errors",
 				"version",
+				"regexes",
+				"file_to_regex",
 			))
 		})
 
@@ -627,6 +629,63 @@ var _ = Describe("Sqlite", func() {
 
 			It("returns an error when inserting fails", func() {
 				_, err := sqliteDB.Exec(`DROP TABLE releases`)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = database.SaveReport("cf1", hosts)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+
+		Context("with regexes", func() {
+			BeforeEach(func() {
+				hosts.JobResults = []scanner.JobResult{
+					{
+						Files: []scantron.File{
+							{
+								Path: "/some/interesting/path",
+								Permissions: 0600,
+								User: "vip",
+								Group: "root",
+								ModifiedTime: time.Now(),
+								Size: 1000,
+								RegexMatches: []scantron.RegexMatch{
+									{
+										PathRegex: "interesting",
+										ContentRegex: "valuable",
+									},
+								},
+							},
+						},
+					},
+				}
+			})
+
+			It("records the regexes the file matched", func() {
+				err := database.SaveReport("cf1", hosts)
+				Expect(err).NotTo(HaveOccurred())
+
+				regexes, err := sqliteDB.Query(` SELECT pr.regex as path_regex, cr.regex as content_regex, files.path from files 
+ join file_to_regex on files.id=file_to_regex.file_id 
+ join regexes as pr on pr.id=file_to_regex.path_regex_id 
+ join regexes as cr on cr.id=file_to_regex.content_regex_id`)
+				Expect(err).NotTo(HaveOccurred())
+
+				defer regexes.Close()
+				Expect(regexes.Next()).To(BeTrue())
+
+				var pathRegex, contentRegex, path string
+				err = regexes.Scan(&pathRegex, &contentRegex, &path)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(pathRegex).To(Equal("interesting"))
+				Expect(contentRegex).To(Equal("valuable"))
+				Expect(path).To(Equal("/some/interesting/path"))
+			})
+
+			It("returns an error when inserting fails", func() {
+				_, err := sqliteDB.Exec(`DROP TABLE file_to_regex`)
+				Expect(err).NotTo(HaveOccurred())
+				_, err = sqliteDB.Exec(`DROP TABLE regexes`)
 				Expect(err).NotTo(HaveOccurred())
 
 				err = database.SaveReport("cf1", hosts)

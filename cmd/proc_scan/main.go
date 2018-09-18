@@ -19,6 +19,7 @@ func main() {
 	var opts struct {
 		Debug bool `long:"debug" description:"Show debug logs in output"`
 		Context string `long:"context" description:"Log context"`
+		FileRegexes scantron.FileMatch `group:"File Content Check"`
 	}
 
 	_, err := flags.Parse(&opts)
@@ -45,8 +46,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	fileWalker, err := filesystem.NewWalker(filesystem.GetFileConfig(), opts.FileRegexes, logger)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error: failed to instantiate filewalker:", err)
+		os.Exit(1)
+	}
 	fs := filesystem.FileScanner{
-		Walker: filesystem.NewWalker(filesystem.GetFileConfig(), logger),
+		Walker:   fileWalker,
 		Metadata: filesystem.GetFileMetadata(),
 		Logger:   logger,
 	}

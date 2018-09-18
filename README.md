@@ -63,6 +63,19 @@ Multiple deployments can be specified and the results merged into a single datab
 the moment so that it can scan the endpoints for their TLS configuration. A
 jumpbox is normally a good machine to run this from.
 
+#### file content check
+
+The file scan can optionally flag files if the content matches a specified regex. For performance optimization 
+an optional path regex and maximum file size can be specified to limit which files have to be read. The maximum 
+file size defaults to 1MB.
+
+    scantron bosh-scan|direct-scan \
+      --content <content regex> \
+      [--path <file path regex>] \
+      [--max <file size in bytes>]
+      
+Regexes use the [golang syntax](https://golang.org/pkg/regexp/syntax/).
+
 ### checking reports
 
 After you run a scan a report is saved to a SQLite database, by default

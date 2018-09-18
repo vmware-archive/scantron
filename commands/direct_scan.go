@@ -21,6 +21,8 @@ type DirectScanCommand struct {
 	PrivateKey string `long:"private-key" description:"Private key of machine to scan" value-name:"PATH"`
 	Database   string `long:"database" description:"location of database where scan output will be stored" value-name:"PATH" default:"./database.db"`
 	OSName     string `long:"os-name" description:"Name of stemcell OS of machine to scan" value-name:"STRING" required:"true"`
+
+	FileRegexes scantron.FileMatch `group:"File Content Check"`
 }
 
 func (command *DirectScanCommand) Execute(args []string) error {
@@ -60,7 +62,7 @@ func (command *DirectScanCommand) Execute(args []string) error {
 		log.Fatalf("failed to create database: %s", err.Error())
 	}
 
-	results, err := scanner.Direct(remoteMachine).Scan(logger)
+	results, err := scanner.Direct(remoteMachine).Scan(&command.FileRegexes, logger)
 	if err != nil {
 		log.Fatalf("failed to scan: %s", err.Error())
 	}

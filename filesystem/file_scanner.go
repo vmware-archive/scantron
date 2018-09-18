@@ -38,12 +38,13 @@ func (fs *FileScanner) ScanFiles() ([]scantron.File, error) {
 		}
 
 		file := scantron.File{
-			Path:         wf.Path,
-			Permissions:  wf.Info.Mode(),
-			Size:         wf.Info.Size(),
-			User:         user,
-			Group:        group,
-			ModifiedTime: wf.Info.ModTime(),
+			Path:           wf.Path,
+			Permissions:    wf.Info.Mode(),
+			Size:           wf.Info.Size(),
+			User:           user,
+			Group:          group,
+			ModifiedTime:   wf.Info.ModTime(),
+			RegexMatches: 	wf.RegexMatches,
 		}
 
 		fs.Logger.Debugf("Record file %s: Permissions: '%d' User: '%s' Group: '%s' Size: '%d' Modified: '%s'",

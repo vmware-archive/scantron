@@ -92,6 +92,46 @@ var _ = Describe("FileScanner", func() {
 			User: "user",
 			Group: "group",
 			ModifiedTime: info.ModTime(),
+			RegexMatches: nil,
+		}))
+	})
+
+	It("does assign regexes to files that do match path and content", func() {
+		info := &fakeFileInfo{}
+		path := "some/valuable/fake"
+
+		mockFileWalker.EXPECT().Walk().Return([]filesystem.WalkedFile{
+			{
+				Path: path,
+				Info: info,
+				RegexMatches: []scantron.RegexMatch{
+				  {
+				    ContentRegex:"content",
+				    PathRegex:"path",
+          },
+        },
+			},
+		}, nil).Times(1)
+		mockFileMetadata.EXPECT().GetUser(path, info).Return("user", nil).Times(1)
+		mockFileMetadata.EXPECT().GetGroup(path, info).Return("group", nil).Times(1)
+
+		files, err := subject.ScanFiles()
+
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(files).To(ConsistOf(scantron.File{
+			Path: path,
+			Permissions: info.Mode(),
+			Size: info.Size(),
+			User: "user",
+			Group: "group",
+			ModifiedTime: info.ModTime(),
+			RegexMatches: []scantron.RegexMatch{
+        {
+          ContentRegex:"content",
+          PathRegex:"path",
+        },
+      },
 		}))
 	})
 })

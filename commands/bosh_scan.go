@@ -23,6 +23,8 @@ type BoshScanCommand struct {
 		ClientSecret string `long:"client-secret" description:"Password or UAA client secret" value-name:"CLIENT_SECRET"`
 	} `group:"Director & Deployment"`
 
+	FileRegexes scantron.FileMatch `group:"File Content Check"`
+
 	Database string `long:"database" description:"location of database where scan output will be stored" value-name:"PATH" default:"./database.db"`
 }
 
@@ -63,7 +65,7 @@ func (command *BoshScanCommand) Execute(args []string) error {
 			defer wg.Done()
 
 			logger.Debugf("About to scan: %s", dep.Name())
-			results, err := scanner.Bosh(dep).Scan(logger)
+			results, err := scanner.Bosh(dep).Scan(&command.FileRegexes, logger)
 			if err != nil {
 				log.Fatalf("failed to scan: %s", err.Error())
 			}

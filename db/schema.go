@@ -101,5 +101,19 @@ CREATE TABLE releases (
   FOREIGN KEY(deployment_id) REFERENCES deployments(id)
 );
 
+CREATE TABLE regexes (
+  id integer PRIMARY KEY AUTOINCREMENT,
+  regex string NOT NULL
+);
+
+CREATE TABLE file_to_regex (
+  file_id integer NOT NULL,
+  path_regex_id integer,
+  content_regex_id integer NOT NULL,
+  FOREIGN KEY(file_id) REFERENCES files(id),
+  FOREIGN KEY(path_regex_id) REFERENCES regexes(id),
+  FOREIGN KEY(content_regex_id) REFERENCES regexes(id)
+);
+
 INSERT INTO version(version) VALUES(?);
 `

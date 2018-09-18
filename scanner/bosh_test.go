@@ -37,6 +37,8 @@ var _ = Describe("Bosh Scanning", func() {
 		scanErr    error
 		logger scanlog.Logger
 		buffer *bytes.Buffer
+
+		fileMatch *scantron.FileMatch
 	)
 
 	AfterEach(func() {
@@ -59,6 +61,9 @@ var _ = Describe("Bosh Scanning", func() {
 			Files: []scantron.File{
 				{Path: "a/path/to/the/file.txt"},
 			},
+		}
+		fileMatch = &scantron.FileMatch{
+			MaxRegexFileSize: int64(1000),
 		}
 
 		buffer = &bytes.Buffer{}
@@ -107,20 +112,35 @@ var _ = Describe("Bosh Scanning", func() {
 		targetDeployment.EXPECT().Cleanup().Times(1).After(setupCall)
 
 	})
+	Context("when no regex specified", func() {
+		It("cleans up the proc_scan binary after the scanning is done", func() {
+			machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
+			machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan --context 10.0.0.1 --max 1000").Return(buffer, nil).Times(1)
+			machine.EXPECT().DeleteFile("./proc_scan").Times(1)
+			scanResult, scanErr = boshScan.Scan(fileMatch, logger)
+		})
+	})
 
-	It("cleans up the proc_scan binary after the scanning is done", func() {
-		machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
-		machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan --context 10.0.0.1").Return(buffer, nil).Times(1)
-		machine.EXPECT().DeleteFile("./proc_scan").Times(1)
-		scanResult, scanErr = boshScan.Scan(logger)
+	Context("when regexes specified", func() {
+		BeforeEach(func() {
+			fileMatch.PathRegexes = []string{"interesting"}
+			fileMatch.ContentRegexes = []string{"valuable"}
+		})
+
+		It("uploads and cleans the proc_scan binary to the remote machine", func() {
+			machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
+			machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan --context 10.0.0.1 --max 1000 --path 'interesting' --content 'valuable'").Return(buffer, nil).Times(1)
+			machine.EXPECT().DeleteFile("./proc_scan").Times(1)
+			scanResult, scanErr = boshScan.Scan(fileMatch, logger)
+		})
 	})
 
 	It("returns a report from the deployment", func() {
 
 		machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
-		machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan --context 10.0.0.1").Return(buffer, nil).Times(1)
+		machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan --context 10.0.0.1 --max 1000").Return(buffer, nil).Times(1)
 		machine.EXPECT().DeleteFile("./proc_scan").Times(1)
-		scanResult, scanErr = boshScan.Scan(logger)
+		scanResult, scanErr = boshScan.Scan(fileMatch, logger)
 		Expect(scanResult).To(Equal(scanner.ScanResult{
 			ReleaseResults: []scanner.ReleaseResult{
 				{
@@ -147,12 +167,12 @@ var _ = Describe("Bosh Scanning", func() {
 		BeforeEach(func() {
 			vmInfo[0].Index = nil
 			machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
-			machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan --context 10.0.0.1").Return(buffer, nil).Times(1)
+			machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan --context 10.0.0.1 --max 1000").Return(buffer, nil).Times(1)
 			machine.EXPECT().DeleteFile("./proc_scan").Times(1)
 		})
 
 		It("all still works", func() {
-			scanResult, scanErr = boshScan.Scan(logger)
+			scanResult, scanErr = boshScan.Scan(fileMatch, logger)
 			Expect(scanErr).ShouldNot(HaveOccurred())
 		})
 	})
@@ -163,7 +183,7 @@ var _ = Describe("Bosh Scanning", func() {
 		})
 
 		It("keeps going", func() {
-			scanResult, scanErr = boshScan.Scan(logger)
+			scanResult, scanErr = boshScan.Scan(fileMatch, logger)
 			Expect(scanErr).NotTo(HaveOccurred())
 		})
 	})
@@ -171,12 +191,12 @@ var _ = Describe("Bosh Scanning", func() {
 	Context("when running the scanning binary fails", func() {
 		BeforeEach(func() {
 			machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
-			machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan --context 10.0.0.1").Return(nil, errors.New("disaster")).Times(1)
+			machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan --context 10.0.0.1 --max 1000").Return(nil, errors.New("disaster")).Times(1)
 			machine.EXPECT().DeleteFile("./proc_scan").Times(1)
 		})
 
 		It("keeps going", func() {
-			scanResult, scanErr = boshScan.Scan(logger)
+			scanResult, scanErr = boshScan.Scan(fileMatch, logger)
 			Expect(scanErr).NotTo(HaveOccurred())
 		})
 	})

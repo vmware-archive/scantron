@@ -7,12 +7,18 @@ import (
 )
 
 type File struct {
-	Path         string      `json:"path"`
-	Permissions  os.FileMode `json:"permissions"`
-	User         string      `json:"user"`
-	Group        string      `json:"group"`
-	ModifiedTime time.Time   `json:"modified_time"`
-	Size         int64       `json:"size"`
+	Path           string      `json:"path"`
+	Permissions    os.FileMode `json:"permissions"`
+	User           string      `json:"user"`
+	Group          string      `json:"group"`
+	ModifiedTime   time.Time   `json:"modified_time"`
+	Size           int64       `json:"size"`
+	RegexMatches   []RegexMatch    `json:"regex_matches"`
+}
+
+type RegexMatch struct {
+	PathRegex string `json:"path_regex"`
+	ContentRegex string `json:"content_regex"`
 }
 
 type Port struct {
@@ -32,6 +38,12 @@ type TLSInformation struct {
 	Mutual            bool              `json:"mutual_tls"`
 
 	ScanError error `json:"scan_error,omitempty"`
+}
+
+type FileMatch struct {
+	PathRegexes      []string `long:"path" description:"Regexes for file paths"`
+	ContentRegexes   []string `long:"content" description:"Regexes for file content"`
+	MaxRegexFileSize int64    `long:"max" description:"Max file size to check content against regexes" default:"1048576"` // default 1 MB
 }
 
 type CipherInformation map[string][]string

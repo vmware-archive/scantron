@@ -91,6 +91,32 @@ func (db *Database) Version() (int,error) {
   return version, nil
 }
 
+type queryFunc func() *sql.Row
+type insertFunc func() (sql.Result, error)
+
+func getIndexOrInsert(qf queryFunc, insF insertFunc) (int, error) {
+  var rowId int
+  err := qf().Scan(&rowId)
+  if err != nil {
+    if err != sql.ErrNoRows {
+      return -1, err
+    }
+
+    res, err := insF()
+    if err != nil {
+      return -1, err
+    }
+
+    insertedID, err := res.LastInsertId()
+    if err != nil {
+      return -1, err
+    }
+
+    rowId = int(insertedID)
+  }
+  return rowId, nil
+}
+
 func (db *Database) SaveReport(deployment string, report scanner.ScanResult) error {
   tx, err := db.db.Begin()
   if err != nil {
@@ -98,48 +124,20 @@ func (db *Database) SaveReport(deployment string, report scanner.ScanResult) err
   }
   defer tx.Rollback()
 
-  var depID int
-  depQuery := "SELECT id FROM deployments WHERE name = ?"
-  err = tx.QueryRow(depQuery, deployment).Scan(&depID)
+  depID, err := getIndexOrInsert(
+    func() *sql.Row{ return tx.QueryRow("SELECT id FROM deployments WHERE name = ?", deployment) },
+    func() (sql.Result, error) { return tx.Exec("INSERT INTO deployments(name) VALUES (?)", deployment) })
   if err != nil {
-    if err != sql.ErrNoRows {
-      return err
-    }
-
-    res, err := tx.Exec("INSERT INTO deployments(name) VALUES (?)", deployment)
-    if err != nil {
-      return err
-    }
-
-    insertedID, err := res.LastInsertId()
-    if err != nil {
-      return err
-    }
-
-    depID = int(insertedID)
+    return err
   }
 
   for _, scan := range report.JobResults {
 
-    var hostID int
-    query := "SELECT id FROM hosts WHERE name = ? AND ip = ?"
-    err = tx.QueryRow(query, scan.Job, scan.IP).Scan(&hostID)
+    hostID, err := getIndexOrInsert(
+      func() *sql.Row{ return tx.QueryRow("SELECT id FROM hosts WHERE name = ? AND ip = ?", scan.Job, scan.IP) },
+      func() (sql.Result, error) { return tx.Exec("INSERT INTO hosts(name, ip, deployment_id) VALUES (?, ?, ?)", scan.Job, scan.IP, depID) })
     if err != nil {
-      if err != sql.ErrNoRows {
-        return err
-      }
-
-      res, err := tx.Exec("INSERT INTO hosts(name, ip, deployment_id) VALUES (?, ?, ?)", scan.Job, scan.IP, depID)
-      if err != nil {
-        return err
-      }
-
-      insertedID, err := res.LastInsertId()
-      if err != nil {
-        return err
-      }
-
-      hostID = int(insertedID)
+      return err
     }
 
     for _, service := range scan.Services {
@@ -232,12 +230,49 @@ func (db *Database) SaveReport(deployment string, report scanner.ScanResult) err
     }
 
     for _, file := range scan.Files {
-      _, err = tx.Exec(
+      res, err := tx.Exec(
         "INSERT INTO files(host_id, path, permissions, user, file_group, size, modified) VALUES (?, ?, ?, ?, ?, ?, ?)",
         hostID, file.Path, file.Permissions, file.User, file.Group, file.Size, file.ModifiedTime,
       )
       if err != nil {
         return err
+      }
+
+      if len(file.RegexMatches) > 0 {
+        fileID, err := res.LastInsertId()
+        if err != nil {
+          return err
+        }
+
+        for _, r := range file.RegexMatches {
+          contentID, err := getIndexOrInsert(
+            func() *sql.Row{ return tx.QueryRow("SELECT id FROM regexes WHERE regex = ?", r.ContentRegex) },
+            func() (sql.Result, error) { return tx.Exec("INSERT INTO regexes(regex) VALUES (?)", r.ContentRegex) })
+          if err != nil {
+            return err
+          }
+
+          if r.PathRegex != "" {
+            pathID, err := getIndexOrInsert(
+              func() *sql.Row{ return tx.QueryRow("SELECT id FROM regexes WHERE regex = ?", r.PathRegex) },
+              func() (sql.Result, error) { return tx.Exec("INSERT INTO regexes(regex) VALUES (?)", r.PathRegex) })
+            if err != nil {
+              return err
+            }
+
+            _, err = tx.Exec("INSERT INTO file_to_regex(file_id, path_regex_id, content_regex_id) VALUES (?, ?, ?)",
+              fileID, pathID, contentID)
+            if err != nil {
+              return err
+            }
+          } else {
+            _, err = tx.Exec("INSERT INTO file_to_regex(file_id, content_regex_id) VALUES (?, ?)",
+              fileID, contentID)
+            if err != nil {
+              return err
+            }
+          }
+        }
       }
     }
 

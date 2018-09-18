@@ -1,6 +1,7 @@
 package scanner
 
 import (
+	"github.com/pivotal-cf/scantron"
 	"net"
 
 	"github.com/pivotal-cf/scantron/remotemachine"
@@ -17,12 +18,12 @@ func Direct(machine remotemachine.RemoteMachine) Scanner {
 	}
 }
 
-func (d *direct) Scan(logger scanlog.Logger) (ScanResult, error) {
+func (d *direct) Scan(match *scantron.FileMatch, logger scanlog.Logger) (ScanResult, error) {
 	hostLogger := logger.With(
 		"host", d.machine.Address(),
 	)
 
-	systemInfo, err := scanMachine(hostLogger, d.machine)
+	systemInfo, err := scanMachine(match, hostLogger, d.machine)
 	if err != nil {
 		hostLogger.Errorf("Failed to scan machine: %s", err)
 		return ScanResult{}, err

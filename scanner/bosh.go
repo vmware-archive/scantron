@@ -1,12 +1,13 @@
 package scanner
 
 import (
-  "fmt"
-  "strconv"
-  "sync"
+	"fmt"
+	"github.com/pivotal-cf/scantron"
+	"strconv"
+	"sync"
 
-  "github.com/pivotal-cf/scantron/bosh"
-  "github.com/pivotal-cf/scantron/scanlog"
+	"github.com/pivotal-cf/scantron/bosh"
+	"github.com/pivotal-cf/scantron/scanlog"
 )
 
 type boshScanner struct {
@@ -19,7 +20,7 @@ func Bosh(deployment bosh.TargetDeployment) Scanner {
   }
 }
 
-func (s *boshScanner) Scan(logger scanlog.Logger) (ScanResult, error) {
+func (s *boshScanner) Scan(fileRegexes *scantron.FileMatch, logger scanlog.Logger) (ScanResult, error) {
 	vms := s.deployment.VMs()
 
 	wg := &sync.WaitGroup{}
@@ -51,7 +52,7 @@ func (s *boshScanner) Scan(logger scanlog.Logger) (ScanResult, error) {
 			remoteMachine := s.deployment.ConnectTo(vm)
 			defer remoteMachine.Close()
 
-			systemInfo, err := scanMachine(machineLogger, remoteMachine)
+			systemInfo, err := scanMachine(fileRegexes, machineLogger, remoteMachine)
 			if err != nil {
 				machineLogger.Errorf("Failed to scan machine: %s", err)
 				return
