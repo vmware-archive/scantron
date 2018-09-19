@@ -86,7 +86,7 @@ var _ = Describe("Direct Scanning", func() {
 
 		It("uploads and cleans the proc_scan binary to the remote machine", func() {
 			machine.EXPECT().UploadFile(gomock.Any(), "./proc_scan").Return(nil).Times(1)
-			machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan --context 10.0.0.1 --max 1000 --path 'interesting' --content 'valuable'").Return(buffer, nil).Times(1)
+			machine.EXPECT().RunCommand("echo password | sudo -S -- ./proc_scan --context 10.0.0.1 --max 1000 --path \"interesting\" --content \"valuable\"").Return(buffer, nil).Times(1)
 			machine.EXPECT().DeleteFile("./proc_scan").Times(1)
 			scanResults, scanErr = directScan.Scan(fileMatch, logger)
 		})
