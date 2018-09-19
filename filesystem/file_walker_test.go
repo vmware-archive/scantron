@@ -76,14 +76,9 @@ var _ = Describe("FileWalker", func() {
   files, err := subject.Walk()
   Expect(err).NotTo(HaveOccurred())
 
-  stat, err := os.Stat(filePath)
-  Expect(err).NotTo(HaveOccurred())
-
-  Expect(files).To(ConsistOf(filesystem.WalkedFile{
-    Path: filePath,
-    Info: stat,
-    RegexMatches: nil,
-  }))
+  Expect(files).To(HaveLen(1))
+  Expect(files[0].Path).To(Equal(filePath))
+  Expect(files[0].RegexMatches).To(BeNil())
  })
 
  It("does not record path matches if the content regex does not match", func() {
@@ -96,14 +91,9 @@ var _ = Describe("FileWalker", func() {
    files, err := subject.Walk()
    Expect(err).NotTo(HaveOccurred())
 
-   stat, err := os.Stat(filePath)
-   Expect(err).NotTo(HaveOccurred())
-
-   Expect(files).To(ConsistOf(filesystem.WalkedFile{
-     Path: filePath,
-     Info: stat,
-     RegexMatches: nil,
-   }))
+   Expect(files).To(HaveLen(1))
+   Expect(files[0].Path).To(Equal(filePath))
+   Expect(files[0].RegexMatches).To(BeNil())
  })
 
  It("does record regex matches if both path and content match", func() {
@@ -116,19 +106,15 @@ var _ = Describe("FileWalker", func() {
    files, err := subject.Walk()
    Expect(err).NotTo(HaveOccurred())
 
-   stat, err := os.Stat(filePath)
-   Expect(err).NotTo(HaveOccurred())
-
-   Expect(files).To(ConsistOf(filesystem.WalkedFile{
-     Path: filePath,
-     Info: stat,
-     RegexMatches: []scantron.RegexMatch {
-       {
+   Expect(files).To(HaveLen(1))
+   Expect(files[0].Path).To(Equal(filePath))
+   Expect(files[0].RegexMatches).To(ConsistOf(
+     scantron.RegexMatch {
          PathRegex: "interesting",
          ContentRegex: "valuable",
-       },
      },
-   }))
+
+   ))
  })
 
  It("does record regex matches if content matches and no path regex supplied", func() {
@@ -141,19 +127,15 @@ var _ = Describe("FileWalker", func() {
    files, err := subject.Walk()
    Expect(err).NotTo(HaveOccurred())
 
-   stat, err := os.Stat(filePath)
-   Expect(err).NotTo(HaveOccurred())
-
-   Expect(files).To(ConsistOf(filesystem.WalkedFile{
-     Path: filePath,
-     Info: stat,
-     RegexMatches: []scantron.RegexMatch {
-       {
+   Expect(files).To(HaveLen(1))
+   Expect(files[0].Path).To(Equal(filePath))
+   Expect(files[0].RegexMatches).To(ConsistOf(
+     scantron.RegexMatch {
          PathRegex: "",
          ContentRegex: "valuable",
-       },
      },
-   }))
+
+   ))
  })
 
  It("does not record directories", func() {
