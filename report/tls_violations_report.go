@@ -1,15 +1,11 @@
 package report
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
-	"github.com/pivotal-cf/scantron/tlsscan"
-
 	"github.com/pivotal-cf/scantron/db"
+	"github.com/pivotal-cf/scantron/tlsscan"
+	"strings"
 )
-
-type cipherSuites map[string][]string
 
 type stringSlice []string
 
@@ -22,7 +18,7 @@ func (s stringSlice) contains(str string) bool {
 	return false
 }
 
-var goodProtocols = stringSlice{
+var goodSuites = stringSlice{
 	"VersionTLS12",
 }
 
@@ -42,17 +38,28 @@ func buildGoodCiphers() (stringSlice, error) {
 }
 
 func BuildTLSViolationsReport(database *db.Database) (Report, error) {
-	rows, err := database.DB().Query(`
-    SELECT DISTINCT h.name, po.number, pr.name, t.cipher_suites
-    FROM hosts h
-      JOIN processes pr
-        ON h.id = pr.host_id
-      JOIN ports po
-        ON po.process_id = pr.id
-      JOIN tls_informations t
-        ON t.port_id = po.id
-    ORDER BY h.name, po.number
-	`)
+	goodCiphers, err := buildGoodCiphers()
+	if err != nil {
+		return Report{}, err
+	}
+	query := fmt.Sprintf(`SELECT DISTINCT h.name, po.number, pr.name, s.suite, c.cipher
+	FROM hosts h
+	JOIN processes pr
+	ON h.id = pr.host_id
+	JOIN ports po
+	ON po.process_id = pr.id
+	JOIN tls_certificates t
+	ON t.port_id = po.id
+	JOIN certificate_to_ciphersuite ctc
+	ON t.id = ctc.certificate_id
+	JOIN tls_suites s
+	ON ctc.suite_id = s.id
+	JOIN tls_ciphers c
+	ON ctc.cipher_id = c.id
+	WHERE s.suite NOT IN(%s) OR c.cipher NOT IN(%s)
+	ORDER BY h.name, po.number`, "'" + strings.Join(goodSuites, "','") + "'", "'" + strings.Join(goodCiphers, "','") + "'") // sql binding doesn't play nice with array args
+	rows, err := database.DB().Query(query)
+
 	if err != nil {
 		return Report{}, err
 	}
@@ -71,66 +78,61 @@ func BuildTLSViolationsReport(database *db.Database) (Report, error) {
 		Footnote: "If this is not an internal endpoint then please check with your PM and the security team before applying this change. This change is not backwards compatible.",
 	}
 
+	type Host struct {
+		hostname string
+		portNumber int
+		processName string
+	}
+
+	type cipherSuites struct {
+		suites stringSlice
+		ciphers stringSlice
+	}
+
+	var hostMap = map[Host]cipherSuites{}
+
 	for rows.Next() {
 		var (
-			hostname         string
-			processName      string
-			portNumber       int
-			cipherSuitesJSON string
+			hostname    string
+			processName string
+			portNumber  int
+			suite       string
+			cipher      string
 		)
 
-		err := rows.Scan(&hostname, &portNumber, &processName, &cipherSuitesJSON)
+		err := rows.Scan(&hostname, &portNumber, &processName, &suite, &cipher)
 		if err != nil {
 			return Report{}, err
 		}
 
-		cs := cipherSuites{}
-
-		err = json.Unmarshal([]byte(cipherSuitesJSON), &cs)
-		if err != nil {
-			return Report{}, err
-		}
-
-		nonApprovedProtocols, nonApprovedCiphers, err := approvedProtocolsAndCiphers(cs)
-		if err != nil {
-			return Report{}, err
-		}
-
-		if len(nonApprovedProtocols) == 0 && len(nonApprovedCiphers) == 0 {
-			continue
-		}
-
-		report.Rows = append(report.Rows, []string{
+		host := Host {
 			hostname,
-			fmt.Sprintf("%d", portNumber),
+			portNumber,
 			processName,
-			strings.Join(nonApprovedProtocols, " "),
-			strings.Join(nonApprovedCiphers, " "),
+		}
+
+		cs := hostMap[host]
+		if cs.suites == nil {
+			cs.suites = []string{}
+			cs.ciphers = []string{}
+		}
+		if !goodSuites.contains(suite) && !cs.suites.contains(suite) {
+			cs.suites = append(cs.suites, suite)
+		}
+		if !goodCiphers.contains(cipher) && !cs.ciphers.contains(cipher) {
+			cs.ciphers = append(cs.ciphers, cipher)
+		}
+		hostMap[host] = cs
+	}
+
+	for host, cs := range hostMap {
+		report.Rows = append(report.Rows, []string{
+			host.hostname,
+			fmt.Sprintf("%d", host.portNumber),
+			host.processName,
+			strings.Join(cs.suites, " "),
+			strings.Join(cs.ciphers, " "),
 		})
 	}
 	return report, nil
-}
-
-func approvedProtocolsAndCiphers(cs cipherSuites) ([]string, []string, error) {
-	var nonApprovedProtocols, nonApprovedCiphers stringSlice
-
-	goodCiphers, err := buildGoodCiphers()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	for protocol, cipherSuites := range cs {
-		if !goodProtocols.contains(protocol) && len(cipherSuites) > 0 {
-			nonApprovedProtocols = append(nonApprovedProtocols, protocol)
-		}
-
-		for _, cipher := range cipherSuites {
-			// record list of distinct non-approved ciphers
-			if !goodCiphers.contains(cipher) && !nonApprovedCiphers.contains(cipher) {
-				nonApprovedCiphers = append(nonApprovedCiphers, cipher)
-			}
-		}
-	}
-
-	return nonApprovedProtocols, nonApprovedCiphers, nil
 }

@@ -40,7 +40,7 @@ CREATE TABLE ports (
   FOREIGN KEY(process_id) REFERENCES processes(id)
 );
 
-CREATE TABLE tls_informations (
+CREATE TABLE tls_certificates (
   id integer PRIMARY KEY AUTOINCREMENT,
   port_id integer,
   cert_expiration datetime,
@@ -50,7 +50,6 @@ CREATE TABLE tls_informations (
   cert_locality string,
   cert_organization string,
   cert_common_name string,
-  cipher_suites text,
   mutual bool,
   FOREIGN KEY(port_id) REFERENCES ports(id)
 );
@@ -60,6 +59,25 @@ CREATE TABLE tls_scan_errors (
   port_id integer,
   cert_scan_error string,
   FOREIGN KEY(port_id) REFERENCES ports(id)
+);
+
+CREATE TABLE tls_suites (
+  id integer PRIMARY KEY AUTOINCREMENT,
+  suite string NOT NULL
+);
+
+CREATE TABLE tls_ciphers (
+  id integer PRIMARY KEY AUTOINCREMENT,
+  cipher string NOT NULL
+);
+
+CREATE TABLE certificate_to_ciphersuite (
+  certificate_id integer NOT NULL,
+  suite_id integer NOT NULL,
+  cipher_id integer NOT NULL,
+  FOREIGN KEY(certificate_id) REFERENCES tls_certificates(id),
+  FOREIGN KEY(suite_id) REFERENCES tls_suites(id),
+  FOREIGN KEY(cipher_id) REFERENCES tls_ciphers(id)
 );
 
 CREATE TABLE env_vars (

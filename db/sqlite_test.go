@@ -81,7 +81,10 @@ var _ = Describe("Sqlite", func() {
 				"processes",
 				"releases",
 				"ssh_keys",
-				"tls_informations",
+				"tls_certificates",
+				"tls_suites",
+				"tls_ciphers",
+				"certificate_to_ciphersuite",
 				"tls_scan_errors",
 				"version",
 				"regexes",
@@ -335,23 +338,32 @@ var _ = Describe("Sqlite", func() {
 					cert_locality,
 					cert_organization,
 					cert_common_name,
-					cipher_suites,
+					s.suite, 
+					c.cipher,
 					mutual
 				FROM
-				  tls_informations`)
+				  tls_certificates t
+				JOIN certificate_to_ciphersuite ctc
+				  ON t.id = ctc.certificate_id
+				JOIN tls_suites s
+				  ON ctc.suite_id = s.id
+				JOIN tls_ciphers c
+				  ON ctc.cipher_id = c.id
+				ORDER BY s.suite, c.cipher`)
+
 				Expect(err).NotTo(HaveOccurred())
 				defer rows.Close()
-				hasRows := rows.Next()
-				Expect(hasRows).To(BeTrue())
 
 				var (
 					cert_expiration                                                                                time.Time
 					cert_bits                                                                                      int
-					cert_country, cert_province, cert_locality, cert_organization, cert_common_name, cipher_suites string
+					cert_country, cert_province, cert_locality, cert_organization, cert_common_name, cipher, suite string
 					mutual                                                                                         bool
 				)
 
-				err = rows.Scan(&cert_expiration, &cert_bits, &cert_country, &cert_province, &cert_locality, &cert_organization, &cert_common_name, &cipher_suites, &mutual)
+				hasRows := rows.Next()
+				Expect(hasRows).To(BeTrue())
+				err = rows.Scan(&cert_expiration, &cert_bits, &cert_country, &cert_province, &cert_locality, &cert_organization, &cert_common_name, &suite, &cipher, &mutual)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cert_expiration.Equal(certExpiration)).To(BeTrue())
@@ -361,7 +373,24 @@ var _ = Describe("Sqlite", func() {
 				Expect(cert_locality).To(Equal("some-locality"))
 				Expect(cert_organization).To(Equal("some-organization"))
 				Expect(cert_common_name).To(Equal("some-common-name"))
-				Expect(cipher_suites).To(MatchJSON(`{"tls1.0": ["ECDHE-NOT-REALLY-SECURE"], "tls1.1": ["ECDHE-REALLY-SECURE"]}`))
+				Expect(suite).To(Equal("tls1.0"))
+				Expect(cipher).To(Equal("ECDHE-NOT-REALLY-SECURE"))
+				Expect(mutual).To(BeTrue())
+
+				hasRows = rows.Next()
+				Expect(hasRows).To(BeTrue())
+				err = rows.Scan(&cert_expiration, &cert_bits, &cert_country, &cert_province, &cert_locality, &cert_organization, &cert_common_name, &suite, &cipher, &mutual)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cert_expiration.Equal(certExpiration)).To(BeTrue())
+				Expect(cert_bits).To(Equal(234))
+				Expect(cert_country).To(Equal("some-country"))
+				Expect(cert_province).To(Equal("some-province"))
+				Expect(cert_locality).To(Equal("some-locality"))
+				Expect(cert_organization).To(Equal("some-organization"))
+				Expect(cert_common_name).To(Equal("some-common-name"))
+				Expect(suite).To(Equal("tls1.1"))
+				Expect(cipher).To(Equal("ECDHE-REALLY-SECURE"))
 				Expect(mutual).To(BeTrue())
 			})
 
@@ -502,7 +531,7 @@ var _ = Describe("Sqlite", func() {
 					err := database.SaveReport("cf1", hosts)
 					Expect(err).NotTo(HaveOccurred())
 
-					rows, err := sqliteDB.Query(`SELECT count(1) FROM tls_informations`)
+					rows, err := sqliteDB.Query(`SELECT count(1) FROM tls_certificates`)
 					Expect(err).NotTo(HaveOccurred())
 					defer rows.Close()
 

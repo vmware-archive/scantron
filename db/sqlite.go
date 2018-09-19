@@ -2,7 +2,6 @@ package db
 
 import (
   "database/sql"
-  "encoding/json"
   "errors"
   "fmt"
   "os"
@@ -186,13 +185,8 @@ func (db *Database) SaveReport(deployment string, report scanner.ScanResult) err
         if port.TLSInformation != nil && port.TLSInformation.Certificate != nil {
           cert := port.TLSInformation.Certificate
 
-          ciJson, err := json.Marshal(port.TLSInformation.CipherInformation)
-          if err != nil {
-            return err
-          }
-
-          _, err = tx.Exec(`
-            INSERT INTO tls_informations (
+          res, err = tx.Exec(`
+            INSERT INTO tls_certificates (
                port_id,
                cert_expiration,
                cert_bits,
@@ -201,9 +195,8 @@ func (db *Database) SaveReport(deployment string, report scanner.ScanResult) err
                cert_locality,
                cert_organization,
                cert_common_name,
-               cipher_suites,
                mutual
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             portID,
             cert.Expiration,
             cert.Bits,
@@ -212,11 +205,40 @@ func (db *Database) SaveReport(deployment string, report scanner.ScanResult) err
             cert.Subject.Locality,
             cert.Subject.Organization,
             cert.Subject.CommonName,
-            string(ciJson),
             port.TLSInformation.Mutual,
           )
           if err != nil {
             return err
+          }
+
+          certID, err := res.LastInsertId()
+          if err != nil {
+            return err
+          }
+
+          for suite, ciphers := range port.TLSInformation.CipherInformation {
+            if len(ciphers) > 0 {
+              suiteID, err := getIndexOrInsert(
+                func() *sql.Row{ return tx.QueryRow("SELECT id FROM tls_suites WHERE suite = ?", suite) },
+                func() (sql.Result, error) { return tx.Exec("INSERT INTO tls_suites(suite) VALUES (?)", suite) })
+              if err != nil {
+                return err
+              }
+
+              for _, cipher := range ciphers {
+                cipherID, err := getIndexOrInsert(
+                  func() *sql.Row{ return tx.QueryRow("SELECT id FROM tls_ciphers WHERE cipher = ?", cipher) },
+                  func() (sql.Result, error) { return tx.Exec("INSERT INTO tls_ciphers(cipher) VALUES (?)", cipher) })
+                if err != nil {
+                  return err
+                }
+
+                _, err = tx.Exec("INSERT INTO certificate_to_ciphersuite(certificate_id, suite_id, cipher_id) VALUES (?, ?, ?)", certID, suiteID, cipherID)
+                if err != nil {
+                  return err
+                }
+              }
+            }
           }
         }
       }
