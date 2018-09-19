@@ -2,10 +2,8 @@ package filesystem
 
 import (
   "bufio"
-  "context"
   "github.com/pivotal-cf/scantron"
   "github.com/pivotal-cf/scantron/scanlog"
-  "golang.org/x/sync/semaphore"
   "os"
   "path/filepath"
   "regexp"
@@ -33,6 +31,11 @@ type fileWalker struct {
   compiledPathRegexes []*regexp.Regexp
   compiledContentRegexes []*regexp.Regexp
   maxRegexFileSize int64
+}
+
+type regexJob struct {
+  wf WalkedFile
+  matchedPaths []string
 }
 
 func NewWalker(config FileConfig,
@@ -81,8 +84,8 @@ func (fw *fileWalker) Walk() ([]WalkedFile, error) {
     maxInFlight = 100
   )
   wf := make(chan WalkedFile, maxInFlight)
+  regexQueue := make(chan regexJob, maxInFlight)
   wg := &sync.WaitGroup{}
-  sm := semaphore.NewWeighted(maxInFlight)
 
   go func() {
     done <- filepath.Walk(fw.config.RootPath, func(path string, info os.FileInfo, err error) error {
@@ -108,32 +111,54 @@ func (fw *fileWalker) Walk() ([]WalkedFile, error) {
         return nil
       }
 
-      wg.Add(1)
-      fw.logger.Debugf("Waiting for file semaphore")
-      sm.Acquire(context.Background(), 1)
-      go func() {
-        fw.logger.Debugf("Checking file %s", path)
-        defer wg.Done()
-        defer sm.Release(1)
-        var regexMatches []scantron.RegexMatch
-        if info.Size() <= fw.maxRegexFileSize {
-          regexMatches, err = fw.matchFile(path)
-        } else {
-          fw.logger.Debugf("Skipping content scan for %s: file too large", path)
-        }
+      matchedPathRegexes := fw.matchPath(path)
+      pathMatch := len(fw.compiledPathRegexes) == 0 || len(matchedPathRegexes) > 0
+      sizeMatch := info.Size() <= fw.maxRegexFileSize
+      checkContent := pathMatch && sizeMatch && len(fw.compiledContentRegexes) > 0
+      if pathMatch && !sizeMatch {
+        fw.logger.Debugf("Skipping content scan for %s: file too large", path)
+      }
 
-        wf <- WalkedFile{
-          Path:         path,
-          Info:         info,
-          RegexMatches: regexMatches,
+      file := WalkedFile{
+        Path:         path,
+        Info:         info,
+        RegexMatches: nil,
+      }
+      if checkContent {
+        wg.Add(1)
+        regexQueue <- regexJob {
+          file,
+          matchedPathRegexes,
         }
-
+        fw.logger.Debugf("Queued file %s for content check", path)
+      } else {
+        wf <- file
         fw.logger.Debugf("Recorded file %s", path)
-      }()
+      }
 
       return nil
     })
   } ()
+
+  if len(fw.compiledContentRegexes) > 0 {
+    for i := 0; i < maxInFlight; i++ {
+      go func() {
+        for job := range regexQueue {
+          fw.logger.Debugf("Checking file %s", job.wf.Path)
+          regexMatches, err := fw.matchContent(job.wf.Path, job.matchedPaths)
+          if err != nil {
+            fw.logger.Warnf("Error checking content of %s: %s", job.wf.Path, err)
+          }
+
+          job.wf.RegexMatches = regexMatches
+          wf <- job.wf
+
+          fw.logger.Debugf("Recorded file %s", job.wf.Path)
+          wg.Done()
+        }
+      }()
+    }
+  }
 
   go func() {
     fw.logger.Debugf("Waiting for walker")
@@ -142,6 +167,7 @@ func (fw *fileWalker) Walk() ([]WalkedFile, error) {
     wg.Wait()
     fw.logger.Debugf("Done waiting for files")
     close(wf)
+    close(regexQueue)
     done <- err
     fw.logger.Debugf("Walker result forwarded")
   }()
@@ -161,9 +187,9 @@ func (fw *fileWalker) Walk() ([]WalkedFile, error) {
   return files, nil
 }
 
-func (fw *fileWalker) matchFile(path string) ([]scantron.RegexMatch, error) {
+func (fw *fileWalker) matchPath(path string) ([]string) {
   var matchedPathRegexes []string
-  var regexMatches []scantron.RegexMatch
+
   for _, pathRegex := range fw.compiledPathRegexes {
     if pathRegex.MatchString(path) {
       fw.logger.Debugf("File path %s matches %s", path, pathRegex.String())
@@ -171,9 +197,11 @@ func (fw *fileWalker) matchFile(path string) ([]scantron.RegexMatch, error) {
     }
   }
 
-  if len(fw.compiledPathRegexes) > 0 && len(matchedPathRegexes) == 0 {
-    return regexMatches, nil
-  }
+  return matchedPathRegexes
+}
+
+func (fw *fileWalker) matchContent(path string, matchedPathRegexes []string) ([]scantron.RegexMatch, error) {
+  var regexMatches []scantron.RegexMatch
 
   for _, contentRegex := range fw.compiledContentRegexes {
     match, err := fw.checkContent(contentRegex, path)
