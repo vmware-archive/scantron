@@ -55,7 +55,6 @@ jobs:
     passed: [scantron]
   - get: scantron-binary
     passed: [scantron]
-    tags: [prod]
   - get: version
   - task: release
     file: scantron/ci/release.yml
