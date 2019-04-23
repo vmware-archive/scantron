@@ -11,13 +11,13 @@ import (
 )
 
 type boshScanner struct {
-  deployment bosh.TargetDeployment
+	deployment bosh.TargetDeployment
 }
 
 func Bosh(deployment bosh.TargetDeployment) Scanner {
-  return &boshScanner{
-    deployment: deployment,
-  }
+	return &boshScanner{
+		deployment: deployment,
+	}
 }
 
 func (s *boshScanner) Scan(fileRegexes *scantron.FileMatch, logger scanlog.Logger) (ScanResult, error) {

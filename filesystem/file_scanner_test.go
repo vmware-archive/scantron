@@ -86,11 +86,11 @@ var _ = Describe("FileScanner", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(files).To(ConsistOf(scantron.File{
-			Path: path,
-			Permissions: info.Mode(),
-			Size: info.Size(),
-			User: "user",
-			Group: "group",
+			Path:         path,
+			Permissions:  info.Mode(),
+			Size:         info.Size(),
+			User:         "user",
+			Group:        "group",
 			ModifiedTime: info.ModTime(),
 			RegexMatches: nil,
 		}))
@@ -105,11 +105,11 @@ var _ = Describe("FileScanner", func() {
 				Path: path,
 				Info: info,
 				RegexMatches: []scantron.RegexMatch{
-				  {
-				    ContentRegex:"content",
-				    PathRegex:"path",
-          },
-        },
+					{
+						ContentRegex: "content",
+						PathRegex:    "path",
+					},
+				},
 			},
 		}, nil).Times(1)
 		mockFileMetadata.EXPECT().GetUser(path, info).Return("user", nil).Times(1)
@@ -120,18 +120,18 @@ var _ = Describe("FileScanner", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(files).To(ConsistOf(scantron.File{
-			Path: path,
-			Permissions: info.Mode(),
-			Size: info.Size(),
-			User: "user",
-			Group: "group",
+			Path:         path,
+			Permissions:  info.Mode(),
+			Size:         info.Size(),
+			User:         "user",
+			Group:        "group",
 			ModifiedTime: info.ModTime(),
 			RegexMatches: []scantron.RegexMatch{
-        {
-          ContentRegex:"content",
-          PathRegex:"path",
-        },
-      },
+				{
+					ContentRegex: "content",
+					PathRegex:    "path",
+				},
+			},
 		}))
 	})
 })

@@ -1,187 +1,183 @@
 package tlsscan
 
 import (
-  "context"
-  "crypto/x509"
-  "fmt"
-  "net"
-  "sync"
+	"context"
+	"crypto/x509"
+	"fmt"
+	"net"
+	"sync"
 
-  "crypto/tls"
-  "strings"
+	"crypto/tls"
+	"strings"
 
-  "time"
+	"time"
 
-  "github.com/pivotal-cf/scantron"
-  "github.com/pivotal-cf/scantron/scanlog"
-  "golang.org/x/sync/semaphore"
+	"github.com/pivotal-cf/scantron"
+	"github.com/pivotal-cf/scantron/scanlog"
+	"golang.org/x/sync/semaphore"
 )
 
 const (
-  maxInFlight = 20
+	maxInFlight = 20
 )
 
 type result struct {
-  version string
-  suite   string
+	version string
+	suite   string
 }
 
 func release(logger scanlog.Logger, sem *semaphore.Weighted, wg *sync.WaitGroup) {
-  logger.Debugf("Releasing locks")
-  sem.Release(1)
-  wg.Done()
+	logger.Debugf("Releasing locks")
+	sem.Release(1)
+	wg.Done()
 }
 
-type TlsScannerImpl struct {}
+type TlsScannerImpl struct{}
 
 func (s *TlsScannerImpl) Scan(logger scanlog.Logger, host string, port string) (scantron.CipherInformation, error) {
-  results := scantron.CipherInformation{}
-  for _, version := range ProtocolVersions {
-    results[version.Name] = []string{}
-  }
+	results := scantron.CipherInformation{}
+	for _, version := range ProtocolVersions {
+		results[version.Name] = []string{}
+	}
 
-  supportedProtocols := getSupportedProtocols(logger, host, port)
-  if len(supportedProtocols) == 0 {
-    logger.Debugf("Skipping cipher scan for %s:%s (no supported protocols)", host, port)
-    return results, nil
-  }
+	supportedProtocols := getSupportedProtocols(logger, host, port)
+	if len(supportedProtocols) == 0 {
+		logger.Debugf("Skipping cipher scan for %s:%s (no supported protocols)", host, port)
+		return results, nil
+	}
 
-  logger.Debugf("Starting cipher scan for %s:%s", host, port)
+	logger.Debugf("Starting cipher scan for %s:%s", host, port)
 
-  sem := semaphore.NewWeighted(maxInFlight)
-  cipherSuites, err := BuildCipherSuites()
-  if err != nil {
-    return results, err
-  }
-  numCiphersuites := len(supportedProtocols) * len(cipherSuites)
-  resultChan := make(chan result, maxInFlight)
+	sem := semaphore.NewWeighted(maxInFlight)
+	cipherSuites, err := BuildCipherSuites()
+	if err != nil {
+		return results, err
+	}
+	numCiphersuites := len(supportedProtocols) * len(cipherSuites)
+	resultChan := make(chan result, maxInFlight)
 
-  wg := &sync.WaitGroup{}
-  wg.Add(numCiphersuites)
+	wg := &sync.WaitGroup{}
+	wg.Add(numCiphersuites)
 
-  go func(logger scanlog.Logger) {
-    for _, version := range supportedProtocols {
-      logger.Debugf("Starting TLS version %s", version.Name)
-      for _, cipherSuite := range cipherSuites {
-        logger.Debugf("Starting ciphersuite %s", cipherSuite.Name)
-        scanLogger := logger.With(
-          "host", host,
-          "port", port,
-          "version", version.Name,
-          "suite", cipherSuite.Name,
-        )
+	go func(logger scanlog.Logger) {
+		for _, version := range supportedProtocols {
+			logger.Debugf("Starting TLS version %s", version.Name)
+			for _, cipherSuite := range cipherSuites {
+				logger.Debugf("Starting ciphersuite %s", cipherSuite.Name)
+				scanLogger := logger.With(
+					"host", host,
+					"port", port,
+					"version", version.Name,
+					"suite", cipherSuite.Name,
+				)
 
-        if err := sem.Acquire(context.Background(), 1); err != nil {
-          scanLogger.Errorf("Failed to acquire lock: %q", err)
-        }
-        scanLogger.Debugf("Acquired lock")
+				if err := sem.Acquire(context.Background(), 1); err != nil {
+					scanLogger.Errorf("Failed to acquire lock: %q", err)
+				}
+				scanLogger.Debugf("Acquired lock")
 
-        go testCipher(scanLogger, version, cipherSuite, sem, wg, host, port, resultChan)
-      }
-    }
-  } (logger)
+				go testCipher(scanLogger, version, cipherSuite, sem, wg, host, port, resultChan)
+			}
+		}
+	}(logger)
 
-  go func(logger scanlog.Logger) {
-    wg.Wait()
-    logger.Debugf("Wait group done")
-    close(resultChan)
-  }(logger)
+	go func(logger scanlog.Logger) {
+		wg.Wait()
+		logger.Debugf("Wait group done")
+		close(resultChan)
+	}(logger)
 
-  logger.Debugf("About to start reading from channel")
-  for res := range resultChan {
-    logger.Debugf("Read %s %s from channel", res.version, res.suite)
-    results[res.version] = append(results[res.version], res.suite)
-  }
+	logger.Debugf("About to start reading from channel")
+	for res := range resultChan {
+		logger.Debugf("Read %s %s from channel", res.version, res.suite)
+		results[res.version] = append(results[res.version], res.suite)
+	}
 
-  logger.Debugf("Finished cipher scan for %s:%s", host, port)
-  return results, nil
+	logger.Debugf("Finished cipher scan for %s:%s", host, port)
+	return results, nil
 }
 
 func testCipher(
-  logger scanlog.Logger,
-  version ProtocolVersion,
-  cipherSuite CipherSuite,
-  sem *semaphore.Weighted,
-  wg *sync.WaitGroup,
-  host string,
-  port string,
-  resultChan chan result) {
-  defer release(logger, sem, wg)
-  found, err := tryHandshakeWithCipher(logger, host, port, version, cipherSuite)
-  if err != nil {
-    logger.Debugf("Remote server did not respond affirmatively to request: %s", err)
-    return
-  }
+	logger scanlog.Logger,
+	version ProtocolVersion,
+	cipherSuite CipherSuite,
+	sem *semaphore.Weighted,
+	wg *sync.WaitGroup,
+	host string,
+	port string,
+	resultChan chan result) {
+	defer release(logger, sem, wg)
+	found, err := tryHandshakeWithCipher(logger, host, port, version, cipherSuite)
+	if err != nil {
+		logger.Debugf("Remote server did not respond affirmatively to request: %s", err)
+		return
+	}
 
-  if found {
-    logger.Debugf("Sending result")
-    resultChan <- result{
-      version: version.Name,
-      suite:   cipherSuite.Name,
-    }
-    logger.Debugf("Result sent")
-  }
-  logger.Debugf("Finished ciphersuite %s", cipherSuite.Name)
+	if found {
+		logger.Debugf("Sending result")
+		resultChan <- result{
+			version: version.Name,
+			suite:   cipherSuite.Name,
+		}
+		logger.Debugf("Result sent")
+	}
+	logger.Debugf("Finished ciphersuite %s", cipherSuite.Name)
 }
 
+func getSupportedProtocols(logger scanlog.Logger, host string, port string) []ProtocolVersion {
+	supportedVersions := []ProtocolVersion{}
+	for _, version := range ProtocolVersions {
+		providesCert := false
+		wantsCert := false
+		config := tls.Config{
+			MinVersion:         version.ID,
+			MaxVersion:         version.ID,
+			InsecureSkipVerify: true,
+			VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+				providesCert = true
+				return nil
+			},
+			GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
+				wantsCert = true
+				return nil, ErrExpectedAbort
+			},
+		}
+		err := AttemptHandshake(logger, &net.Dialer{Timeout: 1 * time.Second}, "tcp", fmt.Sprintf("%s:%s", host, port), &config)
 
-func getSupportedProtocols(logger scanlog.Logger, host string, port string) ([]ProtocolVersion) {
-  supportedVersions := []ProtocolVersion{}
-  for _, version := range ProtocolVersions {
-    providesCert := false
-    wantsCert := false
-    config := tls.Config{
-      MinVersion:version.ID,
-      MaxVersion:version.ID,
-      InsecureSkipVerify: true,
-      VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
-        providesCert = true
-        return nil
-      },
-      GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
-        wantsCert = true
-        return nil, ErrExpectedAbort
-      },
-    }
-    err := AttemptHandshake(logger, &net.Dialer{Timeout: 1 * time.Second}, "tcp", fmt.Sprintf("%s:%s", host, port), &config)
-
-    if providesCert {
-      logger.Debugf("%s:%s accepts TLS (%s mutual=%t)", host, port, version.Name, wantsCert)
-      supportedVersions = append(supportedVersions, version)
-    } else {
-      logger.Debugf("%s:%s refuses TLS (%s %s)", host, port, version.Name, err)
-    }
-  }
-  return supportedVersions
+		if providesCert {
+			logger.Debugf("%s:%s accepts TLS (%s mutual=%t)", host, port, version.Name, wantsCert)
+			supportedVersions = append(supportedVersions, version)
+		} else {
+			logger.Debugf("%s:%s refuses TLS (%s %s)", host, port, version.Name, err)
+		}
+	}
+	return supportedVersions
 }
 
 func tryHandshakeWithCipher(logger scanlog.Logger, host string, port string, version ProtocolVersion, cipherSuite CipherSuite) (bool, error) {
-  config := tls.Config{
-    MinVersion:     version.ID,
-    MaxVersion:     version.ID,
-    CipherSuites: []uint16{cipherSuite.ID},
-    InsecureSkipVerify: true,
-    VerifyPeerCertificate: nil,
-  }
+	config := tls.Config{
+		MinVersion:            version.ID,
+		MaxVersion:            version.ID,
+		CipherSuites:          []uint16{cipherSuite.ID},
+		InsecureSkipVerify:    true,
+		VerifyPeerCertificate: nil,
+	}
 
-  address := fmt.Sprintf("%s:%s", host, port)
-  logger.Debugf("Dialing %s %s %s", address, version.Name, cipherSuite.Name)
-  err := AttemptHandshake(logger, &net.Dialer{Timeout: 10*time.Second}, "tcp", address, &config)
+	address := fmt.Sprintf("%s:%s", host, port)
+	logger.Debugf("Dialing %s %s %s", address, version.Name, cipherSuite.Name)
+	err := AttemptHandshake(logger, &net.Dialer{Timeout: 10 * time.Second}, "tcp", address, &config)
 
-  if err != nil {
-    if strings.Contains(err.Error(), "remote error") {
-      logger.Debugf("Dialed: no tls for %s %s %s (%s)", address, version.Name, cipherSuite.Name, err)
-      return false, nil
-    }
+	if err != nil {
+		if strings.Contains(err.Error(), "remote error") {
+			logger.Debugf("Dialed: no tls for %s %s %s (%s)", address, version.Name, cipherSuite.Name, err)
+			return false, nil
+		}
 
-    // TODO are these meant to be recorded in tls_scan_errors?
-    logger.Debugf("Dialed: error for %s %s %s: %s", address, version.Name, cipherSuite.Name, err)
-    return false, err
-  }
+		// TODO are these meant to be recorded in tls_scan_errors?
+		logger.Debugf("Dialed: error for %s %s %s: %s", address, version.Name, cipherSuite.Name, err)
+		return false, err
+	}
 
-  logger.Debugf("Dialed: tls available for %s %s %s", address, version.Name, cipherSuite.Name)
-  return true, nil
+	logger.Debugf("Dialed: tls available for %s %s %s", address, version.Name, cipherSuite.Name)
+	return true, nil
 }
-
-
-

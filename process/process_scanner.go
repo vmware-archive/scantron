@@ -18,7 +18,7 @@ type ProcessPort struct {
 type ProcessPorts []ProcessPort
 
 type ProcessScanner struct {
-	SysRes SystemResources
+	SysRes  SystemResources
 	TlsScan tlsscan.TlsScanner
 }
 
@@ -34,15 +34,15 @@ func (ps *ProcessScanner) ScanProcesses(logger scanlog.Logger) ([]scantron.Proce
 
 		for j := range portsForPid {
 
-		 if strings.ToUpper(portsForPid[j].State) != "LISTEN" {
-			 continue
-		 }
+			if strings.ToUpper(portsForPid[j].State) != "LISTEN" {
+				continue
+			}
 
-		 if portsForPid[j].Protocol == "udp" {
-			 continue
-		 }
+			if portsForPid[j].Protocol == "udp" {
+				continue
+			}
 
-		 portsForPid[j].TLSInformation = ps.getTLSInformation(logger, portsForPid[j])
+			portsForPid[j].TLSInformation = ps.getTLSInformation(logger, portsForPid[j])
 		}
 
 		processes[i].Ports = portsForPid

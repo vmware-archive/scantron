@@ -12,13 +12,13 @@ import (
 type metadata struct {
 }
 
-func GetFileMetadata() (FileMetadata) {
+func GetFileMetadata() FileMetadata {
 	return &metadata{}
 }
 
-func GetFileConfig() (FileConfig) {
-	return FileConfig {
-		RootPath: "C:\\",
+func GetFileConfig() FileConfig {
+	return FileConfig{
+		RootPath:      "C:\\",
 		ExcludedPaths: []string{},
 	}
 }
@@ -41,9 +41,8 @@ func (f *metadata) GetGroup(path string, fileInfo os.FileInfo) (string, error) {
 
 func (f *metadata) getSids(path string, fileInfo os.FileInfo) (*windows.SID, *windows.SID, error) {
 	var (
-		owner   *windows.SID
-		group   *windows.SID
-
+		owner *windows.SID
+		group *windows.SID
 	)
 	err := api.GetNamedSecurityInfo(
 		fmt.Sprintf("\\\\?\\%s", path), // prefix \\?\ to enable extended-length paths > 260 characters

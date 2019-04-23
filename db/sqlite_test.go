@@ -665,22 +665,21 @@ var _ = Describe("Sqlite", func() {
 			})
 		})
 
-
 		Context("with regexes", func() {
 			BeforeEach(func() {
 				hosts.JobResults = []scanner.JobResult{
 					{
 						Files: []scantron.File{
 							{
-								Path: "/some/interesting/path",
-								Permissions: 0600,
-								User: "vip",
-								Group: "root",
+								Path:         "/some/interesting/path",
+								Permissions:  0600,
+								User:         "vip",
+								Group:        "root",
 								ModifiedTime: time.Now(),
-								Size: 1000,
+								Size:         1000,
 								RegexMatches: []scantron.RegexMatch{
 									{
-										PathRegex: "interesting",
+										PathRegex:    "interesting",
 										ContentRegex: "valuable",
 									},
 								},

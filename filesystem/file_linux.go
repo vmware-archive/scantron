@@ -12,12 +12,12 @@ import (
 type metadata struct {
 }
 
-func GetFileMetadata() (FileMetadata) {
+func GetFileMetadata() FileMetadata {
 	return &metadata{}
 }
 
-func GetFileConfig() (FileConfig) {
-	return FileConfig {
+func GetFileConfig() FileConfig {
+	return FileConfig{
 		RootPath: "/",
 		ExcludedPaths: []string{
 			"/dev", "/proc", "/sys", "/run",

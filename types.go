@@ -7,29 +7,29 @@ import (
 )
 
 type File struct {
-	Path           string      `json:"path"`
-	Permissions    os.FileMode `json:"permissions"`
-	User           string      `json:"user"`
-	Group          string      `json:"group"`
-	ModifiedTime   time.Time   `json:"modified_time"`
-	Size           int64       `json:"size"`
-	RegexMatches   []RegexMatch    `json:"regex_matches"`
+	Path         string       `json:"path"`
+	Permissions  os.FileMode  `json:"permissions"`
+	User         string       `json:"user"`
+	Group        string       `json:"group"`
+	ModifiedTime time.Time    `json:"modified_time"`
+	Size         int64        `json:"size"`
+	RegexMatches []RegexMatch `json:"regex_matches"`
 }
 
 type RegexMatch struct {
-	PathRegex string `json:"path_regex"`
+	PathRegex    string `json:"path_regex"`
 	ContentRegex string `json:"content_regex"`
 }
 
 type Port struct {
-	Protocol        string `json:"protocol"`
-	Address         string `json:"address"`
-	Number          int    `json:"number"`
-	ForeignAddress  string `json:"foreignAddress"`
-	ForeignNumber   int    `json:"foreignNumber"`
-	State           string `json:"state"`
+	Protocol       string `json:"protocol"`
+	Address        string `json:"address"`
+	Number         int    `json:"number"`
+	ForeignAddress string `json:"foreignAddress"`
+	ForeignNumber  int    `json:"foreignNumber"`
+	State          string `json:"state"`
 
-	TLSInformation  *TLSInformation `json:"tls_information"`
+	TLSInformation *TLSInformation `json:"tls_information"`
 }
 
 type TLSInformation struct {

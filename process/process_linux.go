@@ -15,7 +15,6 @@ import (
 )
 
 type SystemResourceImpl struct {
-
 }
 
 func (s *SystemResourceImpl) GetProcesses() ([]scantron.Process, error) {
@@ -50,7 +49,7 @@ func (s *SystemResourceImpl) GetPorts() ProcessPorts {
 	processPorts := []ProcessPort{}
 	for _, np := range netstatPorts {
 		processPorts = append(processPorts, ProcessPort{
-			PID: np.PID,
+			PID:  np.PID,
 			Port: np.Port,
 		})
 	}

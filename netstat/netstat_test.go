@@ -17,12 +17,12 @@ tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      
 			{
 				PID: 1317,
 				Port: scantron.Port{
-					Protocol: "tcp",
-					Address:  "127.0.0.1",
-					Number:   8080,
+					Protocol:       "tcp",
+					Address:        "127.0.0.1",
+					Number:         8080,
 					ForeignAddress: "0.0.0.0",
-					ForeignNumber: -1,
-					State:    "LISTEN",
+					ForeignNumber:  -1,
+					State:          "LISTEN",
 				},
 			},
 		}))
@@ -37,23 +37,23 @@ udp        0      0 127.0.0.2:8080          127.0.0.3:8443          ESTABLISHED 
 			{
 				PID: 1317,
 				Port: scantron.Port{
-					Protocol: "tcp",
-					Address:  "127.0.0.1",
-					Number:   8080,
+					Protocol:       "tcp",
+					Address:        "127.0.0.1",
+					Number:         8080,
 					ForeignAddress: "0.0.0.0",
-					ForeignNumber: -1,
-					State:    "LISTEN",
+					ForeignNumber:  -1,
+					State:          "LISTEN",
 				},
 			},
 			{
 				PID: 1318,
 				Port: scantron.Port{
-					Protocol: "udp",
-					Address:  "127.0.0.2",
-					Number:   8080,
+					Protocol:       "udp",
+					Address:        "127.0.0.2",
+					Number:         8080,
 					ForeignAddress: "127.0.0.3",
-					ForeignNumber: 8443,
-					State:    "ESTABLISHED",
+					ForeignNumber:  8443,
+					State:          "ESTABLISHED",
 				},
 			},
 		}))
@@ -68,23 +68,23 @@ udp        0      0 127.0.0.2:8080          127.0.0.3:8443          ESTABLISHED 
 			{
 				PID: 5149,
 				Port: scantron.Port{
-					Protocol: "tcp6",
-					Address:  "::",
-					Number:   50051,
+					Protocol:       "tcp6",
+					Address:        "::",
+					Number:         50051,
 					ForeignAddress: "::",
-					ForeignNumber: -1,
-					State:    "LISTEN",
+					ForeignNumber:  -1,
+					State:          "LISTEN",
 				},
 			},
 			{
 				PID: 777,
 				Port: scantron.Port{
-					Protocol: "udp6",
-					Address:  "::",
-					Number:   111,
+					Protocol:       "udp6",
+					Address:        "::",
+					Number:         111,
 					ForeignAddress: "::",
-					ForeignNumber: -1,
-					State:    "",
+					ForeignNumber:  -1,
+					State:          "",
 				},
 			},
 		}))
@@ -98,12 +98,12 @@ udp        0      0 127.0.0.2:8080          127.0.0.3:8443          ESTABLISHED 
 				{
 					PID: 4113,
 					Port: scantron.Port{
-						Protocol: "udp",
-						Address:  "127.0.0.1",
-						Number:   53,
+						Protocol:       "udp",
+						Address:        "127.0.0.1",
+						Number:         53,
 						ForeignAddress: "0.0.0.0",
-						ForeignNumber: -1,
-						State:    "",
+						ForeignNumber:  -1,
+						State:          "",
 					},
 				},
 			}))

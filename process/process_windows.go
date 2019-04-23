@@ -11,28 +11,28 @@ import (
 )
 
 type WinProcess struct {
-	CommandName string   `json:"name"`
-	PID         int      `json:"pid"`
-	User        string   `json:"user"`
+	CommandName string `json:"name"`
+	PID         int    `json:"pid"`
+	User        string `json:"user"`
 	Cmdline     string `json:"cmdline"`
 }
 
 type WinEnv struct {
-	Key string `json:"Key"`
+	Key   string `json:"Key"`
 	Value string `json:"Value"`
 }
 
 type WinPort struct {
-	LocalAddress string `json:"localaddress"`
-	LocalPort int `json:"localport"`
+	LocalAddress  string `json:"localaddress"`
+	LocalPort     int    `json:"localport"`
 	RemoteAddress string `json:"remoteaddress"`
-	RemotePort int `json:"remoteport"`
-	OwningProcess int `json:"owningprocess"`
-	State string `json:"state"`
+	RemotePort    int    `json:"remoteport"`
+	OwningProcess int    `json:"owningprocess"`
+	State         string `json:"state"`
 }
 type SystemResourceImpl struct {
-
 }
+
 func (s *SystemResourceImpl) GetProcesses() ([]scantron.Process, error) {
 
 	cmd := exec.Command("powershell", "get-wmiobject win32_process | select @{Name='pid'; Expression={$_.ProcessId}}, @{Name='name'; Expression={$_.Name}}, @{Name='user'; Expression={$_.GetOwner().User }}, @{Name='cmdline'; Expression={$_.Commandline}} | ConvertTo-Json")
@@ -95,23 +95,23 @@ func (s *SystemResourceImpl) GetPorts() ProcessPorts {
 	for _, p := range rawUdp {
 		ports = append(ports, ProcessPort{
 			PID: p.OwningProcess,
-			Port: scantron.Port {
+			Port: scantron.Port{
 				Protocol: "udp",
-				Address: p.LocalAddress,
-				Number: p.LocalPort,
+				Address:  p.LocalAddress,
+				Number:   p.LocalPort,
 			},
 		})
 	}
 	for _, p := range rawTcp {
 		ports = append(ports, ProcessPort{
 			PID: p.OwningProcess,
-			Port: scantron.Port {
-				Protocol: "tcp",
-				Address: p.LocalAddress,
-				Number: p.LocalPort,
+			Port: scantron.Port{
+				Protocol:       "tcp",
+				Address:        p.LocalAddress,
+				Number:         p.LocalPort,
 				ForeignAddress: p.RemoteAddress,
-				ForeignNumber: p.RemotePort,
-				State: p.State, // FIXME normalization with netstat?
+				ForeignNumber:  p.RemotePort,
+				State:          p.State, // FIXME normalization with netstat?
 			},
 		})
 	}

@@ -19,8 +19,8 @@ import (
 
 var _ = Describe("TLS Scan", func() {
 	var (
-		server *httptest.Server
-		logger scanlog.Logger
+		server  *httptest.Server
+		logger  scanlog.Logger
 		subject *tlsscan.TlsScannerImpl
 	)
 

@@ -29,18 +29,18 @@ type TargetDeployment interface {
 }
 
 type TargetDeploymentImpl struct {
-	sshOpts boshdir.SSHOpts
-	signer ssh.Signer
+	sshOpts    boshdir.SSHOpts
+	signer     ssh.Signer
 	deployment boshdir.Deployment
-	logger scanlog.Logger
+	logger     scanlog.Logger
 }
 
 func GetDeployments(
-		creds boshconfig.Creds,
-		caCertPath string,
-		deploymentNames []string,
-		boshURL string,
-		logger scanlog.Logger) ([]TargetDeployment, error) {
+	creds boshconfig.Creds,
+	caCertPath string,
+	deploymentNames []string,
+	boshURL string,
+	logger scanlog.Logger) ([]TargetDeployment, error) {
 
 	var caCert string
 
@@ -85,11 +85,11 @@ func GetDeployments(
 			return nil, err
 		}
 		logger.Debugf("Found deployment %s", deployment.Name())
-		deps = append(deps, &TargetDeploymentImpl {
-			sshOpts: sshOpts,
-			signer: signer,
+		deps = append(deps, &TargetDeploymentImpl{
+			sshOpts:    sshOpts,
+			signer:     signer,
 			deployment: deployment,
-			logger: logger,
+			logger:     logger,
 		})
 	}
 
@@ -144,10 +144,10 @@ func (d *TargetDeploymentImpl) Cleanup() error {
 }
 
 func getDirector(
-		boshURL string,
-		creds boshconfig.Creds,
-		caCert string,
-		logger boshlog.Logger,
+	boshURL string,
+	creds boshconfig.Creds,
+	caCert string,
+	logger boshlog.Logger,
 ) (boshdir.Director, error) {
 	dirConfig, err := boshdir.NewConfigFromURL(boshURL)
 	if err != nil {
