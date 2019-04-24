@@ -15,7 +15,7 @@ outputs:
 - name: scantron-reports
 
 run:
-  path: scantron/ci/scan/scan.sh
+  path: docker/scan.sh
 
 params:
   BOSH_ADDRESS:
