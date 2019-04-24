@@ -67,7 +67,7 @@ var _ = Describe("TLS", func() {
 
 				Expect(cert.Bits).To(Equal(1024))
 
-				expectedExpiration := time.Now().Add(365 * 24 * time.Hour)
+				expectedExpiration := time.Now().AddDate(1, 0, 0)
 				Expect(cert.Expiration).To(BeTemporally("~", expectedExpiration, time.Minute))
 				Expect(cert.Subject.Country).To(Equal("AQ"))
 				Expect(cert.Subject.Province).To(Equal("Ross Island"))
@@ -108,7 +108,7 @@ var _ = Describe("TLS", func() {
 
 				Expect(cert.Bits).To(Equal(1024))
 
-				expectedExpiration := time.Now().Add(365 * 24 * time.Hour)
+				expectedExpiration := time.Now().AddDate(1, 0, 0)
 				Expect(cert.Expiration).To(BeTemporally("~", expectedExpiration, time.Minute))
 				Expect(cert.Subject.Country).To(Equal("AQ"))
 				Expect(cert.Subject.Province).To(Equal("Ross Island"))
