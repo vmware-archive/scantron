@@ -17,7 +17,7 @@ import (
 
 var _ = Describe("Direct Scanning", func() {
 	var (
-		mockCtrl         *gomock.Controller
+		mockCtrl   *gomock.Controller
 		directScan scanner.Scanner
 		machine    *remotemachine.MockRemoteMachine
 
@@ -25,8 +25,8 @@ var _ = Describe("Direct Scanning", func() {
 
 		scanResults scanner.ScanResult
 		scanErr     error
-		logger scanlog.Logger
-		buffer *bytes.Buffer
+		logger      scanlog.Logger
+		buffer      *bytes.Buffer
 
 		fileMatch *scantron.FileMatch
 	)

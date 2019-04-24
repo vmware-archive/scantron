@@ -57,7 +57,7 @@ func BuildTLSViolationsReport(database *db.Database) (Report, error) {
 	JOIN tls_ciphers c
 	ON ctc.cipher_id = c.id
 	WHERE s.suite NOT IN(%s) OR c.cipher NOT IN(%s)
-	ORDER BY h.name, po.number`, "'" + strings.Join(goodSuites, "','") + "'", "'" + strings.Join(goodCiphers, "','") + "'") // sql binding doesn't play nice with array args
+	ORDER BY h.name, po.number`, "'"+strings.Join(goodSuites, "','")+"'", "'"+strings.Join(goodCiphers, "','")+"'") // sql binding doesn't play nice with array args
 	rows, err := database.DB().Query(query)
 
 	if err != nil {
@@ -79,13 +79,13 @@ func BuildTLSViolationsReport(database *db.Database) (Report, error) {
 	}
 
 	type Host struct {
-		hostname string
-		portNumber int
+		hostname    string
+		portNumber  int
 		processName string
 	}
 
 	type cipherSuites struct {
-		suites stringSlice
+		suites  stringSlice
 		ciphers stringSlice
 	}
 
@@ -105,7 +105,7 @@ func BuildTLSViolationsReport(database *db.Database) (Report, error) {
 			return Report{}, err
 		}
 
-		host := Host {
+		host := Host{
 			hostname,
 			portNumber,
 			processName,

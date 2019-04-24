@@ -14,7 +14,7 @@ import (
 
 type BoshScanCommand struct {
 	Director struct {
-		URL        string `long:"director-url" description:"BOSH Director URL" value-name:"URL" required:"true"`
+		URL         string   `long:"director-url" description:"BOSH Director URL" value-name:"URL" required:"true"`
 		Deployments []string `long:"bosh-deployment" description:"BOSH Deployment" value-name:"DEPLOYMENT_NAME" required:"true"`
 
 		CACert string `long:"ca-cert" description:"Director CA certificate path" value-name:"CA_CERT"`
@@ -57,6 +57,7 @@ func (command *BoshScanCommand) Execute(args []string) error {
 		log.Fatalf("failed to create database: %s", err.Error())
 	}
 
+	m := sync.Mutex{}
 	wg := &sync.WaitGroup{}
 	wg.Add(len(deployments))
 	for _, d := range deployments {
@@ -70,6 +71,8 @@ func (command *BoshScanCommand) Execute(args []string) error {
 				log.Fatalf("failed to scan: %s", err.Error())
 			}
 
+			m.Lock()
+			defer m.Unlock()
 			err = db.SaveReport(dep.Name(), results)
 			if err != nil {
 				log.Fatalf("failed to save to database: %s", err.Error())

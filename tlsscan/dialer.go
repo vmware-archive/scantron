@@ -23,7 +23,7 @@ func defaultConfig() *tls.Config {
 
 // copied from crypto/tls/DialWithDialer, modified to immediately close the connection
 // return nil if cipher was negotiated successfully, even if the handshake failed in a later step (e.g. client cert validation)
-func AttemptHandshake(logger scanlog.Logger, dialer *net.Dialer, network, addr string, config *tls.Config) (error) {
+func AttemptHandshake(logger scanlog.Logger, dialer *net.Dialer, network, addr string, config *tls.Config) error {
 
 	timeout := dialer.Timeout
 

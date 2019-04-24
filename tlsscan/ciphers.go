@@ -29,9 +29,9 @@ var ProtocolVersions = []ProtocolVersion{
 }
 
 type CipherSuite struct {
-	ID   uint16
-	Name string
-	DTls bool
+	ID          uint16
+	Name        string
+	DTls        bool
 	Recommended bool
 }
 
@@ -55,8 +55,8 @@ func BuildCipherSuites() ([]CipherSuite, error) {
 	}
 
 	// loop over all rows after header
-	for i:=1; i<len(table); i++ {
-		if (table[i][2] == "" || table[i][3] == "") {
+	for i := 1; i < len(table); i++ {
+		if table[i][2] == "" || table[i][3] == "" {
 			continue
 		}
 
@@ -67,7 +67,7 @@ func BuildCipherSuites() ([]CipherSuite, error) {
 			return cs, err
 		}
 
-		cs = append(cs, CipherSuite{ uint16(cid), table[i][1], dtls, rec})
+		cs = append(cs, CipherSuite{uint16(cid), table[i][1], dtls, rec})
 	}
 	return cs, nil
 }

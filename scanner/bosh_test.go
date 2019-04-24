@@ -35,8 +35,8 @@ var _ = Describe("Bosh Scanning", func() {
 
 		scanResult scanner.ScanResult
 		scanErr    error
-		logger scanlog.Logger
-		buffer *bytes.Buffer
+		logger     scanlog.Logger
+		buffer     *bytes.Buffer
 
 		fileMatch *scantron.FileMatch
 	)
