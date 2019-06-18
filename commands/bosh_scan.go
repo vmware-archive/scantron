@@ -14,22 +14,38 @@ import (
 
 type BoshScanCommand struct {
 	Director struct {
-		URL         string   `long:"director-url" description:"BOSH Director URL" value-name:"URL" required:"true"`
-		Deployments []string `long:"bosh-deployment" description:"BOSH Deployment" value-name:"DEPLOYMENT_NAME" required:"true"`
-
-		CACert string `long:"ca-cert" description:"Director CA certificate path" value-name:"CA_CERT"`
-
-		Client       string `long:"client" description:"Username or UAA client" value-name:"CLIENT"`
-		ClientSecret string `long:"client-secret" description:"Password or UAA client secret" value-name:"CLIENT_SECRET"`
+		URL          string   `long:"director-url" description:"BOSH Director URL" value-name:"URL" required:"true"`
+		Deployments  []string `long:"bosh-deployment" description:"BOSH Deployment" value-name:"DEPLOYMENT_NAME" required:"true"`
+		CACert       string   `long:"ca-cert" description:"Director CA certificate path" value-name:"CA_CERT"`
+		Client       string   `long:"client" description:"Username or UAA client" value-name:"CLIENT"`
+		ClientSecret string   `long:"client-secret" description:"Password or UAA client secret" value-name:"CLIENT_SECRET"`
 	} `group:"Director & Deployment"`
 
 	FileRegexes scantron.FileMatch `group:"File Content Check"`
+	Database    string             `long:"database" description:"location of database where scan output will be stored" value-name:"PATH" default:"./database.db"`
+	Serial      bool               `long:"serial" description:"run scans serially"`
+}
 
-	Database string `long:"database" description:"location of database where scan output will be stored" value-name:"PATH" default:"./database.db"`
+type ScanResult struct {
+	name  string
+	value scanner.ScanResult
+}
+
+func scan(dep bosh.TargetDeployment, command *BoshScanCommand, logger scanlog.Logger, results chan<- ScanResult) {
+	result, err := scanner.Bosh(dep).Scan(&command.FileRegexes, logger)
+	if err != nil {
+		log.Fatalf("failed to scan: %s", err.Error())
+	}
+
+	// Prevent blocking channel write when running in serial
+	go func() {
+		results <- ScanResult{dep.Name(), result}
+	}()
 }
 
 func (command *BoshScanCommand) Execute(args []string) error {
 	scantron.SetDebug(Scantron.Debug)
+
 	logger, err := scanlog.NewLogger(Scantron.Debug)
 	if err != nil {
 		log.Fatalln("failed to set up logger:", err)
@@ -57,34 +73,44 @@ func (command *BoshScanCommand) Execute(args []string) error {
 		log.Fatalf("failed to create database: %s", err.Error())
 	}
 
-	m := sync.Mutex{}
 	wg := &sync.WaitGroup{}
 	wg.Add(len(deployments))
+
+	results := make(chan ScanResult)
+	quit := make(chan int)
+
+	// Inform that it is time to quit after enough writes
+	go func() {
+		wg.Wait()
+		db.Close()
+		quit <- 0
+	}()
+
+	// Scan all deployments
 	for _, d := range deployments {
-		logger.Debugf("About to launch go func: %s", d.Name())
-		go func(dep bosh.TargetDeployment) {
-			defer wg.Done()
+		if command.Serial {
+			scan(d, command, logger, results)
+		} else {
+			go scan(d, command, logger, results)
+		}
+	}
 
-			logger.Debugf("About to scan: %s", dep.Name())
-			results, err := scanner.Bosh(dep).Scan(&command.FileRegexes, logger)
-			if err != nil {
-				log.Fatalf("failed to scan: %s", err.Error())
-			}
+	for {
+		select {
+		case result := <-results:
+			err = db.SaveReport(result.name, result.value)
 
-			m.Lock()
-			defer m.Unlock()
-			err = db.SaveReport(dep.Name(), results)
 			if err != nil {
 				log.Fatalf("failed to save to database: %s", err.Error())
 			}
-		}(d)
+			wg.Done()
+		case <-quit:
+			close(results)
+			close(quit)
+
+			fmt.Println("Report is saved in SQLite3 database:", command.Database)
+
+			return nil
+		}
 	}
-
-	wg.Wait()
-
-	db.Close()
-
-	fmt.Println("Report is saved in SQLite3 database:", command.Database)
-
-	return nil
 }
