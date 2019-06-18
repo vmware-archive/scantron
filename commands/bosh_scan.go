@@ -26,18 +26,18 @@ type BoshScanCommand struct {
 	FileRegexes scantron.FileMatch `group:"File Content Check"`
 
 	Database string `long:"database" description:"location of database where scan output will be stored" value-name:"PATH" default:"./database.db"`
+
+	Stuff bosh.Stuff
+
+	Logger scanlog.Logger
 }
 
 func (command *BoshScanCommand) Execute(args []string) error {
 	scantron.SetDebug(Scantron.Debug)
-	logger, err := scanlog.NewLogger(Scantron.Debug)
-	if err != nil {
-		log.Fatalln("failed to set up logger:", err)
-	}
+	
+	command.Logger.Debugf("Requested deployments to scan: %v", command.Director.Deployments)
 
-	logger.Debugf("Requested deployments to scan: %v", command.Director.Deployments)
-
-	deployments, err := bosh.GetDeployments(
+	deployments, err := command.Stuff.GetDeployments(
 		boshconfig.Creds{
 			Client:       command.Director.Client,
 			ClientSecret: command.Director.ClientSecret,
@@ -45,7 +45,7 @@ func (command *BoshScanCommand) Execute(args []string) error {
 		command.Director.CACert,
 		command.Director.Deployments,
 		command.Director.URL,
-		logger,
+		command.Logger,
 	)
 
 	if err != nil {
@@ -61,12 +61,12 @@ func (command *BoshScanCommand) Execute(args []string) error {
 	wg := &sync.WaitGroup{}
 	wg.Add(len(deployments))
 	for _, d := range deployments {
-		logger.Debugf("About to launch go func: %s", d.Name())
+		command.Logger.Debugf("About to launch go func: %s", d.Name())
 		go func(dep bosh.TargetDeployment) {
 			defer wg.Done()
 
-			logger.Debugf("About to scan: %s", dep.Name())
-			results, err := scanner.Bosh(dep).Scan(&command.FileRegexes, logger)
+			command.Logger.Debugf("About to scan: %s", dep.Name())
+			results, err := scanner.Bosh(dep).Scan(&command.FileRegexes, command.Logger)
 			if err != nil {
 				log.Fatalf("failed to scan: %s", err.Error())
 			}

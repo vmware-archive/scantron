@@ -35,7 +35,20 @@ type TargetDeploymentImpl struct {
 	logger     scanlog.Logger
 }
 
-func GetDeployments(
+type Stuff interface {
+	GetDeployments(
+	 	boshconfig.Creds,
+	 	string,
+	 	[]string,
+	 	string,
+	 	scanlog.Logger) ([]TargetDeployment, error)
+}
+
+type StuffImpl struct{
+
+}
+
+func(s *StuffImpl)  GetDeployments(
 	creds boshconfig.Creds,
 	caCertPath string,
 	deploymentNames []string,
