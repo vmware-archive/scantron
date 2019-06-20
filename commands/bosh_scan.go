@@ -37,10 +37,7 @@ func scan(dep bosh.TargetDeployment, command *BoshScanCommand, logger scanlog.Lo
 		log.Fatalf("failed to scan: %s", err.Error())
 	}
 
-	// Prevent blocking channel write when running in serial
-	go func() {
-		results <- ScanResult{dep.Name(), result}
-	}()
+	results <- ScanResult{dep.Name(), result}
 }
 
 func (command *BoshScanCommand) Execute(args []string) error {
