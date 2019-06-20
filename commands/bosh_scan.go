@@ -75,17 +75,18 @@ func (command *BoshScanCommand) Execute(args []string) error {
 
 	m := sync.Mutex{}
 
+	noOfDeployments := len(deployments)
 	wg := &sync.WaitGroup{}
-	wg.Add(len(deployments))
+	wg.Add(noOfDeployments)
 
-	results := make(chan ScanResult)
-	quit := make(chan int)
+	results := make(chan ScanResult, noOfDeployments)
+	quit := make(chan bool)
 
 	// Inform that it is time to quit after enough writes
 	go func() {
 		wg.Wait()
 		db.Close()
-		quit <- 0
+		quit <- true
 	}()
 
 	// Scan all deployments
@@ -100,7 +101,7 @@ func (command *BoshScanCommand) Execute(args []string) error {
 	for {
 		select {
 		case result := <-results:
-			m.Lock()	
+			m.Lock()
 			defer m.Unlock()
 			err = db.SaveReport(result.name, result.value)
 
