@@ -73,6 +73,8 @@ func (command *BoshScanCommand) Execute(args []string) error {
 		log.Fatalf("failed to create database: %s", err.Error())
 	}
 
+	m := sync.Mutex{}
+
 	wg := &sync.WaitGroup{}
 	wg.Add(len(deployments))
 
@@ -98,6 +100,8 @@ func (command *BoshScanCommand) Execute(args []string) error {
 	for {
 		select {
 		case result := <-results:
+			m.Lock()	
+			defer m.Unlock()
 			err = db.SaveReport(result.name, result.value)
 
 			if err != nil {
