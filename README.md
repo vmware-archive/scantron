@@ -1,8 +1,8 @@
-# scantron
+# Scantron
 
 > scan machines for unexpected processes, ports, or permissions
 
-## purpose
+## Purpose
 
 Scantron is a tool for performing a census of processes, ports, protocols, and
 file permissions on VMs. Scans can be performed against single VMs, or against
@@ -10,7 +10,7 @@ all VMs in a bosh deployment. The intention is to provide a point-in-time scan
 which can be analysed offline. Scans are stored in a SQLite database. The CLI
 provides a summary report format or the SQLite db can be queried directly.
 
-## usage
+## Use
 
 Whether you scan a single host (`direct-scan`) or all VMs in a bosh deployment
 (`bosh-scan`) the results of the scan will be stored in a SQLite file, or
@@ -63,7 +63,7 @@ Multiple deployments can be specified and the results merged into a single datab
 the moment so that it can scan the endpoints for their TLS configuration. A
 jumpbox is normally a good machine to run this from.
 
-#### file content check
+#### File Content Check
 
 The file scan can optionally flag files if the content matches a specified regex. For performance optimization 
 an optional path regex and maximum file size can be specified to limit which files have to be read. The maximum 
@@ -76,7 +76,7 @@ file size defaults to 1MB.
       
 Regexes use the [golang syntax](https://golang.org/pkg/regexp/syntax/).
 
-### checking reports
+### Checking Reports
 
 After you run a scan a report is saved to a SQLite database, by default
 `database.db`.
@@ -114,9 +114,9 @@ there are any discrepancies the exit code will be `3`, otherwise it is `0`.
 ports in your cluster as the generated manifest will contain exactly those
 found in the latest scan.
 
-## notes
+## Notes
 
-### scan filter
+### Scan Filter
 
 Scantron only scans regular files and skips the following directories:
 
@@ -125,7 +125,7 @@ Scantron only scans regular files and skips the following directories:
   * `/dev`
   * `/run`
 
-### database schema
+### Database Schema
 
 Scantron produces a SQLite database for scan reports. The database schema can
 be found in [schema.go](https://github.com/pivotal-cf/scantron/blob/master/db/schema.go).
@@ -140,22 +140,21 @@ machine. Each process is referenced by the port it is listening on and its
 environment variables. TLS information is provided for a port when the port is
 expecting TLS connections.
 
-### example queries
+### Queries
 
-Finding all of the hosts which are listening on a particular port:
+To analyze the results of the database, you can use the database schema documented
+above to craft your own SQL query, or use some of the example queries stored in the
+`example_queries` directory.
 
-``` sql
-SELECT hosts.NAME
-FROM ports
-  JOIN processes
-    ON ports.process_id = processes.id
-  JOIN hosts
-    ON processes.host_id = hosts.id
-WHERE ports.number = 6061
-  AND upper(ports.state) = "LISTEN"
-```
+Finding all of the hosts which are listening on a particular port: hosts_on_port.sql
+Finding all connections not using TLS: no_tls.sql
+Finding all processes running as `root`: root_processes.sql
 
-### manifest format
+Once you have your query, run `sqlite` and specify the query you want to run to generate
+results. Tip: You can include `.mode.csv` at the end of your argument to spit out the results
+in a CSV format that can be imported into the spreadsheet software of your choice.
+
+### Manifest Format
 
 Scantron audits the hosts, processes, and ports in the database against the
 user-generated manifest file.
@@ -205,9 +204,9 @@ specs:
     ignore_ports: true
 ```
 
-## development
+## Development
 
-### building
+### Building
 
 1. Install dep, the vendor package manager: https://github.com/golang/dep
 2. `go get github.com/pivotal-cf/scantron`
@@ -215,7 +214,7 @@ specs:
 4. `dep ensure` # Note: will fail with exit code 1 due to `doublestar` test files 
 5. `./scripts/build`
 
-### testing
+### Testing
 
 1. `./scripts/test`
 2. There is no step 2.
