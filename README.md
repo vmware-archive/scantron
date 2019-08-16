@@ -10,7 +10,7 @@ all VMs in a bosh deployment. The intention is to provide a point-in-time scan
 which can be analysed offline. Scans are stored in a SQLite database. The CLI
 provides a summary report format or the SQLite db can be queried directly.
 
-## Use
+## Usage
 
 Whether you scan a single host (`direct-scan`) or all VMs in a bosh deployment
 (`bosh-scan`) the results of the scan will be stored in a SQLite file, or
@@ -146,9 +146,12 @@ To analyze the results of the database, you can use the database schema document
 above to craft your own SQL query, or use some of the example queries stored in the
 `example_queries` directory.
 
-Finding all of the hosts which are listening on a particular port: hosts_on_port.sql
-Finding all connections not using TLS: no_tls.sql
-Finding all processes running as `root`: root_processes.sql
+* Finding all of the hosts which are listening on a particular port:
+  - hosts_on_port.sql
+* Finding all connections not using TLS:
+  - no_tls.sql
+* Finding all processes running as `root`
+  - root_processes.sql
 
 Once you have your query, run `sqlite` and specify the query you want to run to generate
 results. Tip: You can include `.mode.csv` at the end of your argument to spit out the results
